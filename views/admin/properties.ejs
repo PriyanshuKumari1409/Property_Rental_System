@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Admin Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+    <style>
+        .status-badge {
+            @apply px-3 py-1 rounded-full text-xs font-semibold;
+        }
+        .status-pending { @apply bg-yellow-100 text-yellow-800; }
+        .status-approved { @apply bg-green-100 text-green-800; }
+        .status-live { @apply bg-blue-100 text-blue-800; }
+        .status-rejected { @apply bg-red-100 text-red-800; }
+        .status-suspended { @apply bg-orange-100 text-orange-800; }
+        .status-sold { @apply bg-purple-100 text-purple-800; }
+        .status-rented { @apply bg-indigo-100 text-indigo-800; }
+        .status-draft { @apply bg-gray-100 text-gray-800; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation (Same as dashboard) -->
+    <nav class="bg-white shadow-md border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="/admin/dashboard" class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                            <span class="text-white font-bold text-xl">P</span>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold text-gray-900">Propbandhu</h1>
+                            <p class="text-xs text-gray-500">Admin Panel</p>
+                        </div>
+                    </a>
+                </div>
+                
+                <!-- Right Section -->
+                <div class="flex items-center space-x-6">
+                    <!-- User Profile -->
+                    <div class="flex items-center space-x-3">
+                        <div class="text-right hidden md:block">
+                            <p class="font-medium text-gray-900"><%= user ? user.name : 'Admin' %></p>
+                            <p class="text-sm text-gray-500">Administrator</p>
+                        </div>
+                        <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                            <%= user && user.name ? user.name.charAt(0).toUpperCase() : 'A' %>
+                        </div>
+                        <div class="relative">
+                            <button onclick="toggleDropdown()" class="text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div id="profileDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-10">
+                                <a href="/admin/dashboard" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                                </a>
+                                <a href="/admin/profile" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-user mr-2"></i>Profile
+                                </a>
+                                <hr class="my-2 border-gray-200">
+                                <a href="/logout" class="block px-4 py-2 text-red-600 hover:bg-red-50">
+                                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Layout -->
+    <div class="flex">
+        <!-- Sidebar -->
+        <div class="w-64 bg-white border-r border-gray-200 min-h-[calc(100vh-4rem)] sticky top-16">
+            <div class="p-4">
+                <!-- Quick Stats -->
+                <div class="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl">
+                    <p class="text-sm text-gray-600 mb-1">Total Properties</p>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-2xl font-bold text-gray-900"><%= totalProperties %></p>
+                            <p class="text-xs text-gray-500">All properties</p>
+                        </div>
+                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                            <i class="fas fa-home text-blue-600"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Navigation -->
+                <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Navigation</h3>
+                <ul class="space-y-1">
+                    <li>
+                        <a href="/admin/dashboard" class="sidebar-link block px-4 py-3 rounded-lg">
+                            <i class="fas fa-tachometer-alt mr-3 text-blue-600"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/approvals" class="sidebar-link block px-4 py-3 rounded-lg">
+                            <i class="fas fa-check-circle mr-3 text-yellow-600"></i>
+                            <span>Pending Approvals</span>
+                            <% if (pendingApprovals > 0) { %>
+                                <span class="absolute right-4 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                                    <%= pendingApprovals %>
+                                </span>
+                            <% } %>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/users" class="sidebar-link block px-4 py-3 rounded-lg">
+                            <i class="fas fa-users mr-3 text-green-600"></i>
+                            <span>User Management</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/properties" class="sidebar-link active block px-4 py-3 rounded-lg">
+                            <i class="fas fa-home mr-3 text-purple-600"></i>
+                            <span>Properties</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/commissions" class="sidebar-link block px-4 py-3 rounded-lg">
+                            <i class="fas fa-money-bill-wave mr-3 text-emerald-600"></i>
+                            <span>Commissions</span>
+                           <% if (pendingApprovals > 0) { %>
+                                <span class="absolute right-4 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                                    <%= pendingCommissions %>
+                                </span>
+                            <% } %>
+                        </a>
+                    </li>
+                </ul>
+                
+                <!-- Filters -->
+                <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 mt-6">Filters</h3>
+                <div class="space-y-2">
+                    <a href="/admin/properties" class="block px-4 py-2 text-sm rounded-lg <%= !statusFilter ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50' %>">
+                        <i class="fas fa-layer-group mr-2"></i> All Properties (<%= totalProperties %>)
+                    </a>
+                    <a href="/admin/properties?status=pending_approval" class="block px-4 py-2 text-sm rounded-lg <%= statusFilter === 'pending_approval' ? 'bg-yellow-50 text-yellow-600' : 'text-gray-600 hover:bg-gray-50' %>">
+                        <i class="fas fa-clock mr-2"></i> Pending Approval (<%= pendingApprovals %>)
+                    </a>
+                    <a href="/admin/properties?status=approved" class="block px-4 py-2 text-sm rounded-lg <%= statusFilter === 'approved' ? 'bg-green-50 text-green-600' : 'text-gray-600 hover:bg-gray-50' %>">
+                        <i class="fas fa-check mr-2"></i> Approved (<%= approvedProperties %>)
+                    </a>
+                    <a href="/admin/properties?status=live" class="block px-4 py-2 text-sm rounded-lg <%= statusFilter === 'live' ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50' %>">
+                        <i class="fas fa-eye mr-2"></i> Live (<%= liveProperties %>)
+                    </a>
+                    <a href="/admin/properties?status=rejected" class="block px-4 py-2 text-sm rounded-lg <%= statusFilter === 'rejected' ? 'bg-red-50 text-red-600' : 'text-gray-600 hover:bg-gray-50' %>">
+                        <i class="fas fa-times mr-2"></i> Rejected (<%= rejectedProperties %>)
+                    </a>
+                    <a href="/admin/properties?status=suspended" class="block px-4 py-2 text-sm rounded-lg <%= statusFilter === 'suspended' ? 'bg-orange-50 text-orange-600' : 'text-gray-600 hover:bg-gray-50' %>">
+                        <i class="fas fa-pause mr-2"></i> Suspended (<%= suspendedProperties %>)
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 p-6">
+            <!-- Page Header -->
+            <div class="mb-6">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Property Management</h1>
+                        <p class="text-gray-600 mt-1">Manage all properties in the system</p>
+                    </div>
+                    <div class="flex space-x-3">
+                        <!-- Search -->
+                        <div class="relative">
+                            <input type="text" id="searchInput" 
+                                   placeholder="Search properties..." 
+                                   class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64">
+                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                        </div>
+                        <!-- Export Button -->
+                        <button onclick="exportProperties()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center">
+                            <i class="fas fa-file-export mr-2"></i> Export
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Status Filter Tabs -->
+                <div class="mt-6 flex space-x-4 border-b border-gray-200">
+                    <a href="/admin/properties" 
+                       class="pb-3 px-1 text-sm font-medium <%= !statusFilter ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700' %>">
+                        All (<%= totalProperties %>)
+                    </a>
+                    <a href="/admin/properties?status=pending_approval" 
+                       class="pb-3 px-1 text-sm font-medium <%= statusFilter === 'pending_approval' ? 'text-yellow-600 border-b-2 border-yellow-600' : 'text-gray-500 hover:text-gray-700' %>">
+                        Pending (<%= pendingApprovals %>)
+                    </a>
+                    <a href="/admin/properties?status=approved" 
+                       class="pb-3 px-1 text-sm font-medium <%= statusFilter === 'approved' ? 'text-green-600 border-b-2 border-green-600' : 'text-gray-500 hover:text-gray-700' %>">
+                        Approved (<%= approvedProperties %>)
+                    </a>
+                    <a href="/admin/properties?status=live" 
+                       class="pb-3 px-1 text-sm font-medium <%= statusFilter === 'live' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700' %>">
+                        Live (<%= liveProperties %>)
+                    </a>
+                </div>
+            </div>
+
+            <!-- Properties Table -->
+            <div class="bg-white rounded-xl shadow overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table id="propertiesTable" class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Seller</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <% if (properties && properties.length > 0) { %>
+                                <% properties.forEach((property, index) => { %>
+                                <tr class="hover:bg-gray-50" id="property-<%= property._id %>">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 h-10 w-10">
+                                                <% if (property.images && property.images.length > 0) { %>
+                                                    <img class="h-10 w-10 rounded-lg object-cover" 
+                                                         src="<%= property.images.find(img => img.is_primary)?.url || property.images[0].url %>" 
+                                                         alt="<%= property.title %>">
+                                                <% } else { %>
+                                                    <div class="h-10 w-10 bg-gray-200 rounded-lg flex items-center justify-center">
+                                                        <i class="fas fa-home text-gray-400"></i>
+                                                    </div>
+                                                <% } %>
+                                            </div>
+                                            <div class="ml-4">
+                                                <div class="text-sm font-medium text-gray-900">
+                                                    <%= property.title || 'Untitled Property' %>
+                                                </div>
+                                                <div class="text-xs text-gray-500">
+                                                    <%= property.property_type || 'N/A' %> • <%= property.sub_type || 'N/A' %>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm text-gray-900">
+                                            <% if (property.seller && property.seller.name) { %>
+                                                <%= property.seller.name %>
+                                            <% } else if (property.seller) { %>
+                                                Seller ID: <%= property.seller.toString().substring(0, 8) %>...
+                                            <% } else { %>
+                                                No seller
+                                            <% } %>
+                                        </div>
+                                        <div class="text-xs text-gray-500">
+                                            <% if (property.seller && property.seller.email) { %>
+                                                <%= property.seller.email %>
+                                            <% } else if (property.seller && property.seller.phone) { %>
+                                                <%= property.seller.phone %>
+                                            <% } %>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-semibold text-gray-900">
+                                            ₹<%= property.price ? property.price.toLocaleString('en-IN') : '0' %>
+                                        </div>
+                                        <div class="text-xs text-gray-500">
+                                            <%= property.price_type === 'fixed' ? 'Fixed' : 'Negotiable' %>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm text-gray-900">
+                                            <% if (property.address && property.address.city) { %>
+                                                <%= property.address.city %>
+                                            <% } else { %>
+                                                N/A
+                                            <% } %>
+                                        </div>
+                                        <div class="text-xs text-gray-500">
+                                            <% if (property.address && property.address.area) { %>
+                                                <%= property.address.area %>
+                                            <% } %>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="status-badge status-<%= property.status || 'draft' %>">
+                                            <% if (property.status) { 
+                                                const statusText = property.status.replace('_', ' ');
+                                                const capitalized = statusText.charAt(0).toUpperCase() + statusText.slice(1);
+                                            %>
+                                                <%= capitalized %>
+                                            <% } else { %>
+                                                Draft
+                                            <% } %>
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <%= property.createdAt ? new Date(property.createdAt).toLocaleDateString() : 'N/A' %>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <div class="flex space-x-2">
+                                            <a href="/admin/properties/<%= property._id %>" 
+                                               class="text-blue-600 hover:text-blue-900">
+                                                <i class="fas fa-eye"></i> View
+                                            </a>
+                                            <% if (property.status === 'pending_approval') { %>
+                                                <button onclick="approveProperty('<%= property._id %>')" 
+                                                        class="text-green-600 hover:text-green-900 ml-3">
+                                                    <i class="fas fa-check"></i> Approve
+                                                </button>
+                                                <button onclick="showRejectModal('<%= property._id %>')" 
+                                                        class="text-red-600 hover:text-red-900 ml-3">
+                                                    <i class="fas fa-times"></i> Reject
+                                                </button>
+                                            <% } else if (property.status === 'approved' || property.status === 'live') { %>
+                                                <button onclick="suspendProperty('<%= property._id %>')" 
+                                                        class="text-orange-600 hover:text-orange-900 ml-3">
+                                                    <i class="fas fa-pause"></i> Suspend
+                                                </button>
+                                            <% } else if (property.status === 'suspended') { %>
+                                                <button onclick="unsuspendProperty('<%= property._id %>')" 
+                                                        class="text-green-600 hover:text-green-900 ml-3">
+                                                    <i class="fas fa-play"></i> Unsuspend
+                                                </button>
+                                            <% } %>
+                                            <% if (property.status === 'approved' && property.status !== 'live') { %>
+                                                <button onclick="makeLive('<%= property._id %>')" 
+                                                        class="text-blue-600 hover:text-blue-900 ml-3">
+                                                    <i class="fas fa-eye"></i> Make Live
+                                                </button>
+                                            <% } %>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <% }) %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="7" class="px-6 py-12 text-center">
+                                        <div class="text-gray-400">
+                                            <i class="fas fa-home text-4xl mb-3"></i>
+                                            <p class="text-lg font-medium text-gray-500">No properties found</p>
+                                            <p class="text-sm text-gray-400 mt-1">
+                                                <% if (statusFilter) { %>
+                                                    No properties with status: <%= statusFilter.replace('_', ' ') %>
+                                                <% } else { %>
+                                                    No properties in the system yet
+                                                <% } %>
+                                            </p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                <% if (totalPages > 1) { %>
+                <div class="bg-white px-6 py-4 border-t border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div class="text-sm text-gray-700">
+                            Showing <span class="font-medium"><%= (currentPage - 1) * limit + 1 %></span> to 
+                            <span class="font-medium"><%= Math.min(currentPage * limit, totalProperties) %></span> of 
+                            <span class="font-medium"><%= totalProperties %></span> properties
+                        </div>
+                        <div class="flex space-x-2">
+                            <% if (currentPage > 1) { %>
+                                <a href="/admin/properties?page=<%= currentPage - 1 %><%= statusFilter ? '&status=' + statusFilter : '' %>" 
+                                   class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                    Previous
+                                </a>
+                            <% } %>
+                            
+                            <% for (let i = 1; i <= totalPages; i++) { %>
+                                <% if (i === currentPage) { %>
+                                    <span class="px-3 py-2 border border-blue-500 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium">
+                                        <%= i %>
+                                    </span>
+                                <% } else if (i >= currentPage - 2 && i <= currentPage + 2) { %>
+                                    <a href="/admin/properties?page=<%= i %><%= statusFilter ? '&status=' + statusFilter : '' %>" 
+                                       class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                        <%= i %>
+                                    </a>
+                                <% } %>
+                            <% } %>
+                            
+                            <% if (currentPage < totalPages) { %>
+                                <a href="/admin/properties?page=<%= currentPage + 1 %><%= statusFilter ? '&status=' + statusFilter : '' %>" 
+                                   class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                    Next
+                                </a>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reject Modal -->
+    <div id="rejectModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-xl bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Reject Property</h3>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Reason for rejection</label>
+                    <textarea id="rejectReason" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" 
+                              placeholder="Provide a clear reason for rejection..."></textarea>
+                    <p class="text-xs text-gray-500 mt-1">This reason will be shared with the seller</p>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button onclick="closeRejectModal()" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button onclick="confirmReject()" class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700">
+                        Confirm Reject
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success/Error Toast -->
+    <div id="toast" class="hidden fixed top-5 right-5 z-50 max-w-sm w-full bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+        <div class="p-4">
+            <div class="flex items-start">
+                <div id="toastIcon" class="flex-shrink-0"></div>
+                <div class="ml-3 w-0 flex-1 pt-0.5">
+                    <p id="toastMessage" class="text-sm font-medium text-gray-900"></p>
+                    <p id="toastDescription" class="mt-1 text-sm text-gray-500"></p>
+                </div>
+                <div class="ml-4 flex-shrink-0 flex">
+                    <button onclick="hideToast()" class="bg-white rounded-md inline-flex text-gray-400 hover:text-gray-500">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script>
+        let currentRejectPropertyId = null;
+        
+        // Initialize DataTable
+        $(document).ready(function() {
+            $('#propertiesTable').DataTable({
+                "paging": false,
+                "searching": false,
+                "info": false,
+                "order": [],
+                "columnDefs": [
+                    { "orderable": false, "targets": [6] } // Disable sorting for Actions column
+                ]
+            });
+            
+            // Search functionality
+            $('#searchInput').on('keyup', function() {
+                const searchTerm = $(this).val().toLowerCase();
+                $('#propertiesTable tbody tr').each(function() {
+                    const text = $(this).text().toLowerCase();
+                    $(this).toggle(text.indexOf(searchTerm) > -1);
+                });
+            });
+        });
+        
+        function toggleDropdown() {
+            const dropdown = document.getElementById('profileDropdown');
+            dropdown.classList.toggle('hidden');
+        }
+        
+        // Property Actions
+        function approveProperty(propertyId) {
+            if (confirm('Are you sure you want to approve this property?')) {
+                fetch(`/admin/api/properties/${propertyId}/approve`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ autoGoLive: false })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('success', 'Property Approved', 'The property has been approved successfully.');
+                        // Remove row from table
+                        $(`#property-${propertyId}`).fadeOut(300, function() {
+                            $(this).remove();
+                            // Update counts if needed
+                            updatePropertyCounts();
+                        });
+                    } else {
+                        showToast('error', 'Approval Failed', data.message);
+                    }
+                })
+                .catch(error => {
+                    showToast('error', 'Error', 'Failed to approve property.');
+                });
+            }
+        }
+        
+        function showRejectModal(propertyId) {
+            currentRejectPropertyId = propertyId;
+            document.getElementById('rejectModal').classList.remove('hidden');
+        }
+        
+        function closeRejectModal() {
+            document.getElementById('rejectModal').classList.add('hidden');
+            document.getElementById('rejectReason').value = '';
+            currentRejectPropertyId = null;
+        }
+        
+        function confirmReject() {
+            const reason = document.getElementById('rejectReason').value.trim();
+            if (!reason || reason.length < 10) {
+                showToast('error', 'Invalid Reason', 'Please provide a reason (at least 10 characters).');
+                return;
+            }
+            
+            fetch(`/admin/api/properties/${currentRejectPropertyId}/reject`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ reason: reason })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('success', 'Property Rejected', 'The property has been rejected.');
+                    closeRejectModal();
+                    // Remove row from table
+                    $(`#property-${currentRejectPropertyId}`).fadeOut(300, function() {
+                        $(this).remove();
+                        updatePropertyCounts();
+                    });
+                } else {
+                    showToast('error', 'Rejection Failed', data.message);
+                }
+            })
+            .catch(error => {
+                showToast('error', 'Error', 'Failed to reject property.');
+            });
+        }
+        
+        function suspendProperty(propertyId) {
+            const reason = prompt('Enter reason for suspension (minimum 10 characters):');
+            if (reason && reason.length >= 10) {
+                fetch(`/admin/api/properties/${propertyId}/suspend`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ reason: reason })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('success', 'Property Suspended', 'The property has been suspended.');
+                        // Reload the row
+                        reloadPropertyRow(propertyId);
+                    } else {
+                        showToast('error', 'Suspension Failed', data.message);
+                    }
+                })
+                .catch(error => {
+                    showToast('error', 'Error', 'Failed to suspend property.');
+                });
+            } else if (reason !== null) {
+                showToast('error', 'Invalid Reason', 'Reason must be at least 10 characters.');
+            }
+        }
+        
+        function unsuspendProperty(propertyId) {
+            if (confirm('Are you sure you want to unsuspend this property?')) {
+                fetch(`/admin/api/properties/${propertyId}/unsuspend`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('success', 'Property Unsuspended', 'The property has been unsuspended.');
+                        reloadPropertyRow(propertyId);
+                    } else {
+                        showToast('error', 'Unsuspend Failed', data.message);
+                    }
+                })
+                .catch(error => {
+                    showToast('error', 'Error', 'Failed to unsuspend property.');
+                });
+            }
+        }
+        
+        function makeLive(propertyId) {
+            if (confirm('Are you sure you want to make this property live?')) {
+                fetch(`/admin/api/properties/${propertyId}/make-live`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('success', 'Property Live', 'The property is now live and visible to users.');
+                        reloadPropertyRow(propertyId);
+                    } else {
+                        showToast('error', 'Failed', data.message);
+                    }
+                })
+                .catch(error => {
+                    showToast('error', 'Error', 'Failed to make property live.');
+                });
+            }
+        }
+        
+        function reloadPropertyRow(propertyId) {
+            // Simple page reload for now
+            // In a real app, you would fetch updated data and update the row
+            location.reload();
+        }
+        
+        function updatePropertyCounts() {
+            // You could implement AJAX to update counts without page reload
+            // For simplicity, we'll reload the page
+            location.reload();
+        }
+        
+        function exportProperties() {
+            showToast('info', 'Export Started', 'Preparing export file...');
+            // In a real app, this would trigger a file download
+            setTimeout(() => {
+                showToast('success', 'Export Complete', 'Properties data has been exported.');
+            }, 2000);
+        }
+        
+        // Toast Notification Functions
+        function showToast(type, title, message) {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toastIcon');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastDescription = document.getElementById('toastDescription');
+            
+            // Set icon based on type
+            let iconHtml = '';
+            let bgColor = '';
+            if (type === 'success') {
+                iconHtml = '<i class="fas fa-check-circle text-green-400 text-xl"></i>';
+                bgColor = 'border-l-4 border-green-500';
+            } else if (type === 'error') {
+                iconHtml = '<i class="fas fa-times-circle text-red-400 text-xl"></i>';
+                bgColor = 'border-l-4 border-red-500';
+            } else if (type === 'info') {
+                iconHtml = '<i class="fas fa-info-circle text-blue-400 text-xl"></i>';
+                bgColor = 'border-l-4 border-blue-500';
+            }
+            
+            icon.innerHTML = iconHtml;
+            toast.className = toast.className.replace(/border-l-4 border-\w+/g, '');
+            toast.classList.add(bgColor);
+            toastMessage.textContent = title;
+            toastDescription.textContent = message;
+            
+            toast.classList.remove('hidden');
+            
+            // Auto-hide after 5 seconds
+            setTimeout(hideToast, 5000);
+        }
+        
+        function hideToast() {
+            document.getElementById('toast').classList.add('hidden');
+        }
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('profileDropdown');
+            const profileBtn = event.target.closest('button[onclick="toggleDropdown()"]');
+            
+            if (!dropdown.classList.contains('hidden') && !dropdown.contains(event.target) && !profileBtn) {
+                dropdown.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

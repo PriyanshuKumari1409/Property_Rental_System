@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title || 'Propbandhu' %></title>
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <!-- Include navbar -->
+  <%- include('partials/navbar', { activePage: activePage || 'home' }) %>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <img src="/assets/Desktop-DMELDU-S.jpg" alt="Luxury Real Estate" class="hero-bg" />
+    <div class="overlay"></div>
+    <div class="hero-content">
+      <p class="subtitle">One-Stop Bespoke Solution for Developers, HNIs and Advisors</p>
+      <h1>Redefining Ultra Luxury Real Estate Through Innovation and Expertise</h1>
+      <a href="/properties" class="cta-btn">Explore Our Platforms</a>
+      <div class="search-bar">
+        <!-- City Selection -->
+        <div class="search-field">
+          <select class="custom-select" id="city-select">
+            <option value="">Select City</option>
+            <option value="Noida">Noida</option>
+            <option value="Ghaziabad">Ghaziabad</option>
+            <option value="Gorakhpur">Gorakhpur</option>
+          </select>
+          <span class="search-arrow">&#9662;</span>
+        </div>
+        <div class="divider"></div>
+        
+        <!-- Location Selection -->
+        <div class="search-field">
+          <select class="custom-select" id="location-select">
+            <option value="">Select Location(s)</option>
+          </select>
+          <span class="search-arrow">&#9662;</span>
+        </div>
+        <div class="divider"></div>
+        
+        <!-- Furnishing Filter -->
+        <div class="search-field">
+          <select class="custom-select" id="furnishing-select">
+            <option value="">Select Furnishing</option>
+            <option value="unfurnished">Unfurnished</option>
+            <option value="semi_furnished">Semi Furnished</option>
+            <option value="fully_furnished">Fully Furnished</option>
+          </select>
+          <span class="search-arrow">&#9662;</span>
+        </div>
+        <div class="divider"></div>
+        
+        <!-- Budget Selection -->
+        <div class="search-field">
+          <select class="custom-select" id="budget-select">
+            <option value="">Select Budget</option>
+            <option value="under-50">Under ₹50 lakh</option>
+            <option value="50-75">₹50 lakh – ₹75 lakh</option>
+            <option value="75-100">₹75 lakh – ₹1 crore</option>
+            <option value="100-150">₹1 crore – ₹1.5 crore</option>
+            <option value="150-200">₹1.5 crore – ₹2 crore</option>
+            <option value="above-200">Above ₹2 crore</option>
+          </select>
+          <span class="search-arrow">&#9662;</span>
+        </div>
+        
+        <!-- Search Button -->
+        <button class="search-btn" id="search-button">
+          Search
+          <span class="search-btn-arrow">&#8594;</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Search Results Section (Initially hidden) -->
+  <section id="searchResultsSection" style="display: none; padding: 60px 20px; background: #f8fafc;">
+    <div style="max-width: 1400px; margin: 0 auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <h2 style="font-size: 28px; color: #1e293b; margin: 0;">Search Results</h2>
+        <span id="searchResultsCount" style="color: #64748b; font-size: 16px;"></span>
+      </div>
+      
+      <!-- Results Grid -->
+      <div id="searchResultsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 30px; margin-top: 20px;">
+        <!-- Results will be loaded here via AJAX -->
+      </div>
+      
+      <!-- Loading Spinner -->
+      <div id="searchLoading" style="display: none; text-align: center; padding: 40px;">
+        <div style="width: 40px; height: 40px; border: 3px solid #e2e8f0; border-top: 3px solid #2563eb; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+        <p>Searching properties...</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Include properties section (for initial page load) -->
+  <%- include('partials/properties') %>
+
+  <!-- Include needs section -->
+  <%- include('partials/need-section') %>
+
+  <!-- Include footer -->
+  <%- include('partials/footer') %>
+
+  <script src="/js/script.js"></script>
+  <script>
+    // City to Locations mapping
+    const cityLocationMap = {
+      Noida: [
+        "Sector 62", "Sector 18", "Sector 15", "Sector 50",
+        "Sector 76", "Sector 137", "Sector 128",
+        "Sector 44", "Greater Noida West", "Noida Extension"
+      ],
+      Ghaziabad: [
+        "Indirapuram", "Vaishali", "Raj Nagar",
+        "Raj Nagar Extension", "Crossings Republik",
+        "Kavi Nagar", "Sanjay Nagar", "Shastri Nagar",
+        "Mohan Nagar", "Vasundhara"
+      ],
+      Gorakhpur: [
+        "Golghar", "Medical Road", "Rustampur",
+        "Taramandal", "Chargawan", "Basharatpur",
+        "Betiahata", "Civil Lines", "Transport Nagar",
+        "Padri Bazar"
+      ]
+    };
+
+    // Store selected locations
+    let selectedLocations = [];
+
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      const citySelect = document.getElementById('city-select');
+      const locationSelect = document.getElementById('location-select');
+      const searchButton = document.getElementById('search-button');
+
+      // Update locations when city changes
+      citySelect.addEventListener('change', function() {
+        const selectedCity = this.value;
+        updateLocations(selectedCity);
+        // Reset selected locations when city changes
+        selectedLocations = [];
+      });
+
+      // Handle location selection
+      locationSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const locationValue = selectedOption.value;
+        
+        if (locationValue && !selectedLocations.includes(locationValue)) {
+          selectedLocations.push(locationValue);
+        }
+        
+        // Reset selection
+        this.selectedIndex = 0;
+      });
+
+      // Search button functionality
+      searchButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        performSearch();
+      });
+
+      // Function to update locations dropdown
+      function updateLocations(city) {
+        locationSelect.innerHTML = '<option value="">Select Location(s)</option>';
+        
+        if (city && cityLocationMap[city]) {
+          cityLocationMap[city].forEach(location => {
+            const option = document.createElement('option');
+            option.value = location;
+            option.textContent = location;
+            locationSelect.appendChild(option);
+          });
+          
+          locationSelect.disabled = false;
+        } else {
+          locationSelect.disabled = true;
+        }
+      }
+
+      // Initialize with first city selected if exists
+      if (citySelect.options.length > 1) {
+        citySelect.selectedIndex = 1;
+        citySelect.dispatchEvent(new Event('change'));
+      }
+    });
+
+    // Function to perform AJAX search
+    async function performSearch() {
+      const city = document.getElementById('city-select').value;
+      const furnishing = document.getElementById('furnishing-select').value;
+      const budget = document.getElementById('budget-select').value;
+      
+      // Validate at least one filter is selected
+      if (!city && selectedLocations.length === 0 && !furnishing && !budget) {
+        alert('Please select at least one search criteria');
+        return;
+      }
+      
+      // Build query parameters
+      const params = new URLSearchParams();
+      
+      if (city) params.append('city', city);
+      if (selectedLocations.length > 0) params.append('locations', selectedLocations.join(','));
+      if (furnishing) params.append('furnishing', furnishing);
+      if (budget) params.append('budget', budget);
+      
+      // Show loading
+      showSearchLoading(true);
+      
+      try {
+        const response = await fetch(`/api/properties/search?${params.toString()}`);
+        const data = await response.json();
+        
+        if (data.success) {
+          renderSearchResults(data.properties);
+        } else {
+          showNoResults("Failed to fetch properties. Please try again.");
+        }
+      } catch (error) {
+        console.error('Search error:', error);
+        showNoResults("Network error. Please check your connection.");
+      } finally {
+        showSearchLoading(false);
+      }
+    }
+
+    // Function to render search results
+    function renderSearchResults(properties) {
+      const section = document.getElementById('searchResultsSection');
+      const grid = document.getElementById('searchResultsGrid');
+      const countElement = document.getElementById('searchResultsCount');
+      
+      // Show section
+      section.style.display = 'block';
+      
+      // Update count
+      const count = properties?.length || 0;
+      countElement.textContent = `Found ${count} propert${count === 1 ? 'y' : 'ies'}`;
+      
+      // Clear grid
+      grid.innerHTML = '';
+      
+      if (!properties || properties.length === 0) {
+        showNoResults();
+        return;
+      }
+      
+      // Scroll to results
+      setTimeout(() => {
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+      
+      // Render properties
+      properties.forEach(property => {
+        const card = document.createElement('a');
+        card.href = `/properties/${property._id}`;
+        card.style.cssText = 'background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); transition: all 0.3s ease; text-decoration: none; color: inherit; display: block; height: 100%;';
+        card.onmouseover = function() { this.style.transform = 'translateY(-8px)'; this.style.boxShadow = '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)'; };
+        card.onmouseout = function() { this.style.transform = 'translateY(0)'; this.style.boxShadow = '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)'; };
+        
+        const imageUrl = property.images?.[0]?.url || '/img/default-property.jpg';
+        const price = property.price ? `₹${property.price.toLocaleString('en-IN')}` : 'Price on request';
+        const city = property.address?.city || '';
+        const area = property.address?.areas?.[0] || '';
+        
+        card.innerHTML = `
+          <img src="${imageUrl}" 
+               alt="${property.title}" 
+               style="width: 100%; height: 220px; object-fit: cover; border-bottom: 1px solid #e2e8f0;"
+               onerror="this.src='/img/default-property.jpg'">
+          <div style="padding: 20px;">
+            <div style="font-size: 1.5rem; font-weight: bold; color: #1e293b; margin-bottom: 10px;">${price}</div>
+            <h3 style="font-size: 1.1rem; color: #1e293b; margin-bottom: 12px; line-height: 1.4; font-weight: 600;">${property.title}</h3>
+            <div style="color: #64748b; font-size: 0.9rem; margin-bottom: 16px; display: flex; align-items: center; gap: 6px;">
+              <i class="fas fa-map-marker-alt"></i>
+              ${city}${area ? `, ${area}` : ''}
+            </div>
+            <div style="display: flex; gap: 20px; color: #64748b; font-size: 0.85rem; margin-bottom: 15px; padding-top: 15px; border-top: 1px solid #e2e8f0;">
+              ${property.bedrooms ? `<span><i class="fas fa-bed" style="color: #2563eb;"></i> ${property.bedrooms} Beds</span>` : ''}
+              ${property.bathrooms ? `<span><i class="fas fa-bath" style="color: #2563eb;"></i> ${property.bathrooms} Baths</span>` : ''}
+              ${property.built_up_area ? `<span><i class="fas fa-ruler-combined" style="color: #2563eb;"></i> ${property.built_up_area} ${property.area_unit || 'sqft'}</span>` : ''}
+            </div>
+          </div>
+        `;
+        
+        grid.appendChild(card);
+      });
+    }
+
+    // Helper functions
+    function showSearchLoading(show) {
+      const loadingElement = document.getElementById('searchLoading');
+      const searchButton = document.getElementById('search-button');
+      
+      if (show) {
+        loadingElement.style.display = 'block';
+        searchButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching...';
+        searchButton.disabled = true;
+      } else {
+        loadingElement.style.display = 'none';
+        searchButton.innerHTML = 'Search <span class="search-btn-arrow">&#8594;</span>';
+        searchButton.disabled = false;
+      }
+    }
+
+    function showNoResults(message = "No properties found matching your criteria.") {
+      const grid = document.getElementById('searchResultsGrid');
+      const countElement = document.getElementById('searchResultsCount');
+      
+      countElement.textContent = 'Found 0 properties';
+      
+      grid.innerHTML = `
+        <div style="text-align: center; padding: 80px 20px; color: #64748b; background: white; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); grid-column: 1 / -1;">
+          <div style="font-size: 4rem; color: #e2e8f0; margin-bottom: 20px;">
+            <i class="fas fa-search"></i>
+          </div>
+          <h3 style="font-size: 1.5rem; color: #1e293b; margin-bottom: 10px;">No Properties Found</h3>
+          <p style="margin-bottom: 30px; font-size: 1rem; max-width: 500px; margin-left: auto; margin-right: auto;">${message}</p>
+          <button onclick="clearAllFilters()" style="display: inline-block; background: #2563eb; color: white; padding: 12px 28px; border-radius: 10px; text-decoration: none; font-weight: 600; transition: all 0.3s ease; border: none; cursor: pointer; font-size: 1rem;">
+            <i class="fas fa-times"></i> Clear All Filters
+          </button>
+        </div>
+      `;
+    }
+
+    function clearAllFilters() {
+      document.getElementById('city-select').value = '';
+      document.getElementById('furnishing-select').value = '';
+      document.getElementById('budget-select').value = '';
+      selectedLocations = [];
+      
+      const section = document.getElementById('searchResultsSection');
+      section.style.display = 'none';
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,1650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Admin Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .status-badge {
+            @apply px-3 py-1 rounded-full text-xs font-semibold;
+        }
+        .status-pending { @apply bg-yellow-100 text-yellow-800; }
+        .status-approved { @apply bg-green-100 text-green-800; }
+        .status-live { @apply bg-blue-100 text-blue-800; }
+        .status-rejected { @apply bg-red-100 text-red-800; }
+        .status-suspended { @apply bg-orange-100 text-orange-800; }
+        .status-draft { @apply bg-gray-100 text-gray-800; }
+        .status-changes_requested { @apply bg-amber-100 text-amber-800; }
+        
+        .info-card {
+            @apply bg-white rounded-xl shadow border border-gray-200 p-6;
+        }
+        
+        .property-image {
+            @apply w-full h-64 object-cover rounded-xl;
+        }
+        
+        .detail-row {
+            @apply flex justify-between py-3 border-b border-gray-100;
+        }
+        
+        .detail-label {
+            @apply text-gray-600 font-medium;
+        }
+        
+        .detail-value {
+            @apply text-gray-900;
+        }
+        
+        /* Document icon styles */
+        .doc-icon {
+            @apply text-xl mr-3;
+        }
+        .doc-pdf { @apply text-red-500; }
+        .doc-word { @apply text-blue-600; }
+        .doc-image { @apply text-green-500; }
+        .doc-file { @apply text-gray-500; }
+        
+        /* Modal styles */
+        .modal {
+            @apply hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50;
+        }
+        .modal-content {
+            @apply relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-xl bg-white;
+        }
+        
+        /* Field selection styles */
+        .field-group {
+            @apply mb-4 p-3 border rounded-lg;
+        }
+        .field-group-title {
+            @apply font-medium text-gray-900 mb-2 text-sm flex items-center;
+        }
+        .field-checkbox-label {
+            @apply flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer;
+        }
+        .duration-option {
+            @apply px-3 py-2 border rounded-lg cursor-pointer hover:bg-gray-50;
+        }
+        .duration-option.selected {
+            @apply bg-blue-50 border-blue-300 text-blue-700;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Top Navigation -->
+    <nav class="bg-white shadow-md border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="/admin/dashboard" class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                            <span class="text-white font-bold text-xl">P</span>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold text-gray-900">Propbandhu</h1>
+                            <p class="text-xs text-gray-500">Admin Panel</p>
+                        </div>
+                    </a>
+                </div>
+                
+                <!-- Right Section -->
+                <div class="flex items-center space-x-6">
+                    <!-- Back Button -->
+                    <a href="/admin/properties" class="text-blue-600 hover:text-blue-800 flex items-center">
+                        <i class="fas fa-arrow-left mr-2"></i> Back to Properties
+                    </a>
+                    
+                    <!-- User Profile -->
+                    <div class="flex items-center space-x-3">
+                        <div class="text-right hidden md:block">
+                            <p class="font-medium text-gray-900"><%= user ? user.name : 'Admin' %></p>
+                            <p class="text-sm text-gray-500">Administrator</p>
+                        </div>
+                        <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                            <%= user && user.name ? user.name.charAt(0).toUpperCase() : 'A' %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Property Header -->
+        <div class="mb-6">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900"><%= property.title %></h1>
+                    <div class="flex items-center mt-2 space-x-4">
+                        <span class="status-badge status-<%= property.status %>">
+                            <%= property.status ? property.status.replace('_', ' ') : 'Unknown' %>
+                        </span>
+                        <span class="text-gray-600">
+                            <i class="fas fa-map-marker-alt mr-1"></i>
+                            <% if (property.address && property.address.city) { %>
+                                <%= property.address.city %>
+                                <% if (property.address.areas && property.address.areas.length > 0) { %>
+                                    , <%= property.address.areas.join(', ') %>
+                                <% } %>
+                            <% } else { %>
+                                Location not specified
+                            <% } %>
+                        </span>
+                        <span class="text-2xl font-bold text-gray-900">
+                            ₹<%= property.price ? property.price.toLocaleString('en-IN') : '0' %>
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex space-x-3">
+                    <% if (property.status === 'pending_approval') { %>
+                        <button onclick="approveProperty()" 
+                                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center">
+                            <i class="fas fa-check mr-2"></i> Approve
+                        </button>
+                        <button onclick="showRequestChangesModal()" 
+                                class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 flex items-center">
+                            <i class="fas fa-edit mr-2"></i> Request Changes
+                        </button>
+                        <button onclick="showRejectModal()" 
+                                class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center">
+                            <i class="fas fa-times mr-2"></i> Reject
+                        </button>
+                    <% } else if (property.status === 'approved') { %>
+                        <button onclick="makeLive()" 
+                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center">
+                            <i class="fas fa-eye mr-2"></i> Make Live
+                        </button>
+                        <button onclick="suspendProperty()" 
+                                class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 flex items-center">
+                            <i class="fas fa-pause mr-2"></i> Suspend
+                        </button>
+                    <% } else if (property.status === 'live') { %>
+                        <button onclick="suspendProperty()" 
+                                class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 flex items-center">
+                            <i class="fas fa-pause mr-2"></i> Suspend
+                        </button>
+                    <% } else if (property.status === 'suspended') { %>
+                        <button onclick="unsuspendProperty()" 
+                                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center">
+                            <i class="fas fa-play mr-2"></i> Unsuspend
+                        </button>
+                    <% } else if (property.status === 'changes_requested') { %>
+                        <button onclick="approveProperty()" 
+                                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center">
+                            <i class="fas fa-check mr-2"></i> Approve Changes
+                        </button>
+                    <% } %>
+                    
+                    <a href="/admin/properties/<%= property._id %>/edit" 
+                       class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center">
+                        <i class="fas fa-edit mr-2"></i> Edit
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column: Property Images & Basic Info -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Property Images -->
+                <div class="info-card">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Property Images</h3>
+                    <% if (property.images && property.images.length > 0) { %>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <% property.images.forEach((image, index) => { %>
+                                <div class="relative">
+                                    <img src="<%= image.url %>" 
+                                         alt="Property Image <%= index + 1 %>" 
+                                         class="property-image">
+                                    <% if (image.is_primary) { %>
+                                        <span class="absolute top-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
+                                            Primary
+                                        </span>
+                                    <% } %>
+                                </div>
+                            <% }) %>
+                        </div>
+                    <% } else { %>
+                        <div class="text-center py-8">
+                            <i class="fas fa-image text-gray-300 text-4xl mb-3"></i>
+                            <p class="text-gray-500">No images available</p>
+                        </div>
+                    <% } %>
+                </div>
+                
+                <!-- Property Documents -->
+                <div class="info-card">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">Property Documents</h3>
+                        <span class="text-sm text-gray-500">
+                            <% if (property.documents && property.documents.length > 0) { %>
+                                <%= property.documents.length %> document(s) uploaded by seller
+                            <% } else { %>
+                                No documents uploaded
+                            <% } %>
+                        </span>
+                    </div>
+                    
+                    <% if (property.documents && property.documents.length > 0) { %>
+                        <div class="space-y-3">
+                            <% property.documents.forEach((doc, index) => { 
+                                let iconClass = 'fas fa-file doc-file';
+                                let fileType = doc.type || 'other';
+                                
+                                if (fileType.includes('pdf') || (doc.original_name && doc.original_name.endsWith('.pdf'))) {
+                                    iconClass = 'fas fa-file-pdf doc-pdf';
+                                } else if (fileType.includes('word') || fileType.includes('doc') || 
+                                           (doc.original_name && (doc.original_name.endsWith('.doc') || doc.original_name.endsWith('.docx')))) {
+                                    iconClass = 'fas fa-file-word doc-word';
+                                } else if (fileType.includes('image') || 
+                                           (doc.original_name && (doc.original_name.endsWith('.jpg') || doc.original_name.endsWith('.jpeg') || 
+                                           doc.original_name.endsWith('.png')))) {
+                                    iconClass = 'fas fa-file-image doc-image';
+                                }
+                                
+                                let fileSize = '';
+                                if (doc.size) {
+                                    if (doc.size < 1024) {
+                                        fileSize = doc.size + ' B';
+                                    } else if (doc.size < 1024 * 1024) {
+                                        fileSize = Math.round(doc.size / 1024) + ' KB';
+                                    } else {
+                                        fileSize = (doc.size / (1024 * 1024)).toFixed(2) + ' MB';
+                                    }
+                                }
+                            %>
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                <div class="flex items-center flex-1 min-w-0">
+                                    <i class="<%= iconClass %> doc-icon"></i>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="font-medium text-gray-900 truncate">
+                                            <%= doc.name %>
+                                            <% if (doc.type) { %>
+                                                <span class="text-xs text-gray-500 ml-2">
+                                                    (<%= doc.type.replace('_', ' ') %>)
+                                                </span>
+                                            <% } %>
+                                        </p>
+                                        <div class="flex items-center space-x-3 text-sm text-gray-600 mt-1">
+                                            <span class="truncate"><%= doc.original_name || 'Document' %></span>
+                                            <% if (fileSize) { %>
+                                            <span class="text-xs">• <%= fileSize %></span>
+                                            <% } %>
+                                            <span class="text-xs">
+                                                • Uploaded: <%= new Date(doc.uploaded_at).toLocaleDateString() %>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-2 ml-4">
+                                    <!-- View Document -->
+                                    <a href="<%= doc.url %>" 
+                                       target="_blank" 
+                                       class="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200 flex items-center"
+                                       title="View Document">
+                                        <i class="fas fa-eye mr-1"></i> View
+                                    </a>
+                                    <!-- Download Document -->
+                                    <a href="<%= doc.url %>" 
+                                       download="<%= doc.original_name || doc.name %>"
+                                       class="px-3 py-1 bg-green-100 text-green-700 rounded-lg text-sm hover:bg-green-200 flex items-center"
+                                       title="Download Document">
+                                        <i class="fas fa-download mr-1"></i> Download
+                                    </a>
+                                </div>
+                            </div>
+                            <% }); %>
+                        </div>
+                        
+                        <!-- Document Verification Status -->
+                        <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <div class="flex items-center">
+                                <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+                                <p class="text-sm text-blue-700">
+                                    These documents were uploaded by the seller for property verification. 
+                                    Review them during the approval process.
+                                </p>
+                            </div>
+                        </div>
+                    <% } else { %>
+                        <div class="text-center py-8">
+                            <i class="fas fa-file text-gray-300 text-4xl mb-3"></i>
+                            <p class="text-gray-500 mb-2">No documents uploaded by seller</p>
+                            <p class="text-sm text-gray-400">Seller hasn't uploaded any verification documents for this property</p>
+                            
+                            <!-- Optional: You can request documents during approval -->
+                            <% if (property.status === 'pending_approval') { %>
+                            <div class="mt-4">
+                                <button onclick="showRequestDocumentsModal()" 
+                                        class="px-4 py-2 bg-yellow-100 text-yellow-700 rounded-lg text-sm hover:bg-yellow-200">
+                                    <i class="fas fa-paper-plane mr-2"></i> Request Documents from Seller
+                                </button>
+                            </div>
+                            <% } %>
+                        </div>
+                    <% } %>
+                </div>
+                
+                <!-- Property Description -->
+                <div class="info-card">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Description</h3>
+                    <p class="text-gray-700 whitespace-pre-line"><%= property.description %></p>
+                    
+                    <% if (property.short_description) { %>
+                        <div class="mt-4 p-4 bg-gray-50 rounded-lg">
+                            <h4 class="font-medium text-gray-900 mb-2">Short Description</h4>
+                            <p class="text-gray-600"><%= property.short_description %></p>
+                        </div>
+                    <% } %>
+                </div>
+                
+                <!-- Property Details -->
+                <div class="info-card">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Property Details</h3>
+                    <div class="space-y-3">
+                        <!-- Location Details -->
+                        <div class="detail-row">
+                            <span class="detail-label">City</span>
+                            <span class="detail-value">
+                                <%= property.address?.city || 'Not specified' %>
+                            </span>
+                        </div>
+                        
+                        <div class="detail-row">
+                            <span class="detail-label">Locations</span>
+                            <span class="detail-value">
+                                <% if (property.address?.areas && property.address.areas.length > 0) { %>
+                                    <%= property.address.areas.join(', ') %>
+                                <% } else { %>
+                                    Not specified
+                                <% } %>
+                            </span>
+                        </div>
+                        
+                        <!-- Full Address -->
+                        <div class="detail-row">
+                            <span class="detail-label">Full Address</span>
+                            <span class="detail-value">
+                                <% if (property.address) { %>
+                                    <%= [
+                                        property.address.street,
+                                        property.address.landmark,
+                                        property.address.areas?.join(', '),
+                                        property.address.city,
+                                        property.address.state,
+                                        property.address.pincode
+                                    ].filter(Boolean).join(', ') %>
+                                <% } else { %>
+                                    Not specified
+                                <% } %>
+                            </span>
+                        </div>
+                        
+                        <div class="detail-row">
+                            <span class="detail-label">Property Type</span>
+                            <span class="detail-value"><%= property.property_type || 'Not specified' %></span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Sub Type</span>
+                            <span class="detail-value"><%= property.sub_type || 'Not specified' %></span>
+                        </div>
+                        <% if (property.bedrooms !== undefined) { %>
+                        <div class="detail-row">
+                            <span class="detail-label">Bedrooms</span>
+                            <span class="detail-value"><%= property.bedrooms %></span>
+                        </div>
+                        <% } %>
+                        <% if (property.bathrooms !== undefined) { %>
+                        <div class="detail-row">
+                            <span class="detail-label">Bathrooms</span>
+                            <span class="detail-value"><%= property.bathrooms %></span>
+                        </div>
+                        <% } %>
+                        <% if (property.built_up_area) { %>
+                        <div class="detail-row">
+                            <span class="detail-label">Built-up Area</span>
+                            <span class="detail-value">
+                                <%= property.built_up_area %> <%= property.area_unit || 'sqft' %>
+                            </span>
+                        </div>
+                        <% } %>
+                        <% if (property.carpet_area) { %>
+                        <div class="detail-row">
+                            <span class="detail-label">Carpet Area</span>
+                            <span class="detail-value">
+                                <%= property.carpet_area %> <%= property.area_unit || 'sqft' %>
+                            </span>
+                        </div>
+                        <% } %>
+                        <% if (property.furnishing) { %>
+                        <div class="detail-row">
+                            <span class="detail-label">Furnishing</span>
+                            <span class="detail-value"><%= property.furnishing.replace('_', ' ') %></span>
+                        </div>
+                        <% } %>
+                        <% if (property.facing) { %>
+                        <div class="detail-row">
+                            <span class="detail-label">Facing</span>
+                            <span class="detail-value"><%= property.facing %></span>
+                        </div>
+                        <% } %>
+                        <% if (property.age_of_property) { %>
+                        <div class="detail-row">
+                            <span class="detail-label">Age of Property</span>
+                            <span class="detail-value"><%= property.age_of_property %> years</span>
+                        </div>
+                        <% } %>
+                        <% if (property.floor_number !== undefined) { %>
+                        <div class="detail-row">
+                            <span class="detail-label">Floor Number</span>
+                            <span class="detail-value"><%= property.floor_number %></span>
+                        </div>
+                        <% } %>
+                        <% if (property.total_floors) { %>
+                        <div class="detail-row">
+                            <span class="detail-label">Total Floors</span>
+                            <span class="detail-value"><%= property.total_floors %></span>
+                        </div>
+                        <% } %>
+                    </div>
+                </div>
+                
+                <!-- Amenities & Features -->
+                <% if (property.amenities && property.amenities.length > 0) { %>
+                <div class="info-card">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Amenities</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <% property.amenities.forEach(amenity => { %>
+                            <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                                <%= amenity %>
+                            </span>
+                        <% }) %>
+                    </div>
+                </div>
+                <% } %>
+                
+                <% if (property.features && property.features.length > 0) { %>
+                <div class="info-card">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Features</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <% property.features.forEach(feature => { %>
+                            <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                                <%= feature %>
+                            </span>
+                        <% }) %>
+                    </div>
+                </div>
+                <% } %>
+            </div>
+            
+            <!-- Right Column: Seller Info & Status History -->
+            <div class="space-y-6">
+                <!-- Seller Information -->
+                <div class="info-card">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Seller Information</h3>
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 flex items-center justify-center text-white text-lg font-bold mr-4">
+                            <%= property.seller && property.seller.name ? property.seller.name.charAt(0).toUpperCase() : 'S' %>
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-gray-900">
+                                <%= property.seller ? property.seller.name : 'Unknown Seller' %>
+                            </h4>
+                            <p class="text-sm text-gray-500">
+                                <%= property.seller ? property.seller.email : 'No email' %>
+                            </p>
+                            <% if (property.seller && property.seller.phone) { %>
+                                <p class="text-sm text-gray-500"><%= property.seller.phone %></p>
+                            <% } %>
+                            <% if (property.seller && property.seller.verified) { %>
+                                <span class="inline-block mt-1 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                                    <i class="fas fa-check mr-1"></i> Verified Seller
+                                </span>
+                            <% } %>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Member Since:</span>
+                            <span class="font-medium">
+                                <% if (property.seller && property.seller.created_at) { %>
+                                    <%= new Date(property.seller.created_at).toLocaleDateString() %>
+                                <% } else { %>
+                                    N/A
+                                <% } %>
+                            </span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Properties Listed:</span>
+                            <span class="font-medium">
+                                <% if (property.seller) { %>
+                                    <!-- You would fetch this from database -->
+                                    Multiple
+                                <% } else { %>
+                                    0
+                                <% } %>
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <% if (property.seller) { %>
+                        <div class="mt-4 pt-4 border-t border-gray-200">
+                            <a href="/admin/users/<%= property.seller._id %>" 
+                               class="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center">
+                                <i class="fas fa-external-link-alt mr-2"></i> View Seller Profile
+                            </a>
+                        </div>
+                    <% } %>
+                </div>
+                
+                <!-- Property Status History -->
+                <div class="info-card">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Status History</h3>
+                    <div class="space-y-4">
+                        <% if (property.createdAt) { %>
+                            <div class="flex items-start">
+                                <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                                    <i class="fas fa-plus text-blue-600 text-xs"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900">Property Created</p>
+                                    <p class="text-xs text-gray-500">
+                                        <%= new Date(property.createdAt).toLocaleString() %>
+                                    </p>
+                                </div>
+                            </div>
+                        <% } %>
+                        
+                        <% if (property.added_by && property.added_by.user) { %>
+                            <div class="flex items-start">
+                                <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-3">
+                                    <i class="fas fa-user text-gray-600 text-xs"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900">
+                                        Added by 
+                                        <% if (property.added_by.user.name) { %>
+                                            <%= property.added_by.user.name %>
+                                        <% } else { %>
+                                            User
+                                        <% } %>
+                                        (<%= property.added_by.role %>)
+                                    </p>
+                                    <p class="text-xs text-gray-500">Via <%= property.added_by.role %> dashboard</p>
+                                </div>
+                            </div>
+                        <% } %>
+                        
+                        <% if (property.changes_requested_at) { %>
+                            <div class="flex items-start">
+                                <div class="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center mr-3">
+                                    <i class="fas fa-edit text-yellow-600 text-xs"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900">Changes Requested</p>
+                                    <p class="text-xs text-gray-500">
+                                        <%= new Date(property.changes_requested_at).toLocaleString() %>
+                                        <% if (property.changes_requested_by && property.changes_requested_by.name) { %>
+                                            by <%= property.changes_requested_by.name %>
+                                        <% } %>
+                                    </p>
+                                    <% if (property.changes_reason) { %>
+                                        <p class="text-xs text-gray-600 mt-1">
+                                            Reason: <%= property.changes_reason %>
+                                        </p>
+                                    <% } %>
+                                    <% if (property.edit_permissions && property.edit_permissions.allowed_fields) { %>
+                                        <p class="text-xs text-gray-600 mt-1">
+                                            Allowed Fields: <%= Array.isArray(property.edit_permissions.allowed_fields) ? 
+                                                property.edit_permissions.allowed_fields.join(', ') : 
+                                                property.edit_permissions.allowed_fields %>
+                                        </p>
+                                    <% } %>
+                                </div>
+                            </div>
+                        <% } %>
+                        
+                        <% if (property.approved_at) { %>
+                            <div class="flex items-start">
+                                <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center mr-3">
+                                    <i class="fas fa-check text-green-600 text-xs"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900">Property Approved</p>
+                                    <p class="text-xs text-gray-500">
+                                        <%= new Date(property.approved_at).toLocaleString() %>
+                                        <% if (property.approved_by && property.approved_by.name) { %>
+                                            by <%= property.approved_by.name %>
+                                        <% } %>
+                                    </p>
+                                </div>
+                            </div>
+                        <% } %>
+                        
+                        <% if (property.live_at) { %>
+                            <div class="flex items-start">
+                                <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                                    <i class="fas fa-eye text-blue-600 text-xs"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900">Made Live</p>
+                                    <p class="text-xs text-gray-500">
+                                        <%= new Date(property.live_at).toLocaleString() %>
+                                    </p>
+                                </div>
+                            </div>
+                        <% } %>
+                        
+                        <% if (property.rejected_at) { %>
+                            <div class="flex items-start">
+                                <div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center mr-3">
+                                    <i class="fas fa-times text-red-600 text-xs"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900">Property Rejected</p>
+                                    <p class="text-xs text-gray-500">
+                                        <%= new Date(property.rejected_at).toLocaleString() %>
+                                        <% if (property.rejected_by && property.rejected_by.name) { %>
+                                            by <%= property.rejected_by.name %>
+                                        <% } %>
+                                    </p>
+                                    <% if (property.rejection_reason) { %>
+                                        <p class="text-xs text-gray-600 mt-1">
+                                            Reason: <%= property.rejection_reason %>
+                                        </p>
+                                    <% } %>
+                                </div>
+                            </div>
+                        <% } %>
+                        
+                        <% if (property.suspended_at) { %>
+                            <div class="flex items-start">
+                                <div class="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center mr-3">
+                                    <i class="fas fa-pause text-orange-600 text-xs"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900">Property Suspended</p>
+                                    <p class="text-xs text-gray-500">
+                                        <%= new Date(property.suspended_at).toLocaleString() %>
+                                        <% if (property.suspended_by && property.suspended_by.name) { %>
+                                            by <%= property.suspended_by.name %>
+                                        <% } %>
+                                    </p>
+                                    <% if (property.suspension_reason) { %>
+                                        <p class="text-xs text-gray-600 mt-1">
+                                            Reason: <%= property.suspension_reason %>
+                                        </p>
+                                    <% } %>
+                                </div>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+                
+                <!-- Property Statistics -->
+                <div class="info-card">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Statistics</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Views:</span>
+                            <span class="font-medium"><%= property.views || 0 %></span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Inquiries:</span>
+                            <span class="font-medium"><%= property.inquiries || 0 %></span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">In Cart:</span>
+                            <span class="font-medium">
+                                <% if (property.cart_status && property.cart_status.in_cart) { %>
+                                    Yes
+                                <% } else { %>
+                                    No
+                                <% } %>
+                            </span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Expires:</span>
+                            <span class="font-medium">
+                                <% if (property.expires_at) { %>
+                                    <%= new Date(property.expires_at).toLocaleDateString() %>
+                                <% } else { %>
+                                    Never
+                                <% } %>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Commission Information -->
+                <% if (commissions && commissions.length > 0) { %>
+                <div class="info-card">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Commissions</h3>
+                    <div class="space-y-3">
+                        <% commissions.forEach(commission => { %>
+                            <div class="p-3 bg-gray-50 rounded-lg">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-sm font-medium text-gray-900">
+                                        <%= commission.commission_type === 'adder' ? 'Adder' : 'Seller' %> Commission
+                                    </span>
+                                    <span class="text-sm font-bold text-green-600">
+                                        ₹<%= commission.amount ? commission.amount.toLocaleString('en-IN') : '0' %>
+                                    </span>
+                                </div>
+                                <div class="text-xs text-gray-500">
+                                    <% if (commission.broker && commission.broker.name) { %>
+                                        Broker: <%= commission.broker.name %>
+                                    <% } %>
+                                    <br>
+                                    Status: 
+                                    <span class="<%= commission.status === 'paid' ? 'text-green-600' : 
+                                                  commission.status === 'approved' ? 'text-blue-600' : 
+                                                  'text-yellow-600' %>">
+                                        <%= commission.status %>
+                                    </span>
+                                </div>
+                            </div>
+                        <% }) %>
+                    </div>
+                </div>
+                <% } %>
+            </div>
+        </div>
+        
+        <!-- Similar Properties -->
+        <% if (similarProperties && similarProperties.length > 0) { %>
+        <div class="mt-8">
+            <h3 class="text-xl font-semibold text-gray-900 mb-4">Similar Properties</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <% similarProperties.forEach(similar => { %>
+                <a href="/admin/properties/<%= similar._id %>" 
+                   class="bg-white rounded-xl shadow border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+                    <% if (similar.images && similar.images.length > 0) { %>
+                        <img src="<%= similar.images.find(img => img.is_primary)?.url || similar.images[0].url %>" 
+                             alt="<%= similar.title %>" 
+                             class="w-full h-48 object-cover">
+                    <% } else { %>
+                        <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
+                            <i class="fas fa-home text-gray-400 text-2xl"></i>
+                        </div>
+                    <% } %>
+                    <div class="p-4">
+                        <h4 class="font-medium text-gray-900 truncate"><%= similar.title %></h4>
+                        <!-- Location in similar properties card -->
+                        <p class="text-xs text-gray-500 mt-1">
+                            <%= similar.address?.city || '' %>
+                            <% if (similar.address?.areas?.length) { %>
+                                , <%= similar.address.areas[0] %>
+                            <% } %>
+                        </p>
+                        <div class="flex items-center justify-between mt-2">
+                            <span class="text-lg font-bold text-gray-900">
+                                ₹<%= similar.price ? similar.price.toLocaleString('en-IN') : '0' %>
+                            </span>
+                            <span class="text-xs px-2 py-1 rounded-full 
+                                <%= similar.status === 'approved' ? 'bg-green-100 text-green-800' : 
+                                   similar.status === 'live' ? 'bg-blue-100 text-blue-800' :
+                                   similar.status === 'changes_requested' ? 'bg-amber-100 text-amber-800' :
+                                   'bg-yellow-100 text-yellow-800' %>">
+                                <%= similar.status ? similar.status.replace('_', ' ') : 'unknown' %>
+                            </span>
+                        </div>
+                    </div>
+                </a>
+                <% }) %>
+            </div>
+        </div>
+        <% } %>
+    </div>
+
+   <p>     
+
+ <a href="/admin/broker-assignment?propertyId=<%= property._id %>"
+   class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center">
+    <i class="fas fa-user-tie mr-2"></i> Assign Broker
+   </a>
+
+   </p>
+
+
+
+
+    <!-- Enhanced Request Changes Modal -->
+    <div id="requestChangesModal" class="modal">
+        <div class="modal-content" style="width: 700px; max-width: 90%; max-height: 85vh; overflow-y: auto;">
+            <div class="mt-3">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center mr-3">
+                            <i class="fas fa-edit text-yellow-600"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-900">Request Changes with Limited Edit Access</h3>
+                            <p class="text-sm text-gray-500">Allow seller to edit only specific fields</p>
+                        </div>
+                    </div>
+                    <button onclick="closeRequestChangesModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+                
+                <!-- Step 1: Select Fields to Allow Editing -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">
+                        <i class="fas fa-sliders-h mr-2"></i>Step 1: Select fields seller can edit
+                    </label>
+                    
+                    <!-- Quick Selection Buttons -->
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <button type="button" onclick="selectAllFields()" 
+                                class="px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-lg hover:bg-blue-200 flex items-center">
+                            <i class="fas fa-check-circle mr-1"></i>All Fields
+                        </button>
+                        <button type="button" onclick="selectEssentialFields()" 
+                                class="px-3 py-1 bg-green-100 text-green-700 text-sm rounded-lg hover:bg-green-200 flex items-center">
+                            <i class="fas fa-star mr-1"></i>Essential Only
+                        </button>
+                        <button type="button" onclick="selectPriceOnly()" 
+                                class="px-3 py-1 bg-purple-100 text-purple-700 text-sm rounded-lg hover:bg-purple-200 flex items-center">
+                            <i class="fas fa-tag mr-1"></i>Price Only
+                        </button>
+                        <button type="button" onclick="selectImagesOnly()" 
+                                class="px-3 py-1 bg-pink-100 text-pink-700 text-sm rounded-lg hover:bg-pink-200 flex items-center">
+                            <i class="fas fa-image mr-1"></i>Images Only
+                        </button>
+                        <button type="button" onclick="deselectAllFields()" 
+                                class="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 flex items-center">
+                            <i class="fas fa-times-circle mr-1"></i>Clear All
+                        </button>
+                    </div>
+                    
+                    <!-- Fields Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-64 overflow-y-auto p-4 border rounded-lg bg-gray-50">
+                        
+                        <!-- Property Information -->
+                        <div class="field-group">
+                            <div class="field-group-title">
+                                <i class="fas fa-info-circle mr-2 text-blue-500"></i>Basic Info
+                            </div>
+                            <div class="space-y-1">
+                                <label class="field-checkbox-label">
+                                    <input type="checkbox" name="allowed_fields" value="title" class="field-checkbox h-4 w-4 text-blue-600">
+                                    <span class="text-sm">Title</span>
+                                </label>
+                                <label class="field-checkbox-label">
+                                    <input type="checkbox" name="allowed_fields" value="description" class="field-checkbox h-4 w-4 text-blue-600">
+                                    <span class="text-sm">Description</span>
+                                </label>
+                                <label class="field-checkbox-label">
+                                    <input type="checkbox" name="allowed_fields" value="short_description" class="field-checkbox h-4 w-4 text-blue-600">
+                                    <span class="text-sm">Short Description</span>
+                                </label>
+                                <label class="field-checkbox-label">
+                                    <input type="checkbox" name="allowed_fields" value="property_type" class="field-checkbox h-4 w-4 text-blue-600">
+                                    <span class="text-sm">Property Type</span>
+                                </label>
+                                <label class="field-checkbox-label">
+                                    <input type="checkbox" name="allowed_fields" value="sub_type" class="field-checkbox h-4 w-4 text-blue-600">
+                                    <span class="text-sm">Sub Type</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Pricing -->
+                        <div class="field-group">
+                            <div class="field-group-title">
+                                <i class="fas fa-tag mr-2 text-green-500"></i>Pricing
+                            </div>
+                            <div class="space-y-1">
+                                <label class="field-checkbox-label">
+                                    <input type="checkbox" name="allowed_fields" value="price" class="field-checkbox h-4 w-4 text-blue-600">
+                                    <span class="text-sm">Price</span>
+                                </label>
+                                <label class="field-checkbox-label">
+                                    <input type="checkbox" name="allowed_fields" value="price_type" class="field-checkbox h-4 w-4 text-blue-600">
+                                    <span class="text-sm">Price Type</span>
+                                </label>
+                                <label class="field-checkbox-label">
+                                    <input type="checkbox" name="allowed_fields" value="maintenance_charges" class="field-checkbox h-4 w-4 text-blue-600">
+                                    <span class="text-sm">Maintenance Charges</span>
+                                </label>
+                                <label class="field-checkbox-label">
+                                    <input type="checkbox" name="allowed_fields" value="deposit" class="field-checkbox h-4 w-4 text-blue-600">
+                                    <span class="text-sm">Deposit</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Specifications -->
+                        <div class="field-group">
+                            <div class="field-group-title">
+                                <i class="fas fa-ruler-combined mr-2 text-purple-500"></i>Specifications
+                            </div>
+                            <div class="space-y-1">
+                                <label class="field-checkbox-label">
+                                    <input type="checkbox" name="allowed_fields" value="bedrooms" class="field-checkbox h-4 w-4 text-blue-600">
+                                    <span class="text-sm">Bedrooms</span>
+                                </label>
+                                <label class="field-checkbox-label">
+                                    <input type="checkbox" name="allowed_fields" value="bathrooms" class="field-checkbox h-4 w-4 text-blue-600">
+                                    <span class="text-sm">Bathrooms</span>
+                                </label>
+                                <label class="field-checkbox-label">
+                                    <input type="checkbox" name="allowed_fields" value="balconies" class="field-checkbox h-4 w-4 text-blue-600">
+                                    <span class="text-sm">Balconies</span>
+                                </label>
+                                <label class="field-checkbox-label">
+                                    <input type="checkbox" name="allowed_fields" value="built_up_area" class="field-checkbox h-4 w-4 text-blue-600">
+                                    <span class="text-sm">Built-up Area</span>
+                                </label>
+                                <label class="field-checkbox-label">
+                                    <input type="checkbox" name="allowed_fields" value="carpet_area" class="field-checkbox h-4 w-4 text-blue-600">
+                                    <span class="text-sm">Carpet Area</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Location -->
+                        <div class="field-group">
+                            <div class="field-group-title">
+                                <i class="fas fa-map-marker-alt mr-2 text-red-500"></i>Location
+                            </div>
+                            <div class="space-y-1">
+                                <label class="field-checkbox-label">
+                                    <input type="checkbox" name="allowed_fields" value="address.city" class="field-checkbox h-4 w-4 text-blue-600">
+                                    <span class="text-sm">City</span>
+                                </label>
+                                <label class="field-checkbox-label">
+                                    <input type="checkbox" name="allowed_fields" value="address.areas" class="field-checkbox h-4 w-4 text-blue-600">
+                                    <span class="text-sm">Areas/Locations</span>
+                                </label>
+                                <label class="field-checkbox-label">
+                                    <input type="checkbox" name="allowed_fields" value="address.street" class="field-checkbox h-4 w-4 text-blue-600">
+                                    <span class="text-sm">Street</span>
+                                </label>
+                                <label class="field-checkbox-label">
+                                    <input type="checkbox" name="allowed_fields" value="address.landmark" class="field-checkbox h-4 w-4 text-blue-600">
+                                    <span class="text-sm">Landmark</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Additional Details -->
+                        <div class="field-group">
+                            <div class="field-group-title">
+                                <i class="fas fa-home mr-2 text-yellow-500"></i>Property Details
+                            </div>
+                            <div class="space-y-1">
+                                <label class="field-checkbox-label">
+                                    <input type="checkbox" name="allowed_fields" value="furnishing" class="field-checkbox h-4 w-4 text-blue-600">
+                                    <span class="text-sm">Furnishing</span>
+                                </label>
+                                <label class="field-checkbox-label">
+                                    <input type="checkbox" name="allowed_fields" value="facing" class="field-checkbox h-4 w-4 text-blue-600">
+                                    <span class="text-sm">Facing</span>
+                                </label>
+                                <label class="field-checkbox-label">
+                                    <input type="checkbox" name="allowed_fields" value="age_of_property" class="field-checkbox h-4 w-4 text-blue-600">
+                                    <span class="text-sm">Age of Property</span>
+                                </label>
+                                <label class="field-checkbox-label">
+                                    <input type="checkbox" name="allowed_fields" value="floor_number" class="field-checkbox h-4 w-4 text-blue-600">
+                                    <span class="text-sm">Floor Number</span>
+                                </label>
+                                <label class="field-checkbox-label">
+                                    <input type="checkbox" name="allowed_fields" value="total_floors" class="field-checkbox h-4 w-4 text-blue-600">
+                                    <span class="text-sm">Total Floors</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Media & Documents -->
+                        <div class="field-group">
+                            <div class="field-group-title">
+                                <i class="fas fa-images mr-2 text-pink-500"></i>Media & Documents
+                            </div>
+                            <div class="space-y-1">
+                                <label class="field-checkbox-label">
+                                    <input type="checkbox" name="allowed_fields" value="images" class="field-checkbox h-4 w-4 text-blue-600">
+                                    <span class="text-sm">Images</span>
+                                </label>
+                                <label class="field-checkbox-label">
+                                    <input type="checkbox" name="allowed_fields" value="documents" class="field-checkbox h-4 w-4 text-blue-600">
+                                    <span class="text-sm">Documents</span>
+                                </label>
+                                <label class="field-checkbox-label">
+                                    <input type="checkbox" name="allowed_fields" value="video_url" class="field-checkbox h-4 w-4 text-blue-600">
+                                    <span class="text-sm">Video URL</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Amenities & Features -->
+                        <div class="field-group">
+                            <div class="field-group-title">
+                                <i class="fas fa-concierge-bell mr-2 text-teal-500"></i>Amenities & Features
+                            </div>
+                            <div class="space-y-1">
+                                <label class="field-checkbox-label">
+                                    <input type="checkbox" name="allowed_fields" value="amenities" class="field-checkbox h-4 w-4 text-blue-600">
+                                    <span class="text-sm">Amenities</span>
+                                </label>
+                                <label class="field-checkbox-label">
+                                    <input type="checkbox" name="allowed_fields" value="features" class="field-checkbox h-4 w-4 text-blue-600">
+                                    <span class="text-sm">Features</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Contact Information -->
+                        <div class="field-group">
+                            <div class="field-group-title">
+                                <i class="fas fa-phone-alt mr-2 text-indigo-500"></i>Contact Info
+                            </div>
+                            <div class="space-y-1">
+                                <label class="field-checkbox-label">
+                                    <input type="checkbox" name="allowed_fields" value="contact_name" class="field-checkbox h-4 w-4 text-blue-600">
+                                    <span class="text-sm">Contact Name</span>
+                                </label>
+                                <label class="field-checkbox-label">
+                                    <input type="checkbox" name="allowed_fields" value="contact_phone" class="field-checkbox h-4 w-4 text-blue-600">
+                                    <span class="text-sm">Contact Phone</span>
+                                </label>
+                                <label class="field-checkbox-label">
+                                    <input type="checkbox" name="allowed_fields" value="contact_email" class="field-checkbox h-4 w-4 text-blue-600">
+                                    <span class="text-sm">Contact Email</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3 text-sm text-gray-500">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Seller will only be able to edit the selected fields. Other fields will be locked.
+                    </div>
+                </div>
+                
+                <!-- Step 2: Set Edit Duration -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">
+                        <i class="fas fa-clock mr-2"></i>Step 2: Set edit duration
+                    </label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                        <div class="duration-option" onclick="selectDuration(24)">
+                            <div class="font-medium">24 Hours</div>
+                            <div class="text-xs text-gray-500">(1 day)</div>
+                        </div>
+                        <div class="duration-option" onclick="selectDuration(48)">
+                            <div class="font-medium">48 Hours</div>
+                            <div class="text-xs text-gray-500">(2 days)</div>
+                        </div>
+                        <div class="duration-option" onclick="selectDuration(72)">
+                            <div class="font-medium">72 Hours</div>
+                            <div class="text-xs text-gray-500">(3 days)</div>
+                        </div>
+                        <div class="duration-option selected" onclick="selectDuration(168)">
+                            <div class="font-medium">168 Hours</div>
+                            <div class="text-xs text-gray-500">(7 days)</div>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Custom Duration (Hours)</label>
+                        <div class="flex space-x-3">
+                            <input type="number" id="customDuration" min="1" max="720" placeholder="Enter custom hours"
+                                   class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <button type="button" onclick="setCustomDuration()"
+                                    class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                                Apply
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">Maximum 720 hours (30 days)</p>
+                    </div>
+                    <input type="hidden" id="selectedDuration" value="168">
+                </div>
+                
+                <!-- Step 3: Provide Instructions -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">
+                        <i class="fas fa-comment-alt mr-2"></i>Step 3: Provide instructions for seller
+                    </label>
+                    <textarea id="changesReason" rows="4" 
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500" 
+                              placeholder="Provide clear instructions for the seller. Example:
+• Update the price to match market rates
+• Add more high-quality images of bedrooms
+• Correct the built-up area measurement
+• Add missing amenities like swimming pool, gym
+• Upload ownership documents"></textarea>
+                    <p class="text-xs text-gray-500 mt-1">
+                        Seller will receive these instructions along with the list of fields they can edit.
+                    </p>
+                </div>
+                
+                <!-- Selected Fields Summary -->
+                <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <div class="flex items-center mb-2">
+                        <i class="fas fa-clipboard-check text-blue-500 mr-2"></i>
+                        <span class="font-medium text-blue-800">Selected Fields Summary</span>
+                    </div>
+                    <div id="selectedFieldsSummary" class="text-sm text-blue-700">
+                        No fields selected yet. Select fields from above.
+                    </div>
+                    <div class="mt-2 text-sm text-blue-600">
+                        <i class="fas fa-clock mr-1"></i>
+                        Edit Duration: <span id="durationSummary">168 hours (7 days)</span>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex justify-end space-x-3">
+                    <button onclick="closeRequestChangesModal()" 
+                            class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button onclick="confirmRequestChangesWithLimitedAccess()" 
+                            class="px-4 py-2 bg-yellow-600 text-white rounded-lg text-sm font-medium hover:bg-yellow-700 flex items-center">
+                        <i class="fas fa-paper-plane mr-2"></i>
+                        Send with Limited Edit Access
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+   
+
+
+    <!-- Reject Modal -->
+    <div id="rejectModal" class="modal">
+        <div class="modal-content">
+            <div class="mt-3">
+                <div class="flex items-center mb-4">
+                    <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center mr-3">
+                        <i class="fas fa-times text-red-600"></i>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900">Reject Property</h3>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Reason for rejection
+                    </label>
+                    <textarea id="rejectReason" rows="4" 
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" 
+                              placeholder="Provide a clear reason for rejection. Example:
+• Property details are inaccurate
+• Images do not match the property
+• Missing required documents
+• Violates platform guidelines
+• Seller has multiple policy violations"></textarea>
+                    <p class="text-xs text-gray-500 mt-1">
+                        This is a final rejection. Seller will NOT be able to edit or resubmit.
+                    </p>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button onclick="closeRejectModal()" 
+                            class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button onclick="confirmReject()" 
+                            class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 flex items-center">
+                        <i class="fas fa-ban mr-2"></i>
+                        Confirm Reject
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Field selection functions
+        function selectAllFields() {
+            const checkboxes = document.querySelectorAll('.field-checkbox');
+            checkboxes.forEach(cb => cb.checked = true);
+            updateSelectedFieldsSummary();
+        }
+        
+        function selectEssentialFields() {
+            const checkboxes = document.querySelectorAll('.field-checkbox');
+            checkboxes.forEach(cb => cb.checked = false);
+            
+            // Essential fields
+            const essentialFields = ['title', 'description', 'price', 'images', 'bedrooms', 'bathrooms', 'built_up_area'];
+            checkboxes.forEach(cb => {
+                if (essentialFields.includes(cb.value)) {
+                    cb.checked = true;
+                }
+            });
+            updateSelectedFieldsSummary();
+        }
+        
+        function selectPriceOnly() {
+            const checkboxes = document.querySelectorAll('.field-checkbox');
+            checkboxes.forEach(cb => cb.checked = false);
+            
+            const priceFields = ['price', 'price_type', 'maintenance_charges', 'deposit'];
+            checkboxes.forEach(cb => {
+                if (priceFields.includes(cb.value)) {
+                    cb.checked = true;
+                }
+            });
+            updateSelectedFieldsSummary();
+        }
+        
+        function selectImagesOnly() {
+            const checkboxes = document.querySelectorAll('.field-checkbox');
+            checkboxes.forEach(cb => cb.checked = false);
+            
+            const mediaFields = ['images', 'video_url'];
+            checkboxes.forEach(cb => {
+                if (mediaFields.includes(cb.value)) {
+                    cb.checked = true;
+                }
+            });
+            updateSelectedFieldsSummary();
+        }
+        
+        function deselectAllFields() {
+            const checkboxes = document.querySelectorAll('.field-checkbox');
+            checkboxes.forEach(cb => cb.checked = false);
+            updateSelectedFieldsSummary();
+        }
+        
+        function updateSelectedFieldsSummary() {
+            const selectedFields = Array.from(document.querySelectorAll('.field-checkbox:checked'))
+                .map(cb => {
+                    const label = cb.parentElement.querySelector('span').textContent;
+                    return label;
+                });
+            
+            const summaryElement = document.getElementById('selectedFieldsSummary');
+            if (selectedFields.length > 0) {
+                summaryElement.innerHTML = `
+                    <div class="flex flex-wrap gap-1">
+                        ${selectedFields.map(field => `<span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">${field}</span>`).join('')}
+                    </div>
+                    <div class="mt-1 text-xs">
+                        Total: ${selectedFields.length} field(s) selected
+                    </div>
+                `;
+            } else {
+                summaryElement.textContent = 'No fields selected yet. Select fields from above.';
+            }
+        }
+        
+        // Duration functions
+        function selectDuration(hours) {
+            const options = document.querySelectorAll('.duration-option');
+            options.forEach(opt => opt.classList.remove('selected'));
+            event.currentTarget.classList.add('selected');
+            document.getElementById('selectedDuration').value = hours;
+            updateDurationSummary();
+        }
+        
+        function setCustomDuration() {
+            const customInput = document.getElementById('customDuration');
+            const hours = parseInt(customInput.value);
+            
+            if (hours >= 1 && hours <= 720) {
+                const options = document.querySelectorAll('.duration-option');
+                options.forEach(opt => opt.classList.remove('selected'));
+                document.getElementById('selectedDuration').value = hours;
+                updateDurationSummary();
+                
+                // Show success feedback
+                customInput.classList.remove('border-red-300');
+                customInput.classList.add('border-green-300');
+                setTimeout(() => {
+                    customInput.classList.remove('border-green-300');
+                }, 1000);
+            } else {
+                customInput.classList.add('border-red-300');
+            }
+        }
+        
+        function updateDurationSummary() {
+            const hours = parseInt(document.getElementById('selectedDuration').value);
+            const days = Math.round((hours / 24) * 10) / 10;
+            const summary = `${hours} hours (${days} days)`;
+            document.getElementById('durationSummary').textContent = summary;
+        }
+        
+        // Initialize field listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Update summary when fields change
+            const checkboxes = document.querySelectorAll('.field-checkbox');
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', updateSelectedFieldsSummary);
+            });
+            
+            // Initialize duration summary
+            updateDurationSummary();
+            updateSelectedFieldsSummary();
+        });
+        
+        // Modal functions
+        function showRequestChangesModal() {
+            document.getElementById('requestChangesModal').classList.remove('hidden');
+        }
+        
+        function closeRequestChangesModal() {
+            document.getElementById('requestChangesModal').classList.add('hidden');
+            document.getElementById('changesReason').value = '';
+        }
+        
+        function showRejectModal() {
+            document.getElementById('rejectModal').classList.remove('hidden');
+        }
+        
+        function closeRejectModal() {
+            document.getElementById('rejectModal').classList.add('hidden');
+            document.getElementById('rejectReason').value = '';
+        }
+        
+        // Enhanced Request Changes with Limited Access
+        function confirmRequestChangesWithLimitedAccess() {
+            const reason = document.getElementById('changesReason').value.trim();
+            if (!reason || reason.length < 10) {
+                alert('Please provide detailed instructions (at least 10 characters).');
+                return;
+            }
+            
+            // Get selected fields
+            const selectedFields = Array.from(document.querySelectorAll('.field-checkbox:checked'))
+                .map(cb => cb.value);
+            
+            if (selectedFields.length === 0) {
+                alert('Please select at least one field that the seller can edit.');
+                return;
+            }
+            
+            const durationHours = parseInt(document.getElementById('selectedDuration').value);
+            
+            // Confirm with admin
+            if (confirm(`You are allowing the seller to edit ${selectedFields.length} field(s) for ${durationHours} hours. Continue?`)) {
+                showLoading('Sending request with limited edit access...');
+                
+                fetch(`/admin/api/properties/<%= property._id %>/request-changes-limited`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        reason: reason,
+                        allowed_fields: selectedFields,
+                        duration_hours: durationHours,
+                        allowEdit: true 
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    if (data.success) {
+                        alert('Property sent back to seller with limited edit access!');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    alert('Failed to request changes.');
+                });
+            }
+        }
+        
+        // Original confirmRequestChanges (for backward compatibility)
+        function confirmRequestChanges() {
+            const reason = document.getElementById('changesReason').value.trim();
+            if (!reason || reason.length < 10) {
+                alert('Please provide detailed instructions (at least 10 characters).');
+                return;
+            }
+            
+            fetch(`/admin/api/properties/<%= property._id %>/request-changes`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    reason: reason,
+                    allowEdit: true 
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Property sent back to seller for changes!');
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('Failed to request changes.');
+            });
+        }
+        
+        function confirmReject() {
+            const reason = document.getElementById('rejectReason').value.trim();
+            if (!reason || reason.length < 10) {
+                alert('Please provide a proper reason (at least 10 characters).');
+                return;
+            }
+            
+            fetch(`/admin/api/properties/<%= property._id %>/reject`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    reason: reason,
+                    allowEdit: false 
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Property rejected permanently!');
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('Failed to reject property.');
+            });
+        }
+        
+        // Loading function
+        function showLoading(message = 'Processing...') {
+            const loading = document.createElement('div');
+            loading.id = 'loading-overlay';
+            loading.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            loading.innerHTML = `
+                <div class="bg-white p-6 rounded-lg shadow-xl text-center">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p class="text-gray-700">${message}</p>
+                </div>
+            `;
+            document.body.appendChild(loading);
+        }
+        
+        function hideLoading() {
+            const loading = document.getElementById('loading-overlay');
+            if (loading) loading.remove();
+        }
+        
+        // Other existing functions (approveProperty, makeLive, etc.)
+        function approveProperty() {
+            if (confirm('Are you sure you want to approve this property?')) {
+                fetch(`/admin/api/properties/<%= property._id %>/approve`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ autoGoLive: true })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Property approved successfully!');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('Failed to approve property.');
+                });
+            }
+        }
+        
+        function makeLive() {
+            if (confirm('Make this property live and visible to all users?')) {
+                fetch(`/admin/api/properties/<%= property._id %>/make-live`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Property is now live!');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('Failed to make property live.');
+                });
+            }
+        }
+        
+        function suspendProperty() {
+            const reason = prompt('Enter reason for suspension (minimum 10 characters):');
+            if (reason && reason.length >= 10) {
+                fetch(`/admin/api/properties/<%= property._id %>/suspend`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ reason: reason })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Property suspended successfully!');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('Failed to suspend property.');
+                });
+            } else if (reason !== null) {
+                alert('Reason must be at least 10 characters.');
+            }
+        }
+        
+        function unsuspendProperty() {
+            if (confirm('Unsuspend this property?')) {
+                fetch(`/admin/api/properties/<%= property._id %>/unsuspend`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Property unsuspended successfully!');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('Failed to unsuspend property.');
+                });
+            }
+        }
+       
+        document.addEventListener("DOMContentLoaded", () => {
+    const autoId = "<%= typeof autoAssignPropertyId !== 'undefined' ? autoAssignPropertyId : '' %>";
+
+    if (autoId && autoId !== "null") {
+        console.log("Auto Assign Modal for Property:", autoId);
+    }
+});
+
+
+
+        function showRequestDocumentsModal() {
+            const specificDocuments = prompt('Which specific documents are required?\n\nExample:\n• Ownership Deed\n• Tax Receipts 2024\n• Aadhaar Card\n• Electricity Bill\n• NOC Certificate');
+            
+            if (specificDocuments && specificDocuments.trim().length >= 10) {
+                fetch(`/admin/api/properties/<%= property._id %>/request-documents`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        required_documents: specificDocuments,
+                        message: 'Please upload the following documents for property verification.' 
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Document request sent to seller!');
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('Failed to send document request.');
+                });
+            } else if (specificDocuments !== null) {
+                alert('Please specify at least 10 characters.');
+            }
+        }
+
+        // Close modals when clicking outside
+        document.addEventListener('DOMContentLoaded', function() {
+            const modals = ['requestChangesModal', 'rejectModal'];
+            
+            modals.forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.addEventListener('click', function(e) {
+                        if (e.target === modal) {
+                            if (modalId === 'requestChangesModal') closeRequestChangesModal();
+                            if (modalId === 'rejectModal') closeRejectModal();
+                        }
+                    });
+                }
+            });
+
+            // Escape key to close modals
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    if (!document.getElementById('requestChangesModal').classList.contains('hidden')) {
+                        closeRequestChangesModal();
+                    }
+                    if (!document.getElementById('rejectModal').classList.contains('hidden')) {
+                        closeRejectModal();
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

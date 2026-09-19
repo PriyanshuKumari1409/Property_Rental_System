@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= property.title %> - Property Details | Propbandhu</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #3b82f6;
+            --primary-hover: #2563eb;
+            --secondary-color: #10b981;
+            --text-dark: #1f2937;
+            --text-light: #6b7280;
+            --bg-light: #f9fafb;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        
+        .property-header-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .status-badge {
+            @apply px-3 py-1 rounded-full text-xs font-semibold;
+        }
+        .status-pending { @apply bg-yellow-100 text-yellow-800; }
+        .status-approved { @apply bg-green-100 text-green-800; }
+        .status-live { @apply bg-blue-100 text-blue-800; }
+        .status-rejected { @apply bg-red-100 text-red-800; }
+        .status-suspended { @apply bg-orange-100 text-orange-800; }
+        .status-draft { @apply bg-gray-100 text-gray-800; }
+        .status-changes_requested { @apply bg-amber-100 text-amber-800; }
+        
+        .info-card {
+            @apply bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all duration-300 hover:shadow-md;
+        }
+        
+        .detail-item {
+            @apply flex justify-between py-3 border-b border-gray-100 last:border-b-0;
+        }
+        
+        .detail-label {
+            @apply text-gray-600 font-medium flex items-center;
+        }
+        
+        .detail-value {
+            @apply text-gray-900 font-medium;
+        }
+        
+        .feature-tag {
+            @apply inline-flex items-center px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm mr-2 mb-2 hover:bg-blue-100 transition-colors;
+        }
+        
+        .image-gallery {
+            @apply rounded-xl overflow-hidden shadow-lg;
+        }
+        
+        .main-image {
+            @apply w-full h-96 object-cover transition-transform duration-500 hover:scale-105;
+        }
+        
+        .thumbnail {
+            @apply w-24 h-20 object-cover rounded-lg cursor-pointer transition-all duration-200 hover:scale-110 hover:shadow-md border-2 border-transparent;
+        }
+        
+        .thumbnail.active {
+            @apply border-blue-500 scale-105;
+        }
+        
+        .buy-button {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+            @apply text-white font-semibold py-4 px-8 rounded-xl text-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1;
+        }
+        
+        .buy-button:hover {
+            background: linear-gradient(135deg, var(--primary-hover), var(--primary-color));
+        }
+        
+        .highlight-box {
+            @apply bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 p-4 rounded-r-lg;
+        }
+        
+        .modal-overlay {
+            @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden;
+        }
+        
+        .modal-content {
+            @apply bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-md border-b border-gray-200 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center space-x-3 group">
+                        <div class="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <span class="text-white font-bold text-xl">P</span>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold text-gray-900">Propbandhu</h1>
+                            <p class="text-xs text-gray-500">Find Your Dream Property</p>
+                        </div>
+                    </a>
+                </div>
+                
+                <!-- Navigation Links -->
+                <div class="flex items-center space-x-8">
+                    <a href="/" class="text-gray-700 hover:text-blue-600 transition-colors flex items-center">
+                        <i class="fas fa-home mr-2"></i> Home
+                    </a>
+                    <a href="/properties" class="text-gray-700 hover:text-blue-600 transition-colors flex items-center">
+                        <i class="fas fa-building mr-2"></i> Properties
+                    </a>
+                    <a href="/search" class="text-gray-700 hover:text-blue-600 transition-colors flex items-center">
+                        <i class="fas fa-search mr-2"></i> Search
+                    </a>
+                    
+                    <!-- User/Auth Actions -->
+                    <% if (user) { %>
+                        <a href="/buyer/dashboard" class="text-blue-600 font-medium flex items-center">
+                            <i class="fas fa-user-circle mr-2"></i> My Account
+                        </a>
+                    <% } else { %>
+                        <a href="/login" class="text-blue-600 font-medium flex items-center">
+                            <i class="fas fa-sign-in-alt mr-2"></i> Login
+                        </a>
+                        <a href="/register" class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                            Sign Up
+                        </a>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Property Details Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Property Header -->
+        <div class="property-header-gradient rounded-2xl p-8 mb-8 shadow-xl text-white">
+            <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between">
+                <div class="mb-6 lg:mb-0 lg:pr-8">
+                    <h1 class="text-3xl lg:text-4xl font-bold mb-4"><%= property.title %></h1>
+                    
+                    <div class="flex flex-wrap items-center gap-4 mb-4">
+                        <span class="status-badge bg-white bg-opacity-20 backdrop-blur-sm text-white">
+                            <i class="fas fa-tag mr-2"></i>
+                            <%= property.status === 'live' ? 'Available Now' : 
+                               property.status === 'pending_approval' ? 'Under Review' :
+                               property.status.charAt(0).toUpperCase() + property.status.slice(1).replace('_', ' ') %>
+                        </span>
+                        
+                        <span class="flex items-center">
+                            <i class="fas fa-map-marker-alt mr-2"></i>
+                            <span class="font-medium">
+                                <%= property.address?.city || 'Location not specified' %>
+                                <% if (property.address?.areas && property.address.areas.length > 0) { %>
+                                    , <%= property.address.areas[0] %>
+                                <% } %>
+                            </span>
+                        </span>
+                        
+                        <span class="flex items-center">
+                            <i class="fas fa-home mr-2"></i>
+                            <span><%= property.property_type || 'Property' %></span>
+                        </span>
+                    </div>
+                    
+                    <!-- Property ID -->
+                    <div class="text-white/80 text-sm">
+                        <i class="fas fa-hashtag mr-1"></i>
+                        Property ID: <%= property._id.toString().slice(-8).toUpperCase() %>
+                    </div>
+                </div>
+                
+                <!-- Price and Action -->
+                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 lg:w-96">
+                    <div class="text-center mb-6">
+                        <div class="text-4xl font-bold mb-2">
+                            ₹<%= property.price ? property.price.toLocaleString('en-IN') : '0' %>
+                        </div>
+                        <div class="text-white/80 text-sm mb-4">
+                            <% if (property.price_type === 'negotiable') { %>
+                                <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-medium">
+                                    <i class="fas fa-comments mr-1"></i> Price Negotiable
+                                </span>
+                            <% } else { %>
+                                Fixed Price
+                            <% } %>
+                        </div>
+                    </div>
+                    
+                    <!-- BUY NOW Button -->
+       <a href="/login" class="buy-button w-full mb-4 inline-flex items-center justify-center">
+        <i class="fas fa-shopping-cart mr-2"></i> BUY NOW
+      </a>
+
+                    
+
+                    <!-- Secondary Actions -->
+                    <div class="flex space-x-3">
+                        <button onclick="showInquiryModal()" class="flex-1 bg-white/20 text-white py-3 rounded-lg hover:bg-white/30 transition-colors">
+                            <i class="fas fa-envelope mr-2"></i> Inquiry
+                        </button>
+                        <button onclick="saveToFavorites()" id="favoriteBtn" class="flex-1 bg-white/20 text-white py-3 rounded-lg hover:bg-white/30 transition-colors">
+                            <i class="far fa-heart mr-2"></i> Save
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column - Property Content -->
+            <div class="lg:col-span-2 space-y-8">
+                <!-- Image Gallery -->
+                <div class="info-card">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                        <i class="fas fa-images mr-3 text-blue-500"></i> Gallery
+                    </h2>
+                    
+                    <% if (property.images && property.images.length > 0) { %>
+                        <!-- Main Image -->
+                        <div class="image-gallery mb-6">
+                            <img id="mainImage" 
+                                 src="<%= property.images[0].url %>" 
+                                 alt="<%= property.title %>"
+                                 class="main-image">
+                        </div>
+                        
+                        <!-- Thumbnails -->
+                        <div class="flex space-x-4 overflow-x-auto pb-4">
+                            <% property.images.forEach((image, index) => { %>
+                                <img src="<%= image.url %>" 
+                                     alt="Thumbnail <%= index + 1 %>"
+                                     class="thumbnail <%= index === 0 ? 'active' : '' %>"
+                                     onclick="changeMainImage('<%= image.url %>', this)"
+                                     data-index="<%= index %>">
+                            <% }) %>
+                        </div>
+                    <% } else { %>
+                        <div class="text-center py-12">
+                            <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-image text-gray-400 text-3xl"></i>
+                            </div>
+                            <h3 class="text-lg font-medium text-gray-900 mb-2">No Images Available</h3>
+                            <p class="text-gray-500">Images will be added soon</p>
+                        </div>
+                    <% } %>
+                </div>
+
+                <!-- Property Description -->
+                <div class="info-card">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                        <i class="fas fa-file-alt mr-3 text-blue-500"></i> Description
+                    </h2>
+                    
+                    <div class="prose max-w-none">
+                        <p class="text-gray-700 text-lg mb-6 leading-relaxed">
+                            <%= property.description || 'No description available for this property.' %>
+                        </p>
+                        
+                        <% if (property.short_description) { %>
+                            <div class="highlight-box">
+                                <h4 class="font-bold text-gray-900 mb-2">Quick Summary</h4>
+                                <p class="text-gray-700"><%= property.short_description %></p>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+
+                <!-- Property Specifications -->
+                <div class="info-card">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                        <i class="fas fa-ruler-combined mr-3 text-blue-500"></i> Specifications
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Left Column -->
+                        <div class="space-y-4">
+                            <% if (property.bedrooms !== undefined) { %>
+                                <div class="detail-item">
+                                    <span class="detail-label">
+                                        <i class="fas fa-bed mr-2 text-blue-500"></i> Bedrooms
+                                    </span>
+                                    <span class="detail-value"><%= property.bedrooms %></span>
+                                </div>
+                            <% } %>
+                            
+                            <% if (property.bathrooms !== undefined) { %>
+                                <div class="detail-item">
+                                    <span class="detail-label">
+                                        <i class="fas fa-bath mr-2 text-blue-500"></i> Bathrooms
+                                    </span>
+                                    <span class="detail-value"><%= property.bathrooms %></span>
+                                </div>
+                            <% } %>
+                            
+                            <% if (property.built_up_area) { %>
+                                <div class="detail-item">
+                                    <span class="detail-label">
+                                        <i class="fas fa-arrows-alt mr-2 text-blue-500"></i> Built-up Area
+                                    </span>
+                                    <span class="detail-value">
+                                        <%= property.built_up_area %> <%= property.area_unit || 'sq ft' %>
+                                    </span>
+                                </div>
+                            <% } %>
+                            
+                            <% if (property.carpet_area) { %>
+                                <div class="detail-item">
+                                    <span class="detail-label">
+                                        <i class="fas fa-square mr-2 text-blue-500"></i> Carpet Area
+                                    </span>
+                                    <span class="detail-value">
+                                        <%= property.carpet_area %> <%= property.area_unit || 'sq ft' %>
+                                    </span>
+                                </div>
+                            <% } %>
+                        </div>
+                        
+                        <!-- Right Column -->
+                        <div class="space-y-4">
+                            <% if (property.furnishing) { %>
+                                <div class="detail-item">
+                                    <span class="detail-label">
+                                        <i class="fas fa-couch mr-2 text-blue-500"></i> Furnishing
+                                    </span>
+                                    <span class="detail-value capitalize">
+                                        <%= property.furnishing.replace('_', ' ') %>
+                                    </span>
+                                </div>
+                            <% } %>
+                            
+                            <% if (property.facing) { %>
+                                <div class="detail-item">
+                                    <span class="detail-label">
+                                        <i class="fas fa-compass mr-2 text-blue-500"></i> Facing
+                                    </span>
+                                    <span class="detail-value"><%= property.facing %></span>
+                                </div>
+                            <% } %>
+                            
+                            <% if (property.age_of_property) { %>
+                                <div class="detail-item">
+                                    <span class="detail-label">
+                                        <i class="fas fa-calendar-alt mr-2 text-blue-500"></i> Age
+                                    </span>
+                                    <span class="detail-value"><%= property.age_of_property %> years</span>
+                                </div>
+                            <% } %>
+                            
+                            <% if (property.floor_number !== undefined) { %>
+                                <div class="detail-item">
+                                    <span class="detail-label">
+                                        <i class="fas fa-building mr-2 text-blue-500"></i> Floor
+                                    </span>
+                                    <span class="detail-value">
+                                        <%= property.floor_number %> of <%= property.total_floors || 'N/A' %>
+                                    </span>
+                                </div>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Location Details -->
+                <div class="info-card">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                        <i class="fas fa-map-marked-alt mr-3 text-blue-500"></i> Location
+                    </h2>
+                    
+                    <div class="space-y-6">
+                        <!-- Address -->
+                        <div class="bg-gray-50 rounded-lg p-5">
+                            <h4 class="font-bold text-gray-900 mb-3 flex items-center">
+                                <i class="fas fa-location-dot mr-2 text-red-500"></i> Full Address
+                            </h4>
+                            <div class="space-y-2">
+                                <% if (property.address) { %>
+                                    <% if (property.address.street) { %>
+                                        <div class="flex items-start">
+                                            <i class="fas fa-road text-gray-400 mt-1 mr-3 w-5"></i>
+                                            <span><%= property.address.street %></span>
+                                        </div>
+                                    <% } %>
+                                    
+                                    <% if (property.address.landmark) { %>
+                                        <div class="flex items-start">
+                                            <i class="fas fa-map-pin text-gray-400 mt-1 mr-3 w-5"></i>
+                                            <span>Near <%= property.address.landmark %></span>
+                                        </div>
+                                    <% } %>
+                                    
+                                    <% if (property.address.areas && property.address.areas.length > 0) { %>
+                                        <div class="flex items-start">
+                                            <i class="fas fa-map text-gray-400 mt-1 mr-3 w-5"></i>
+                                            <span><%= property.address.areas.join(', ') %></span>
+                                        </div>
+                                    <% } %>
+                                    
+                                    <% if (property.address.city) { %>
+                                        <div class="flex items-start">
+                                            <i class="fas fa-city text-gray-400 mt-1 mr-3 w-5"></i>
+                                            <span><%= property.address.city %></span>
+                                        </div>
+                                    <% } %>
+                                    
+                                    <% if (property.address.state) { %>
+                                        <div class="flex items-start">
+                                            <i class="fas fa-flag text-gray-400 mt-1 mr-3 w-5"></i>
+                                            <span><%= property.address.state %></span>
+                                        </div>
+                                    <% } %>
+                                    
+                                    <% if (property.address.pincode) { %>
+                                        <div class="flex items-start">
+                                            <i class="fas fa-mail-bulk text-gray-400 mt-1 mr-3 w-5"></i>
+                                            <span>PIN: <%= property.address.pincode %></span>
+                                        </div>
+                                    <% } %>
+                                <% } else { %>
+                                    <p class="text-gray-500">Address not specified</p>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Amenities -->
+                <% if (property.amenities && property.amenities.length > 0) { %>
+                <div class="info-card">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                        <i class="fas fa-concierge-bell mr-3 text-blue-500"></i> Amenities & Features
+                    </h2>
+                    
+                    <div class="flex flex-wrap gap-3">
+                        <% property.amenities.forEach(amenity => { %>
+                            <span class="feature-tag">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                <%= amenity %>
+                            </span>
+                        <% }) %>
+                    </div>
+                </div>
+                <% } %>
+
+                <!-- Documents -->
+                <% if (property.documents && property.documents.length > 0) { %>
+                <div class="info-card">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                        <i class="fas fa-file-contract mr-3 text-blue-500"></i> Documents
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <% property.documents.forEach((doc, index) => { 
+                            let icon = 'fa-file';
+                            let color = 'text-gray-500';
+                            
+                            if (doc.type?.includes('pdf') || doc.original_name?.endsWith('.pdf')) {
+                                icon = 'fa-file-pdf';
+                                color = 'text-red-500';
+                            } else if (doc.type?.includes('image') || 
+                                      doc.original_name?.match(/\.(jpg|jpeg|png|gif)$/i)) {
+                                icon = 'fa-file-image';
+                                color = 'text-green-500';
+                            } else if (doc.type?.includes('word') || 
+                                      doc.original_name?.match(/\.(doc|docx)$/i)) {
+                                icon = 'fa-file-word';
+                                color = 'text-blue-500';
+                            }
+                        %>
+                            <div class="document-card">
+                                <div class="flex items-start">
+                                    <i class="fas <%= icon %> <%= color %> text-2xl mr-4 mt-1"></i>
+                                    <div class="flex-1">
+                                        <h4 class="font-medium text-gray-900 mb-1"><%= doc.name %></h4>
+                                        <p class="text-sm text-gray-500 mb-2">
+                                            <%= doc.original_name || 'Document' %>
+                                        </p>
+                                        <div class="flex space-x-3">
+                                            <a href="<%= doc.url %>" 
+                                               target="_blank"
+                                               class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                                <i class="fas fa-eye mr-1"></i> View
+                                            </a>
+                                            <a href="<%= doc.url %>" 
+                                               download="<%= doc.original_name || doc.name %>"
+                                               class="text-green-600 hover:text-green-800 text-sm font-medium">
+                                                <i class="fas fa-download mr-1"></i> Download
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <% }) %>
+                    </div>
+                </div>
+                <% } %>
+            </div>
+
+            <!-- Right Column - Seller Info & Quick Actions -->
+            <div class="space-y-8">
+                <!-- Seller Information -->
+                <div class="info-card">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">Seller Information</h2>
+                    
+                    <div class="flex items-center mb-6">
+                        <div class="w-16 h-16 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 flex items-center justify-center text-white text-xl font-bold mr-4">
+                            <%= property.seller?.name?.charAt(0).toUpperCase() || 'S' %>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-gray-900 text-lg">
+                                <%= property.seller?.name || 'Property Owner' %>
+                            </h4>
+                            <p class="text-gray-600 text-sm">
+                                <i class="fas fa-envelope mr-1"></i>
+                                <%= property.seller?.email || 'Contact for details' %>
+                            </p>
+                            <% if (property.seller?.phone) { %>
+                                <p class="text-gray-600 text-sm mt-1">
+                                    <i class="fas fa-phone mr-1"></i>
+                                    <%= property.seller.phone %>
+                                </p>
+                            <% } %>
+                            <% if (property.seller?.verified) { %>
+                                <span class="inline-block mt-2 px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium">
+                                    <i class="fas fa-check-circle mr-1"></i> Verified Seller
+                                </span>
+                            <% } %>
+                        </div>
+                    </div>
+                    
+                    <!-- Contact Seller Button -->
+                    <button onclick="contactSeller()" 
+                            class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 rounded-lg font-medium hover:from-green-600 hover:to-emerald-700 transition-all">
+                        <i class="fas fa-comment-alt mr-2"></i> Contact Seller
+                    </button>
+                </div>
+
+                <!-- Quick Facts -->
+                <div class="info-card">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">Property Quick Facts</h2>
+                    
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Property ID:</span>
+                            <span class="font-bold text-gray-900">
+                                <%= property._id.toString().slice(-8).toUpperCase() %>
+                            </span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Listed On:</span>
+                            <span class="font-medium text-gray-900">
+                                <%= property.createdAt ? new Date(property.createdAt).toLocaleDateString() : 'N/A' %>
+                            </span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Last Updated:</span>
+                            <span class="font-medium text-gray-900">
+                                <%= property.updatedAt ? new Date(property.updatedAt).toLocaleDateString() : 'N/A' %>
+                            </span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Property Type:</span>
+                            <span class="font-medium text-gray-900 capitalize">
+                                <%= property.property_type || 'Not specified' %>
+                            </span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Views:</span>
+                            <span class="font-medium text-gray-900">
+                                <%= property.views || 0 %> views
+                            </span>
+                        </div>
+                        
+                        <% if (property.cart_status?.in_cart) { %>
+                            <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                <div class="flex items-center">
+                                    <i class="fas fa-shopping-cart text-yellow-500 mr-2"></i>
+                                    <span class="text-yellow-800 text-sm font-medium">In Someone's Cart</span>
+                                </div>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+
+                <!-- Share Property -->
+                <div class="info-card">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">Share This Property</h2>
+                    
+                    <div class="flex space-x-4">
+                        <button onclick="shareOnFacebook()" class="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                            <i class="fab fa-facebook-f"></i>
+                        </button>
+                        <button onclick="shareOnTwitter()" class="flex-1 bg-sky-500 text-white py-3 rounded-lg hover:bg-sky-600 transition-colors">
+                            <i class="fab fa-twitter"></i>
+                        </button>
+                        <button onclick="shareOnWhatsApp()" class="flex-1 bg-green-500 text-white py-3 rounded-lg hover:bg-green-600 transition-colors">
+                            <i class="fab fa-whatsapp"></i>
+                        </button>
+                        <button onclick="copyLink()" class="flex-1 bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition-colors">
+                            <i class="fas fa-link"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Report Property -->
+                <div class="info-card">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center text-gray-600">
+                            <i class="fas fa-flag mr-2"></i>
+                            <span>See something wrong?</span>
+                        </div>
+                        <button onclick="showReportModal()" class="text-red-600 hover:text-red-800 text-sm font-medium">
+                            Report Property
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fixed Buy Button for Mobile -->
+    <div class="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg z-30">
+        <div class="flex items-center justify-between">
+            <div>
+                <div class="text-lg font-bold text-gray-900">
+                    ₹<%= property.price ? property.price.toLocaleString('en-IN') : '0' %>
+                </div>
+                <div class="text-sm text-gray-500">Total Price</div>
+            </div>
+            <button onclick="handleBuyNow()" class="buy-button px-6">
+                <i class="fas fa-shopping-cart mr-2"></i> BUY
+            </button>
+        </div>
+    </div>
+
+    <!-- Login Required Modal -->
+    <div id="loginModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-lock text-blue-600 text-2xl"></i>
+                </div>
+                
+                <h3 class="text-xl font-bold text-gray-900 mb-2">Login Required</h3>
+                <p class="text-gray-600 mb-6">
+                    You need to be logged in to purchase this property. Please login or create an account to continue.
+                </p>
+                
+                <div class="space-y-3">
+                    <a href="/login?redirect=/buyer/properties/<%= property._id %>" 
+                       class="block bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-sign-in-alt mr-2"></i> Login to Your Account
+                    </a>
+                    <a href="/register" 
+                       class="block border border-blue-600 text-blue-600 py-3 rounded-lg font-medium hover:bg-blue-50 transition-colors">
+                        <i class="fas fa-user-plus mr-2"></i> Create New Account
+                    </a>
+                    <button onclick="closeLoginModal()" 
+                            class="block w-full text-gray-600 hover:text-gray-800 py-2">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-check text-green-600 text-2xl"></i>
+                </div>
+                
+                <h3 class="text-xl font-bold text-gray-900 mb-2">Property Saved!</h3>
+                <p class="text-gray-600 mb-6" id="successMessage">
+                    <!-- Message will be inserted here -->
+                </p>
+                
+                <button onclick="closeSuccessModal()" 
+                        class="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                    Continue Browsing
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div id="imageModal" class="modal-overlay hidden">
+        <div class="modal-content max-w-4xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-gray-900">Property Image</h3>
+                <button onclick="closeImageModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <img id="modalImage" src="" alt="" class="w-full rounded-lg">
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // User authentication state
+        const isLoggedIn = <%= !!user %>;
+        const userId = '<%= user ? user._id : "" %>';
+        const propertyId = '<%= property._id %>';
+        const propertyPrice = <%= property.price || 0 %>;
+        const propertyTitle = '<%= property.title.replace(/'/g, "\\'") %>';
+
+        // Handle Buy Now Button
+        function handleBuyNow() {
+            if (!isLoggedIn) {
+                // Show login modal if not logged in
+                document.getElementById('loginModal').classList.remove('hidden');
+            } else {
+                // If logged in, proceed with purchase
+                proceedToPurchase();
+            }
+        }
+
+        // Proceed with purchase (after login)
+        function proceedToPurchase() {
+            // Show loading
+            showLoading('Processing your purchase...');
+            
+            // Add property to cart
+            fetch('/api/cart/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    propertyId: propertyId,
+                    propertyTitle: propertyTitle,
+                    price: propertyPrice
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                
+                if (data.success) {
+                    // Redirect to checkout page
+                    window.location.href = '/buyer/checkout?property=' + propertyId;
+                } else {
+                    showErrorModal(data.message || 'Failed to add to cart');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                showErrorModal('Network error. Please try again.');
+            });
+        }
+
+        // Save to favorites
+        function saveToFavorites() {
+            if (!isLoggedIn) {
+                document.getElementById('loginModal').classList.remove('hidden');
+                return;
+            }
+
+            const button = document.getElementById('favoriteBtn');
+            const icon = button.querySelector('i');
+            
+            if (icon.classList.contains('far')) {
+                // Add to favorites
+                fetch('/api/properties/favorite', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ propertyId: propertyId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        icon.classList.remove('far');
+                        icon.classList.add('fas');
+                        button.innerHTML = '<i class="fas fa-heart mr-2"></i> Saved';
+                        showSuccess('Property added to favorites!');
+                    }
+                });
+            } else {
+                // Remove from favorites
+                fetch('/api/properties/favorite', {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ propertyId: propertyId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        icon.classList.remove('fas');
+                        icon.classList.add('far');
+                        button.innerHTML = '<i class="far fa-heart mr-2"></i> Save';
+                        showSuccess('Property removed from favorites');
+                    }
+                });
+            }
+        }
+
+        // Image gallery functions
+        function changeMainImage(src, element) {
+            // Update main image
+            document.getElementById('mainImage').src = src;
+            
+            // Update active thumbnail
+            document.querySelectorAll('.thumbnail').forEach(thumb => {
+                thumb.classList.remove('active');
+            });
+            element.classList.add('active');
+        }
+
+        function openImageModal(src) {
+            document.getElementById('modalImage').src = src;
+            document.getElementById('imageModal').classList.remove('hidden');
+        }
+
+        function closeImageModal() {
+            document.getElementById('imageModal').classList.add('hidden');
+        }
+
+        // Modal functions
+        function closeLoginModal() {
+            document.getElementById('loginModal').classList.add('hidden');
+        }
+
+        function closeSuccessModal() {
+            document.getElementById('successModal').classList.add('hidden');
+        }
+
+        // Utility functions
+        function showLoading(message) {
+            // Create loading overlay
+            const loading = document.createElement('div');
+            loading.id = 'loading-overlay';
+            loading.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            loading.innerHTML = `
+                <div class="bg-white p-6 rounded-xl shadow-xl text-center">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p class="text-gray-700 font-medium">${message}</p>
+                </div>
+            `;
+            document.body.appendChild(loading);
+        }
+
+        function hideLoading() {
+            const loading = document.getElementById('loading-overlay');
+            if (loading) loading.remove();
+        }
+
+        function showSuccess(message) {
+            document.getElementById('successMessage').textContent = message;
+            document.getElementById('successModal').classList.remove('hidden');
+        }
+
+        function showErrorModal(message) {
+            alert('Error: ' + message);
+        }
+
+        // Share functions
+        function shareOnFacebook() {
+            const url = encodeURIComponent(window.location.href);
+            const text = encodeURIComponent('Check out this amazing property: ' + propertyTitle);
+            window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`, '_blank');
+        }
+
+        function shareOnTwitter() {
+            const url = encodeURIComponent(window.location.href);
+            const text = encodeURIComponent('Check out this property: ' + propertyTitle);
+            window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank');
+        }
+
+        function shareOnWhatsApp() {
+            const url = encodeURIComponent(window.location.href);
+            const text = encodeURIComponent('Check out this property: ' + propertyTitle + ' - ' + window.location.href);
+            window.open(`https://wa.me/?text=${text}`, '_blank');
+        }
+
+        function copyLink() {
+            navigator.clipboard.writeText(window.location.href)
+                .then(() => {
+                    const button = event.currentTarget;
+                    const originalHtml = button.innerHTML;
+                    button.innerHTML = '<i class="fas fa-check mr-1"></i> Copied!';
+                    setTimeout(() => {
+                        button.innerHTML = originalHtml;
+                    }, 2000);
+                });
+        }
+
+        // Contact seller
+        function contactSeller() {
+            if (!isLoggedIn) {
+                document.getElementById('loginModal').classList.remove('hidden');
+                return;
+            }
+            
+            window.location.href = `/buyer/contact-seller/${propertyId}`;
+        }
+
+        // Report property
+        function showReportModal() {
+            if (!isLoggedIn) {
+                document.getElementById('loginModal').classList.remove('hidden');
+                return;
+            }
+            
+            const reason = prompt('Please describe the issue with this property:');
+            if (reason && reason.length > 10) {
+                fetch('/api/properties/report', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        propertyId: propertyId,
+                        reason: reason
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Thank you for reporting. We will review this property.');
+                    }
+                });
+            } else if (reason !== null) {
+                alert('Please provide a detailed reason (minimum 10 characters).');
+            }
+        }
+
+        // Show inquiry modal
+        function showInquiryModal() {
+            if (!isLoggedIn) {
+                document.getElementById('loginModal').classList.remove('hidden');
+                return;
+            }
+            
+            const message = prompt('Enter your inquiry message for the seller:');
+            if (message && message.length > 10) {
+                fetch('/api/properties/inquire', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        propertyId: propertyId,
+                        message: message
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Your inquiry has been sent to the seller.');
+                    }
+                });
+            } else if (message !== null) {
+                alert('Please enter a proper inquiry message (minimum 10 characters).');
+            }
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if user has already favorited this property
+            if (isLoggedIn) {
+                fetch(`/api/properties/check-favorite/${propertyId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.isFavorite) {
+                            const button = document.getElementById('favoriteBtn');
+                            button.innerHTML = '<i class="fas fa-heart mr-2"></i> Saved';
+                        }
+                    });
+            }
+
+            // Add animation to price display
+            const priceElement = document.querySelector('.property-header-gradient .text-4xl');
+            if (priceElement) {
+                priceElement.classList.add('animate-pulse');
+                setTimeout(() => {
+                    priceElement.classList.remove('animate-pulse');
+                }, 1000);
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Escape to close modals
+            if (e.key === 'Escape') {
+                closeLoginModal();
+                closeSuccessModal();
+                closeImageModal();
+            }
+            
+            // B key to trigger buy
+            if (e.key === 'b' || e.key === 'B') {
+                if (!e.ctrlKey && !e.metaKey) {
+                    handleBuyNow();
+                }
+            }
+            
+            // F key to toggle favorite
+            if (e.key === 'f' || e.key === 'F') {
+                if (!e.ctrlKey && !e.metaKey) {
+                    saveToFavorites();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

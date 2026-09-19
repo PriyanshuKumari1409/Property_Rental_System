@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  
+  <style>
+    /* ========== CLEAN RESET ========== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.5;
+      color: #1f2937;
+      background-color: #504b4b;
+    }
+
+    /* ========== MAIN SECTION ========== */
+    .properties-section {
+      padding: 60px 5%;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .section-title {
+      font-size: 2rem;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 12px;
+    }
+
+    .section-subtitle {
+      font-size: 1rem;
+      color: #6b7280;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* ========== PROPERTIES GRID ========== */
+    .properties-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 32px;
+      justify-items: center;
+    }
+
+    /* ========== PROPERTY CARD ========== */
+    .property-card {
+      background: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      border: 1px solid #e5e7eb;
+      transition: all 0.2s ease;
+      width: 100%;
+      max-width: 380px;
+    }
+
+    .property-card:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      border-color: #d1d5db;
+      transform: translateY(-2px);
+    }
+
+    /* Image Container */
+    .property-image {
+      position: relative;
+      height: 240px;
+      overflow: hidden;
+    }
+
+    .property-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+
+    .property-card:hover .property-image img {
+      transform: scale(1.02);
+    }
+
+    /* Status Badge */
+    .status-badge {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: white;
+    }
+
+    .status-new {
+      background-color: #10b981;
+    }
+
+    .status-construction {
+      background-color: #f59e0b;
+    }
+
+    .status-ready {
+      background-color: #3b82f6;
+    }
+
+    /* Favorite Button */
+    .favorite-btn {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.95);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #6b7280;
+      font-size: 1rem;
+      transition: all 0.2s ease;
+    }
+
+    .favorite-btn:hover {
+      color: #ef4444;
+      background: white;
+    }
+
+    .favorite-btn.active {
+      color: #ef4444;
+    }
+
+    /* Property Details */
+    .property-details {
+      padding: 24px;
+    }
+
+    .property-price {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 12px;
+    }
+
+    .property-title {
+      font-size: 1.125rem;
+      font-weight: 500;
+      color: #111827;
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
+    /* Property Features */
+    .property-features {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .feature {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      flex: 1;
+    }
+
+    .feature i {
+      font-size: 1.125rem;
+      color: #6b7280;
+      margin-bottom: 6px;
+    }
+
+    .feature span {
+      font-size: 0.875rem;
+      color: #6b7280;
+    }
+
+    .feature strong {
+      font-size: 1rem;
+      color: #111827;
+      font-weight: 600;
+    }
+
+    /* Property Location */
+    .property-location {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #6b7280;
+      font-size: 0.875rem;
+      margin-bottom: 20px;
+    }
+
+    .property-location i {
+      color: #9ca3af;
+    }
+
+    /* Property Actions */
+    .property-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .view-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background-color: #2563eb;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.875rem;
+      transition: background-color 0.2s ease;
+    }
+
+    .view-btn:hover {
+      background-color: #1d4ed8;
+    }
+
+    /* ========== NO PROPERTIES STATE ========== */
+    .no-properties {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 80px 20px;
+    }
+
+    .no-properties-icon {
+      font-size: 3rem;
+      color: #d1d5db;
+      margin-bottom: 20px;
+    }
+
+    .no-properties h3 {
+      font-size: 1.25rem;
+      color: #6b7280;
+      margin-bottom: 12px;
+    }
+
+    .no-properties p {
+      color: #9ca3af;
+      margin-bottom: 24px;
+    }
+
+    .explore-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background-color: #2563eb;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.875rem;
+      transition: background-color 0.2s ease;
+    }
+
+    .explore-btn:hover {
+      background-color: #1d4ed8;
+    }
+
+    /* ========== RESPONSIVE DESIGN ========== */
+    @media (max-width: 1200px) {
+      .properties-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 24px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .properties-section {
+        padding: 40px 20px;
+      }
+
+      .section-header {
+        margin-bottom: 32px;
+      }
+
+      .section-title {
+        font-size: 1.75rem;
+      }
+
+      .properties-grid {
+        grid-template-columns: 1fr;
+        max-width: 400px;
+        margin: 0 auto;
+      }
+
+      .property-image {
+        height: 200px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .properties-section {
+        padding: 32px 16px;
+      }
+
+      .section-title {
+        font-size: 1.5rem;
+      }
+
+      .property-details {
+        padding: 20px;
+      }
+
+      .property-features {
+        gap: 16px;
+      }
+
+      .property-actions {
+        flex-direction: column;
+      }
+    }
+
+    /* ========== LOADING STATE ========== */
+    .loading-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px 20px;
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border: 3px solid #e5e7eb;
+      border-top-color: #2563eb;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ========== UTILITY CLASSES ========== */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ================= PROPERTIES SECTION ================= -->
+<section class="properties-section">
+  <div class="section-header">
+    <h2 class="section-title">Available Properties</h2>
+    <p class="section-subtitle">Browse through our selection of premium properties</p>
+  </div>
+
+  <div class="properties-grid">
+    <% if (properties.length === 0) { %>
+      <div class="no-properties">
+        <div class="no-properties-icon">
+          <i class="fas fa-home"></i>
+        </div>
+        <h3>No Properties Found</h3>
+        <p>There are no properties available at the moment.</p>
+        <a href="/" class="explore-btn">
+          <i class="fas fa-search"></i> Explore More
+        </a>
+      </div>
+    <% } else { %>
+      <% properties.forEach(property => { %>
+        <div class="property-card">
+          <!-- Property Image -->
+          <div class="property-image">
+            <img src="<%= property.images?.[0]?.url || '/img/default-property.jpg' %>" alt="<%= property.title %>">
+            
+            <!-- Status Badge -->
+            <% if (property.status) { %>
+              <div class="status-badge status-<%= 
+                property.status === 'new-launch' ? 'new' : 
+                property.status === 'under-construction' ? 'construction' : 
+                property.status === 'ready-to-move' ? 'ready' : '' 
+              %>">
+                <%= 
+                  property.status === 'new-launch' ? 'New Launch' : 
+                  property.status === 'under-construction' ? 'Under Construction' : 
+                  property.status === 'ready-to-move' ? 'Ready to Move' : property.status 
+                %>
+              </div>
+            <% } %>
+            
+            <!-- Favorite Button -->
+            <button class="favorite-btn" data-property-id="<%= property._id %>" aria-label="Add to favorites">
+              <i class="far fa-heart"></i>
+            </button>
+          </div>
+          
+          <!-- Property Details -->
+          <div class="property-details">
+            <!-- Price -->
+            <div class="property-price">
+              ₹<%= property.price.toLocaleString('en-IN') %>
+            </div>
+            
+            <!-- Title -->
+            <h3 class="property-title">
+              <%= property.title %>
+            </h3>
+            
+            <!-- Features -->
+            <div class="property-features">
+              <% if (property.bedrooms) { %>
+                <div class="feature">
+                  <i class="fas fa-bed"></i>
+                  <span><strong><%= property.bedrooms %></strong> Beds</span>
+                </div>
+              <% } %>
+              
+              <% if (property.bathrooms) { %>
+                <div class="feature">
+                  <i class="fas fa-bath"></i>
+                  <span><strong><%= property.bathrooms %></strong> Baths</span>
+                </div>
+              <% } %>
+              
+              <% if (property.built_up_area) { %>
+                <div class="feature">
+                  <i class="fas fa-ruler-combined"></i>
+                  <span><strong><%= property.built_up_area %></strong> <%= property.area_unit || 'sq ft' %></span>
+                </div>
+              <% } %>
+            </div>
+            
+            <!-- Location -->
+            <div class="property-location">
+              <i class="fas fa-map-marker-alt"></i>
+              <span><%= property.address?.city || 'Unknown City' %>, <%= property.address?.areas?.[0] || 'Unknown Area' %></span>
+            </div>
+            
+            <!-- Actions -->
+            <div class="property-actions">
+              <a href="/properties/<%= property._id %>" class="view-btn">
+                <i class="fas fa-eye"></i> View Details
+              </a>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    <% } %>
+  </div>
+</section>
+
+<script>
+  // Simple favorite button functionality
+  document.querySelectorAll('.favorite-btn').forEach(button => {
+    button.addEventListener('click', function(e) {
+      e.preventDefault();
+      const icon = this.querySelector('i');
+      
+      // Toggle favorite state visually
+      if (icon.classList.contains('far')) {
+        icon.classList.remove('far');
+        icon.classList.add('fas');
+        this.classList.add('active');
+        showToast('Added to favorites');
+      } else {
+        icon.classList.remove('fas');
+        icon.classList.add('far');
+        this.classList.remove('active');
+        showToast('Removed from favorites');
+      }
+    });
+  });
+
+  // Simple toast notification
+  function showToast(message) {
+    // Remove existing toast
+    const existingToast = document.querySelector('.toast');
+    if (existingToast) {
+      existingToast.remove();
+    }
+    
+    // Create new toast
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = message;
+    toast.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #111827;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 1000;
+      animation: fadeIn 0.3s ease;
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+      toast.style.animation = 'fadeOut 0.3s ease';
+      setTimeout(() => {
+        if (toast.parentNode) {
+          toast.parentNode.removeChild(toast);
+        }
+      }, 300);
+    }, 3000);
+  }
+
+  // Add fade animations for toast
+  const toastStyle = document.createElement('style');
+  toastStyle.textContent = `
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes fadeOut {
+      from { opacity: 1; transform: translateY(0); }
+      to { opacity: 0; transform: translateY(10px); }
+    }
+  `;
+  document.head.appendChild(toastStyle);
+</script>
+
+</body>
+</html>

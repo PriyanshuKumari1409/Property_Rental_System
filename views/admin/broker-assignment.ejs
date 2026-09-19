@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .nav-link {
+            @apply text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors;
+        }
+        .nav-link.active {
+            @apply bg-blue-100 text-blue-700;
+        }
+        .table-row-hover:hover {
+            @apply bg-gray-50;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/admin/dashboard" class="flex items-center">
+                        <span class="text-xl font-bold text-gray-900">Propbandhu Admin</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/admin/dashboard" class="nav-link">
+                        <i class="fas fa-tachometer-alt mr-1"></i>Dashboard
+                    </a>
+                    <a href="/admin/approvals" class="nav-link">
+                        <i class="fas fa-check-circle mr-1"></i>Approvals
+                    </a>
+                    <a href="/admin/properties" class="nav-link">
+                        <i class="fas fa-home mr-1"></i>Properties
+                    </a>
+                    <a href="/admin/broker-assignment" class="nav-link active">
+                        <i class="fas fa-user-tie mr-1"></i>Broker Assignment
+                    </a>
+                    <a href="/logout" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors">
+                        <i class="fas fa-sign-out-alt mr-1"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- Page Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Broker Assignment</h1>
+            <p class="text-gray-600 mt-2">Assign brokers to seller-added properties</p>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-center">
+                    <div class="p-3 bg-blue-100 text-blue-600 rounded-lg mr-4">
+                        <i class="fas fa-home text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Properties Needing Broker</p>
+                        <p class="text-2xl font-bold text-gray-900"><%= stats.propertiesNeedingBroker %></p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-center">
+                    <div class="p-3 bg-green-100 text-green-600 rounded-lg mr-4">
+                        <i class="fas fa-user-tie text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Active Brokers</p>
+                        <p class="text-2xl font-bold text-gray-900"><%= stats.activeBrokers %></p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-center">
+                    <div class="p-3 bg-yellow-100 text-yellow-600 rounded-lg mr-4">
+                        <i class="fas fa-chart-line text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Avg. Assignments/Broker</p>
+                        <p class="text-2xl font-bold text-gray-900"><%= stats.avgAssignments %></p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-center">
+                    <div class="p-3 bg-purple-100 text-purple-600 rounded-lg mr-4">
+                        <i class="fas fa-clock text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Assigned Today</p>
+                        <p class="text-2xl font-bold text-gray-900"><%= stats.assignedToday %></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Properties Needing Broker -->
+        <div class="bg-white rounded-xl shadow-lg mb-8">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900">Properties Needing Broker Assignment</h2>
+                        <p class="text-gray-600 mt-1">Seller-added properties without assigned broker</p>
+                    </div>
+                    <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1 rounded-full">
+                        <%= properties.length %> Properties
+                    </span>
+                </div>
+            </div>
+            
+            <% if (properties.length === 0) { %>
+            <div class="p-12 text-center">
+                <i class="fas fa-check-circle text-green-400 text-6xl mb-4"></i>
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">All seller properties have brokers assigned</h3>
+                <p class="text-gray-600">Great job! No seller-added properties need broker assignment.</p>
+            </div>
+            <% } else { %>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Seller</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Added By</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <% properties.forEach(property => { %>
+                        <tr class="table-row-hover">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <% if (property.primary_image) { %>
+                                    <img class="h-10 w-10 rounded-lg object-cover mr-3" 
+                                         src="<%= property.primary_image %>" 
+                                         alt="<%= property.title %>"
+                                         onerror="this.src='https://via.placeholder.com/40?text=Property'">
+                                    <% } else { %>
+                                    <div class="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center mr-3">
+                                        <i class="fas fa-home text-gray-400"></i>
+                                    </div>
+                                    <% } %>
+                                    <div>
+                                        <div class="font-medium text-gray-900 truncate max-w-xs">
+                                            <%= property.title %>
+                                        </div>
+                                        <div class="text-sm text-gray-500">
+                                            <%= property.address?.city || 'City not specified' %>, <%= property.address?.area || 'Area not specified' %>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <% if (property.seller) { %>
+                                <div class="text-sm text-gray-900"><%= property.seller.name %></div>
+                                <div class="text-sm text-gray-500"><%= property.seller.phone %></div>
+                                <% } else { %>
+                                <span class="text-gray-400">No seller</span>
+                                <% } %>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="font-medium">₹<%= property.price.toLocaleString() %></span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    <%= property.status === 'approved' ? 'bg-green-100 text-green-800' : 
+                                       property.status === 'live' ? 'bg-blue-100 text-blue-800' : 
+                                       property.status === 'pending_approval' ? 'bg-yellow-100 text-yellow-800' : 
+                                       'bg-gray-100 text-gray-800' %>">
+                                    <%= property.status %>
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <% if (property.added_by?.role === 'broker') { %>
+                                <span class="text-blue-600 font-medium">Broker Added</span>
+                                <% } else if (property.added_by?.role === 'seller') { %>
+                                <span class="text-green-600 font-medium">Seller Added</span>
+                                <% } else { %>
+                                <span class="text-gray-500">Unknown</span>
+                                <% } %>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <% if (property.added_by?.role === 'seller') { %>
+                                <button onclick="openAssignModal('<%= property._id %>', '<%= property.title %>')" 
+                                        class="text-blue-600 hover:text-blue-900 mr-3 px-3 py-1 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                                    <i class="fas fa-user-plus mr-1"></i>Assign Broker
+                                </button>
+                                <% } else { %>
+                                <span class="text-gray-400 text-sm px-3 py-1 bg-gray-50 rounded-lg">
+                                    <i class="fas fa-check mr-1"></i>Already Managed
+                                </span>
+                                <% } %>
+                                <a href="/admin/properties/<%= property._id %>" 
+                                   class="text-gray-600 hover:text-gray-900 ml-3 px-3 py-1 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-eye mr-1"></i>View
+                                </a>
+                            </td>
+                        </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+            <% } %>
+        </div>
+
+        <!-- Recent Assignments - Table View -->
+        <div class="bg-white rounded-xl shadow-lg">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900">Recent Broker Assignments</h2>
+                        <p class="text-gray-600 mt-1">Last 20 broker assignments to seller properties</p>
+                    </div>
+                    <a href="/admin/broker-assignment/history" 
+                       class="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center">
+                        <i class="fas fa-history mr-1"></i> View All History
+                    </a>
+                </div>
+            </div>
+            
+            <% if (recentAssignments.length === 0) { %>
+            <div class="p-8 text-center">
+                <i class="fas fa-history text-gray-300 text-4xl mb-3"></i>
+                <p class="text-gray-500">No recent broker assignments</p>
+                <p class="text-sm text-gray-400 mt-1">Assign a broker to a seller property to see it here</p>
+            </div>
+            <% } else { %>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Broker</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <% recentAssignments.forEach(assignment => { %>
+                        <tr class="table-row-hover">
+                            <!-- Broker Column -->
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                                        <i class="fas fa-user-tie text-blue-600"></i>
+                                    </div>
+                                    <div>
+                                        <div class="font-medium text-gray-900">
+                                            <%= assignment.broker?.name || 'Unknown Broker' %>
+                                        </div>
+                                        <div class="text-sm text-gray-500">
+                                            <%= assignment.broker?.phone || 'N/A' %>
+                                        </div>
+                                        <% if (assignment.broker?.email) { %>
+                                        <div class="text-xs text-gray-400 truncate max-w-xs">
+                                            <%= assignment.broker.email %>
+                                        </div>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </td>
+                            
+                            <!-- Property Column -->
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <% if (assignment.property?.primary_image) { %>
+                                    <img class="h-10 w-10 rounded-lg object-cover mr-3" 
+                                         src="<%= assignment.property.primary_image %>" 
+                                         alt="<%= assignment.property.title %>"
+                                         onerror="this.src='https://via.placeholder.com/40?text=Property'">
+                                    <% } else { %>
+                                    <div class="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center mr-3">
+                                        <i class="fas fa-home text-gray-400"></i>
+                                    </div>
+                                    <% } %>
+                                    <div>
+                                        <div class="font-medium text-gray-900 truncate max-w-xs">
+                                            <%= assignment.property?.title || 'Property' %>
+                                        </div>
+                                        <div class="text-sm text-gray-500">
+                                            <% if (assignment.property?.address) { %>
+                                                <%= assignment.property.address.city || 'City not specified' %>
+                                                <% if (assignment.property.address.areas && assignment.property.address.areas.length > 0) { %>
+                                                    , <%= assignment.property.address.areas[0] %>
+                                                <% } %>
+                                            <% } else { %>
+                                                Location not specified
+                                            <% } %>
+                                        </div>
+                                        <div class="text-xs mt-1">
+                                            <span class="px-1.5 py-0.5 rounded-full 
+                                                <%= assignment.property?.added_by?.role === 'seller' ? 'bg-green-100 text-green-800' : 
+                                                   'bg-blue-100 text-blue-800' %>">
+                                                <% if (assignment.property?.added_by?.role === 'seller') { %>
+                                                    <i class="fas fa-user mr-0.5"></i> Seller
+                                                <% } else { %>
+                                                    <i class="fas fa-user-tie mr-0.5"></i> Broker
+                                                <% } %>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            
+                            <!-- Price Column -->
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="font-medium">₹<%= assignment.property?.price ? assignment.property.price.toLocaleString() : 'N/A' %></span>
+                            </td>
+                            
+                            <!-- Status Column -->
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    <%= assignment.property?.status === 'approved' ? 'bg-green-100 text-green-800' : 
+                                       assignment.property?.status === 'live' ? 'bg-blue-100 text-blue-800' : 
+                                       'bg-gray-100 text-gray-800' %>">
+                                    <%= assignment.property?.status ? assignment.property.status.replace('_', ' ') : 'unknown' %>
+                                </span>
+                            </td>
+                            
+                            <!-- Assigned Info Column -->
+                            <td class="px-6 py-4">
+                                <div class="text-sm text-gray-900">
+                                    <i class="far fa-calendar-alt mr-1"></i>
+                                    <%= new Date(assignment.assigned_at).toLocaleDateString() %>
+                                </div>
+                                <div class="text-xs text-gray-500">
+                                    <i class="far fa-clock mr-1"></i>
+                                    <%= new Date(assignment.assigned_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) %>
+                                </div>
+                                <% if (assignment.assigned_by?.name) { %>
+                                <div class="text-xs text-gray-600 mt-1">
+                                    <i class="fas fa-user-shield mr-1"></i>
+                                    By: <%= assignment.assigned_by.name %>
+                                </div>
+                                <% } %>
+                            </td>
+                            
+                            <!-- Actions Column -->
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <div class="flex space-x-2">
+                                    <% if (assignment.property) { %>
+                                    <a href="/admin/properties/<%= assignment.property._id %>" 
+                                       class="text-blue-600 hover:text-blue-900 px-3 py-1 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors flex items-center"
+                                       title="View Property">
+                                        <i class="fas fa-eye mr-1"></i> Property
+                                    </a>
+                                    <% } %>
+                                    
+                                    <% if (assignment.broker) { %>
+                                    <a href="/admin/users/<%= assignment.broker._id %>" 
+                                       class="text-indigo-600 hover:text-indigo-900 px-3 py-1 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors flex items-center"
+                                       title="View Broker">
+                                        <i class="fas fa-user-tie mr-1"></i> Broker
+                                    </a>
+                                    <% } %>
+                                </div>
+                            </td>
+                        </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Summary Footer -->
+            <div class="p-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+                <div class="flex justify-between items-center">
+                    <div class="text-sm text-gray-600">
+                        Showing <span class="font-medium"><%= recentAssignments.length %></span> recent assignments
+                    </div>
+                    <div class="flex space-x-2">
+                        <% const todayCount = recentAssignments.filter(a => {
+                            const today = new Date();
+                            const assignDate = new Date(a.assigned_at);
+                            return assignDate.toDateString() === today.toDateString();
+                        }).length; %>
+                        
+                        <% const sellerCount = recentAssignments.filter(a => 
+                            a.property?.added_by?.role === 'seller'
+                        ).length; %>
+                        
+                        <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                            <i class="fas fa-sun mr-1"></i> <%= todayCount %> today
+                        </span>
+                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                            <i class="fas fa-user mr-1"></i> <%= sellerCount %> seller properties
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <% } %>
+        </div>
+    </div>
+
+    <!-- Assign Broker Modal -->
+    <div id="assignModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-xl bg-white">
+            <div class="mt-3">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-user-tie text-blue-600"></i>
+                        </div>
+                        <div>
+                            <h3 id="modalTitle" class="text-lg font-medium leading-6 text-gray-900"></h3>
+                            <p class="text-sm text-gray-500 mt-1">Assign a broker to this seller property</p>
+                        </div>
+                    </div>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Select Broker</label>
+                    <select id="brokerSelect" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                        <option value="">Choose a broker</option>
+                        <% brokers.forEach(broker => { %>
+                        <option value="<%= broker._id %>">
+                            <%= broker.name %> (<%= broker.phone %>) - <%= broker.commission_stats?.total_assignments || 0 %> assignments
+                        </option>
+                        <% }); %>
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Showing <%= brokers.length %> active brokers
+                    </p>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Notes (Optional)</label>
+                    <textarea id="assignmentNotes" 
+                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                              rows="3" 
+                              placeholder="Add notes about this assignment..."></textarea>
+                    <p class="text-xs text-gray-500 mt-1">
+                        Broker will see these notes in their notification
+                    </p>
+                </div>
+                
+                <div class="mb-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <div class="flex items-start">
+                        <i class="fas fa-info-circle text-yellow-600 mr-2 mt-0.5"></i>
+                        <div>
+                            <span class="text-sm font-medium text-yellow-800">Seller Property Assignment</span>
+                            <p class="text-xs text-yellow-700 mt-1">
+                                Broker will handle property verification, showing to buyers, and sale process.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center justify-between mt-6">
+                    <button onclick="closeModal()" 
+                            class="px-4 py-2.5 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium">
+                        Cancel
+                    </button>
+                    <button onclick="assignBroker()" 
+                            id="assignButton"
+                            class="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center">
+                        <i class="fas fa-user-plus mr-2"></i>Assign Broker
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPropertyId = '';
+        
+        function openAssignModal(propertyId, propertyTitle) {
+            currentPropertyId = propertyId;
+            document.getElementById('modalTitle').textContent = `Assign Broker to: ${propertyTitle}`;
+            document.getElementById('assignModal').classList.remove('hidden');
+        }
+        
+        function closeModal() {
+            document.getElementById('assignModal').classList.add('hidden');
+            document.getElementById('brokerSelect').value = '';
+            document.getElementById('assignmentNotes').value = '';
+            currentPropertyId = '';
+        }
+        
+        async function assignBroker() {
+            const brokerId = document.getElementById('brokerSelect').value;
+            const notes = document.getElementById('assignmentNotes').value;
+            
+            if (!brokerId) {
+                alert('Please select a broker');
+                return;
+            }
+            
+            const assignBtn = document.getElementById('assignButton');
+            const originalText = assignBtn.innerHTML;
+            assignBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Assigning...';
+            assignBtn.disabled = true;
+            
+            try {
+                const response = await fetch(`/admin/api/properties/${currentPropertyId}/assign-broker`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        brokerId: brokerId,
+                        notes: notes
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Show success message
+                    const successMessage = document.createElement('div');
+                    successMessage.className = 'fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg shadow-lg z-50 flex items-center';
+                    successMessage.innerHTML = `
+                        <i class="fas fa-check-circle mr-2"></i>
+                        <span>✅ Broker assigned successfully!</span>
+                    `;
+                    document.body.appendChild(successMessage);
+                    
+                    // Remove message after 3 seconds
+                    setTimeout(() => {
+                        successMessage.remove();
+                    }, 3000);
+                    
+                    closeModal();
+                    setTimeout(() => {
+                        location.reload();
+                    }, 500);
+                } else {
+                    alert('❌ ' + result.message);
+                    assignBtn.innerHTML = originalText;
+                    assignBtn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Failed to assign broker. Please try again.');
+                assignBtn.innerHTML = originalText;
+                assignBtn.disabled = false;
+            }
+        }
+        
+        // Close modal when clicking outside
+        document.getElementById('assignModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+        
+        // Add loading animation to images
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add error handling for images
+            const images = document.querySelectorAll('img');
+            images.forEach(img => {
+                img.addEventListener('error', function() {
+                    this.src = 'https://via.placeholder.com/40?text=Property';
+                });
+            });
+            
+            // Add tooltips
+            const tooltips = document.querySelectorAll('[title]');
+            tooltips.forEach(element => {
+                element.addEventListener('mouseenter', function(e) {
+                    const title = this.getAttribute('title');
+                    const tooltip = document.createElement('div');
+                    tooltip.className = 'fixed bg-gray-900 text-white text-xs rounded px-2 py-1 z-50';
+                    tooltip.textContent = title;
+                    document.body.appendChild(tooltip);
+                    
+                    const rect = this.getBoundingClientRect();
+                    tooltip.style.left = rect.left + 'px';
+                    tooltip.style.top = (rect.top - 30) + 'px';
+                    
+                    this.setAttribute('data-tooltip-id', tooltip.id = 'tooltip-' + Date.now());
+                });
+                
+                element.addEventListener('mouseleave', function() {
+                    const tooltipId = this.getAttribute('data-tooltip-id');
+                    if (tooltipId) {
+                        const tooltip = document.getElementById(tooltipId);
+                        if (tooltip) tooltip.remove();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Propbandhu</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center">
+                        <span class="text-xl font-bold text-gray-900">Propbandhu</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/buyer/dashboard" class="text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-home mr-1"></i>Dashboard
+                    </a>
+                    <a href="/buyer/properties" class="text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-search mr-1"></i>Browse
+                    </a>
+                    <a href="/buyer/cart" class="text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-shopping-cart mr-1"></i>My Cart
+                    </a>
+                    <a href="/logout" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+                        <i class="fas fa-sign-out-alt mr-1"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- Progress Steps -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div class="text-center">
+                    <div class="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center mx-auto mb-2">
+                        <i class="fas fa-shopping-cart"></i>
+                    </div>
+                    <p class="font-medium text-sm">In Cart</p>
+                </div>
+                
+                <div class="flex-1 h-1 mx-4 bg-blue-600"></div>
+                
+                <div class="text-center">
+                    <div class="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center mx-auto mb-2">
+                        <i class="fas fa-calendar-day"></i>
+                    </div>
+                    <p class="font-medium text-sm">Schedule Visit</p>
+                </div>
+                
+                <div class="flex-1 h-1 mx-4 bg-gray-300"></div>
+                
+                <div class="text-center">
+                    <div class="w-12 h-12 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center mx-auto mb-2">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <p class="font-medium text-sm text-gray-500">Confirm Visit</p>
+                </div>
+                
+                <div class="flex-1 h-1 mx-4 bg-gray-300"></div>
+                
+                <div class="text-center">
+                    <div class="w-12 h-12 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center mx-auto mb-2">
+                        <i class="fas fa-money-check-alt"></i>
+                    </div>
+                    <p class="font-medium text-sm text-gray-500">Booking</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Property Info -->
+        <div class="bg-white rounded-xl shadow p-6 mb-6">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Property Details</h2>
+            <div class="flex items-start">
+                <% if (property.images && property.images.length > 0) { %>
+                <img src="<%= property.images[0].url %>" alt="<%= property.title %>" 
+                     class="w-24 h-24 object-cover rounded-lg mr-4">
+                <% } else { %>
+                <div class="w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center mr-4">
+                    <i class="fas fa-home text-gray-400"></i>
+                </div>
+                <% } %>
+                
+                <div>
+                    <h3 class="font-bold text-lg text-gray-900"><%= property.title %></h3>
+                    <p class="text-gray-600 text-sm mb-2">
+                        <i class="fas fa-map-marker-alt mr-1"></i>
+                        <%= property.address.area %>, <%= property.address.city %>
+                    </p>
+                    <div class="flex items-center">
+                        <span class="text-blue-600 font-bold">₹<%= property.price.toLocaleString() %></span>
+                        <span class="mx-4">•</span>
+                        <span class="text-gray-600">
+                            <i class="fas fa-bed mr-1"></i><%= property.bedrooms || 'NA' %> Beds
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Schedule Visit Form -->
+        <div class="bg-white rounded-xl shadow p-6">
+            <h2 class="text-xl font-bold text-gray-900 mb-6">Schedule Your Visit</h2>
+            
+            <form id="visitForm" class="space-y-6">
+                <!-- Visit Date & Time -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Preferred Date <span class="text-red-500">*</span>
+                        </label>
+                        <input type="date" id="visitDate" name="visitDate" required
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               min="<%= new Date().toISOString().split('T')[0] %>">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Preferred Time <span class="text-red-500">*</span>
+                        </label>
+                        <select id="visitTime" name="visitTime" required
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">Select Time Slot</option>
+                            <option value="09:00-10:00">09:00 AM - 10:00 AM</option>
+                            <option value="10:00-11:00">10:00 AM - 11:00 AM</option>
+                            <option value="11:00-12:00">11:00 AM - 12:00 PM</option>
+                            <option value="12:00-13:00">12:00 PM - 01:00 PM</option>
+                            <option value="14:00-15:00">02:00 PM - 03:00 PM</option>
+                            <option value="15:00-16:00">03:00 PM - 04:00 PM</option>
+                            <option value="16:00-17:00">04:00 PM - 05:00 PM</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Visit Type -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Visit Type <span class="text-red-500">*</span>
+                    </label>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <label class="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                            <input type="radio" name="visitType" value="in_person" class="mr-3" required>
+                            <div>
+                                <p class="font-medium">In-Person Visit</p>
+                                <p class="text-sm text-gray-600">Physical property tour</p>
+                            </div>
+                        </label>
+                        
+                        <label class="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                            <input type="radio" name="visitType" value="virtual" class="mr-3">
+                            <div>
+                                <p class="font-medium">Virtual Tour</p>
+                                <p class="text-sm text-gray-600">Video call viewing</p>
+                            </div>
+                        </label>
+                        
+                        <label class="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                            <input type="radio" name="visitType" value="broker_accompanied" class="mr-3">
+                            <div>
+                                <p class="font-medium">Broker Accompanied</p>
+                                <p class="text-sm text-gray-600">With property broker</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Additional Notes -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Additional Notes
+                    </label>
+                    <textarea name="notes" rows="3" placeholder="Any special requirements or questions..."
+                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+
+                <!-- Contact Information -->
+                <div>
+                    <h3 class="font-bold text-lg text-gray-900 mb-4">Your Contact Information</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                            <input type="text" value="<%= user.name %>" disabled
+                                   class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                            <input type="tel" id="phoneNumber" name="phoneNumber" 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="Enter your contact number" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Terms & Conditions -->
+                <div class="border rounded-lg p-4 bg-blue-50">
+                    <div class="flex items-start">
+                        <input type="checkbox" id="terms" name="terms" required 
+                               class="mt-1 mr-3">
+                        <label for="terms" class="text-sm text-gray-700">
+                            I understand that by scheduling this visit, I agree to the 7-day visit window policy. 
+                            If I fail to complete the visit within 7 days, the property will be automatically removed from my cart.
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Submit Buttons -->
+                <div class="flex space-x-4">
+                    <a href="/buyer/properties/<%= property._id %>" 
+                       class="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50">
+                        <i class="fas fa-arrow-left mr-2"></i>Back
+                    </a>
+                    
+                    <button type="submit" 
+                            class="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">
+                        <i class="fas fa-calendar-check mr-2"></i>Schedule Visit
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Important Information -->
+        <div class="mt-6 bg-yellow-50 border border-yellow-200 rounded-xl p-6">
+            <h3 class="font-bold text-yellow-800 mb-3">
+                <i class="fas fa-exclamation-triangle mr-2"></i>Important Information
+            </h3>
+            <ul class="space-y-2 text-yellow-700">
+                <li class="flex items-start">
+                    <i class="fas fa-clock mr-2 mt-1"></i>
+                    <span>You have <strong>7 days</strong> from when this property was added to your cart to complete the visit</span>
+                </li>
+                <li class="flex items-start">
+                    <i class="fas fa-calendar-alt mr-2 mt-1"></i>
+                    <span>After visit confirmation, you'll have <strong>60 days</strong> to complete the booking</span>
+                </li>
+                <li class="flex items-start">
+                    <i class="fas fa-lock mr-2 mt-1"></i>
+                    <span>The property will remain locked in your cart until the visit is completed or the window expires</span>
+                </li>
+                <li class="flex items-start">
+                    <i class="fas fa-bell mr-2 mt-1"></i>
+                    <span>You'll receive email and SMS reminders for your scheduled visit</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Set minimum date to today
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('visitDate').min = today;
+        
+        // Set maximum date to 7 days from now
+        const maxDate = new Date();
+        maxDate.setDate(maxDate.getDate() + 7);
+        document.getElementById('visitDate').max = maxDate.toISOString().split('T')[0];
+        
+        // Form submission
+        document.getElementById('visitForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const visitData = {
+                propertyId: '<%= property._id %>',
+                visitDate: formData.get('visitDate'),
+                visitTime: formData.get('visitTime'),
+                visitType: formData.get('visitType'),
+                phoneNumber: formData.get('phoneNumber'),
+                notes: formData.get('notes')
+            };
+            
+            try {
+                // In a real application, you would save the visit schedule first
+                // For now, we'll proceed directly to confirmation
+                
+                // Show confirmation modal
+                if (confirm('Schedule visit for ' + visitData.visitDate + ' at ' + visitData.visitTime + '?')) {
+                    // Confirm the visit
+                    const response = await fetch('/buyer/api/visit/confirm', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            propertyId: '<%= property._id %>',
+                            confirmationMethod: 'scheduled'
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        alert('Visit scheduled successfully! Visit confirmation OTP will be sent before your scheduled time.');
+                        window.location.href = '/buyer/visits';
+                    } else {
+                        alert('Error: ' + result.message);
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to schedule visit');
+            }
+        });
+    </script>
+</body>
+</html>

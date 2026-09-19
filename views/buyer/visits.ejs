@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Propbandhu</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .tab-btn.active {
+            border-bottom-width: 2px;
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+        .timeline-connector {
+            position: relative;
+        }
+        .timeline-connector:after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: -20px;
+            width: 40px;
+            height: 2px;
+            background-color: #d1d5db;
+            transform: translateY(-50%);
+        }
+        .timeline-connector.active:after {
+            background-color: #10b981;
+        }
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center">
+                        <span class="text-xl font-bold text-gray-900">Propbandhu</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/buyer/dashboard" class="text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-home mr-1"></i>Dashboard
+                    </a>
+                    <a href="/buyer/properties" class="text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-search mr-1"></i>Browse
+                    </a>
+                    <a href="/buyer/cart" class="text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-shopping-cart mr-1"></i>My Cart
+                    </a>
+                    <a href="/buyer/visits" class="text-blue-600 font-medium">
+                        <i class="fas fa-calendar-day mr-1"></i>My Visits
+                    </a>
+                    <a href="/logout" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+                        <i class="fas fa-sign-out-alt mr-1"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- Page Header -->
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">My Property Visits</h1>
+                <p class="text-gray-600 mt-1">Schedule and manage your property visits</p>
+            </div>
+            <a href="/buyer/cart" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center">
+                <i class="fas fa-shopping-cart mr-2"></i>View Cart
+                <% if (cartCount && cartCount > 0) { %>
+                <span class="ml-2 bg-white text-blue-600 text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                    <%= cartCount %>
+                </span>
+                <% } %>
+            </a>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="flex items-center">
+                    <div class="p-3 bg-blue-100 text-blue-600 rounded-lg mr-4">
+                        <i class="fas fa-calendar-alt text-lg"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Total Visits</p>
+                        <p class="text-2xl font-bold text-gray-900"><%= visits.length %></p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="flex items-center">
+                    <div class="p-3 bg-yellow-100 text-yellow-600 rounded-lg mr-4">
+                        <i class="fas fa-clock text-lg"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Pending</p>
+                        <p class="text-2xl font-bold text-gray-900"><%= pendingVisits ? pendingVisits.length : 0 %></p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="flex items-center">
+                    <div class="p-3 bg-blue-100 text-blue-600 rounded-lg mr-4">
+                        <i class="fas fa-calendar-check text-lg"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Scheduled</p>
+                        <p class="text-2xl font-bold text-gray-900"><%= scheduledVisits ? scheduledVisits.length : 0 %></p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="flex items-center">
+                    <div class="p-3 bg-green-100 text-green-600 rounded-lg mr-4">
+                        <i class="fas fa-check-circle text-lg"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Confirmed</p>
+                        <p class="text-2xl font-bold text-gray-900"><%= confirmedVisits ? confirmedVisits.length : 0 %></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visit Status Tabs -->
+        <div class="flex border-b border-gray-200 mb-6">
+            <button data-status="all" onclick="filterVisits('all')" 
+                    class="tab-btn px-4 py-2 font-medium border-b-2 border-blue-500 text-blue-600">
+                All Visits
+            </button>
+            <button data-status="pending" onclick="filterVisits('pending')" 
+                    class="tab-btn px-4 py-2 font-medium text-gray-600 hover:text-blue-600">
+                Pending (<%= pendingVisits ? pendingVisits.length : 0 %>)
+            </button>
+            <button data-status="scheduled" onclick="filterVisits('scheduled')" 
+                    class="tab-btn px-4 py-2 font-medium text-gray-600 hover:text-blue-600">
+                Scheduled (<%= scheduledVisits ? scheduledVisits.length : 0 %>)
+            </button>
+            <button data-status="confirmed" onclick="filterVisits('confirmed')" 
+                    class="tab-btn px-4 py-2 font-medium text-gray-600 hover:text-blue-600">
+                Confirmed (<%= confirmedVisits ? confirmedVisits.length : 0 %>)
+            </button>
+            <button data-status="expired" onclick="filterVisits('expired')" 
+                    class="tab-btn px-4 py-2 font-medium text-gray-600 hover:text-blue-600">
+                Expired (<%= expiredVisits ? expiredVisits.length : 0 %>)
+            </button>
+        </div>
+
+        <!-- Visits List -->
+        <% if (visits.length === 0) { %>
+        <div class="text-center py-12 bg-white rounded-xl shadow">
+            <i class="fas fa-calendar-times text-gray-300 text-6xl mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-700 mb-2">No visits scheduled</h3>
+            <p class="text-gray-600 mb-6">Add properties to your cart to schedule visits</p>
+            <a href="/buyer/properties" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 inline-flex items-center">
+                <i class="fas fa-search mr-2"></i>Browse Properties
+            </a>
+        </div>
+        <% } else { %>
+        <div class="space-y-6">
+            <% visits.forEach(item => { 
+                const property = item.property;
+                const addedDate = new Date(item.added_at);
+                const visitExpiry = new Date(addedDate);
+                visitExpiry.setDate(visitExpiry.getDate() + 7);
+                const now = new Date();
+                const daysLeft = item.daysLeft || Math.ceil((visitExpiry - now) / (1000 * 60 * 60 * 24));
+                
+                // Status logic
+                const isConfirmed = item.visit_status === 'confirmed';
+                const isScheduled = item.visit_status === 'scheduled';
+                const isExpired = item.isExpired || item.visit_status === 'expired';
+                const isPending = item.visit_status === 'pending' && !isExpired;
+                
+                // Status styling
+                let statusColor = 'bg-yellow-100 text-yellow-800';
+                let statusText = 'Pending';
+                
+                if (isConfirmed) {
+                    statusColor = 'bg-green-100 text-green-800';
+                    statusText = 'Confirmed';
+                } else if (isScheduled) {
+                    statusColor = 'bg-blue-100 text-blue-800';
+                    statusText = 'Scheduled';
+                } else if (isExpired) {
+                    statusColor = 'bg-red-100 text-red-800';
+                    statusText = 'Expired';
+                }
+                
+                // Determine data-status for filtering
+                let dataStatus = 'pending';
+                if (isConfirmed) dataStatus = 'confirmed';
+                else if (isScheduled) dataStatus = 'scheduled';
+                else if (isExpired) dataStatus = 'expired';
+            %>
+            <div class="bg-white rounded-xl shadow p-6 visit-item" data-status="<%= dataStatus %>">
+                <div class="flex flex-col md:flex-row">
+                    <!-- Property Image -->
+                    <div class="md:w-1/4 mb-4 md:mb-0 md:mr-6">
+                        <% if (property.primary_image) { %>
+                        <img src="<%= property.primary_image %>" alt="<%= property.title %>" 
+                             class="w-full h-48 object-cover rounded-lg">
+                        <% } else if (property.images && property.images.length > 0) { %>
+                        <img src="<%= property.images[0].url %>" alt="<%= property.title %>" 
+                             class="w-full h-48 object-cover rounded-lg">
+                        <% } else { %>
+                        <div class="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-home text-gray-400 text-4xl"></i>
+                        </div>
+                        <% } %>
+                    </div>
+                    
+                    <!-- Visit Details -->
+                    <div class="flex-1">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 class="font-bold text-xl text-gray-900"><%= property.title %></h3>
+                                <p class="text-gray-600 text-sm flex items-center mt-1">
+                                    <i class="fas fa-map-marker-alt mr-2 text-gray-400"></i>
+                                    <%= property.full_address || (property.address ? property.address.area + ', ' + property.address.city : 'Address not specified') %>
+                                </p>
+                                <div class="flex items-center mt-2">
+                                    <span class="text-blue-600 font-bold mr-3">
+                                        <%= property.formatted_price || ('₹' + (property.price || 0).toLocaleString()) %>
+                                    </span>
+                                    <span class="text-gray-500 text-sm">
+                                        <i class="fas fa-layer-group mr-1"></i>
+                                        <%= property.property_type || 'Property' %>
+                                    </span>
+                                </div>
+                            </div>
+                            <span class="<%= statusColor %> status-badge">
+                                <%= statusText %>
+                            </span>
+                        </div>
+                        
+                        <!-- ✅ SCHEDULED VISIT INFO -->
+                        <% if (isScheduled) { %>
+                        <div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div class="flex items-start text-blue-800">
+                                <i class="fas fa-calendar-alt mr-3 text-lg mt-1"></i>
+                                <div class="flex-1">
+                                    <p class="font-semibold text-sm mb-1">Visit Scheduled</p>
+                                    <p class="text-sm">
+                                        <i class="far fa-clock mr-1"></i>
+                                        <% if (item.scheduled_date) { %>
+                                        On <b><%= new Date(item.scheduled_date).toLocaleDateString('en-IN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }) %></b>
+                                        <% if (item.scheduled_time) { %>
+                                        at <b><%= item.scheduled_time %></b>
+                                        <% } %>
+                                        <% } else { %>
+                                        Date & time to be confirmed
+                                        <% } %>
+                                    </p>
+                                    <% if (item.visit_notes) { %>
+                                    <p class="text-sm text-blue-700 mt-2 p-2 bg-blue-100 rounded">
+                                        <i class="fas fa-sticky-note mr-2"></i>
+                                        <%= item.visit_notes %>
+                                    </p>
+                                    <% } %>
+                                    <p class="text-xs text-blue-600 mt-2">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        Scheduled by broker. Please confirm once you visit.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <% } %>
+                        
+                        <!-- ✅ CONFIRMED VISIT INFO -->
+                        <% if (isConfirmed) { %>
+                        <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                            <div class="flex items-start text-green-800">
+                                <i class="fas fa-check-circle mr-3 text-lg mt-1"></i>
+                                <div class="flex-1">
+                                    <p class="font-semibold text-sm mb-1">Visit Confirmed</p>
+                                    <p class="text-sm">
+                                        <i class="fas fa-calendar-check mr-1"></i>
+                                        Confirmed on <b><%= item.visit_confirmed_at ? new Date(item.visit_confirmed_at).toLocaleDateString('en-IN') : 'N/A' %></b>
+                                    </p>
+                                    <% if (item.booking_window_end) { %>
+                                    <p class="text-sm mt-1">
+                                        <i class="fas fa-hourglass-half mr-1"></i>
+                                        Booking window ends: <b><%= new Date(item.booking_window_end).toLocaleDateString('en-IN') %></b>
+                                    </p>
+                                    <% } %>
+                                </div>
+                            </div>
+                        </div>
+                        <% } %>
+                        
+                        <!-- ✅ EXPIRED VISIT INFO -->
+                        <% if (isExpired) { %>
+                        <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                            <div class="flex items-start text-red-800">
+                                <i class="fas fa-exclamation-triangle mr-3 text-lg mt-1"></i>
+                                <div class="flex-1">
+                                    <p class="font-semibold text-sm mb-1">Visit Expired</p>
+                                    <p class="text-sm">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        <%= item.expiredReason || 'Visit window has expired' %>
+                                    </p>
+                                    <% if (item.visit_status === 'scheduled' && item.scheduled_date) { %>
+                                    <p class="text-sm mt-1">
+                                        <i class="far fa-calendar-times mr-1"></i>
+                                        Was scheduled for: <b><%= new Date(item.scheduled_date).toLocaleDateString('en-IN') %></b>
+                                    </p>
+                                    <% } else { %>
+                                    <p class="text-sm mt-1">
+                                        <i class="far fa-calendar-times mr-1"></i>
+                                        7-day window ended on: <b><%= visitExpiry.toLocaleDateString('en-IN') %></b>
+                                    </p>
+                                    <% } %>
+                                </div>
+                            </div>
+                        </div>
+                        <% } %>
+                        
+                        <!-- Visit Timeline -->
+                        <div class="mb-6">
+                            <div class="flex items-center justify-between">
+                                <div class="text-center flex-1">
+                                    <div class="w-10 h-10 rounded-full 
+                                        <%= isConfirmed ? 'bg-green-100 text-green-600 border-2 border-green-300' : 
+                                           (isScheduled ? 'bg-blue-100 text-blue-600 border-2 border-blue-300' : 
+                                           (isExpired ? 'bg-red-100 text-red-600 border-2 border-red-300' : 'bg-blue-100 text-blue-600 border-2 border-blue-300')) %> 
+                                        flex items-center justify-center mx-auto mb-2">
+                                        <i class="fas fa-cart-plus text-sm"></i>
+                                    </div>
+                                    <p class="text-xs text-gray-600 font-medium">Added to Cart</p>
+                                    <p class="text-xs text-gray-500"><%= item.added_at_formatted || new Date(item.added_at).toLocaleDateString('en-IN') %></p>
+                                </div>
+                                
+                                <div class="flex-1 mx-4">
+                                    <div class="h-1 <%= isConfirmed ? 'bg-green-500' : (isScheduled ? 'bg-blue-300' : 'bg-gray-300') %>"></div>
+                                </div>
+                                
+                                <div class="text-center flex-1">
+                                    <div class="w-10 h-10 rounded-full 
+                                        <%= isConfirmed ? 'bg-green-100 text-green-600 border-2 border-green-300' : 
+                                           (isScheduled ? 'bg-blue-100 text-blue-600 border-2 border-blue-300' : 
+                                           (isExpired ? 'bg-red-100 text-red-600 border-2 border-red-300' : 'bg-yellow-100 text-yellow-600 border-2 border-yellow-300')) %> 
+                                        flex items-center justify-center mx-auto mb-2">
+                                        <% if (isConfirmed) { %>
+                                        <i class="fas fa-check text-sm"></i>
+                                        <% } else if (isScheduled) { %>
+                                        <i class="fas fa-calendar-check text-sm"></i>
+                                        <% } else if (isExpired) { %>
+                                        <i class="fas fa-times text-sm"></i>
+                                        <% } else { %>
+                                        <i class="fas fa-clock text-sm"></i>
+                                        <% } %>
+                                    </div>
+                                    <p class="text-xs text-gray-600 font-medium">Visit Status</p>
+                                    <% if (isPending && !isExpired) { %>
+                                    <p class="text-xs font-medium <%= daysLeft <= 2 ? 'text-red-600' : 'text-yellow-600' %>">
+                                        <% if (daysLeft > 0) { %>
+                                        <%= daysLeft %> days left
+                                        <% } else if (daysLeft === 0) { %>
+                                        Last day
+                                        <% } else { %>
+                                        Expired
+                                        <% } %>
+                                    </p>
+                                    <% } %>
+                                </div>
+                                
+                                <% if (isConfirmed) { %>
+                                <div class="flex-1 mx-4">
+                                    <div class="h-1 bg-green-500"></div>
+                                </div>
+                                
+                                <div class="text-center flex-1">
+                                    <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 border-2 border-blue-300 flex items-center justify-center mx-auto mb-2">
+                                        <i class="fas fa-calendar-check text-sm"></i>
+                                    </div>
+                                    <p class="text-xs text-gray-600 font-medium">Booking Window</p>
+                                    <% if (item.booking_window_end) { %>
+                                    <p class="text-xs font-medium text-blue-600">60 days</p>
+                                    <% } %>
+                                </div>
+                                <% } %>
+                            </div>
+                        </div>
+                        
+                        <!-- Visit Information Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <p class="text-sm text-gray-600 mb-1 flex items-center">
+                                    <i class="fas fa-rupee-sign mr-2 text-gray-400"></i>Price
+                                </p>
+                                <p class="font-bold text-blue-600 text-lg">
+                                    <%= property.formatted_price || ('₹' + (property.price || 0).toLocaleString()) %>
+                                </p>
+                            </div>
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <p class="text-sm text-gray-600 mb-1 flex items-center">
+                                    <i class="fas fa-building mr-2 text-gray-400"></i>Property Type
+                                </p>
+                                <p class="font-medium text-gray-900"><%= property.property_type || 'Not specified' %></p>
+                            </div>
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <p class="text-sm text-gray-600 mb-1 flex items-center">
+                                    <i class="fas fa-calendar-day mr-2 text-gray-400"></i>Visit Window
+                                </p>
+                                <p class="font-medium text-gray-900">
+                                    <% if (isConfirmed) { %>
+                                    Confirmed • 60 days booking
+                                    <% } else if (isScheduled) { %>
+                                    Scheduled visit
+                                    <% } else if (isExpired) { %>
+                                    Expired • <%= item.expiredReason || 'Window closed' %>
+                                    <% } else { %>
+                                    Until <%= visitExpiry.toLocaleDateString('en-IN') %>
+                                    <% } %>
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="flex flex-wrap gap-3 pt-4 border-t border-gray-200">
+                            <a href="/buyer/properties/<%= property._id %>" 
+                               class="bg-blue-100 text-blue-700 px-4 py-2 rounded-lg hover:bg-blue-200 flex items-center">
+                                <i class="fas fa-eye mr-2"></i>View Property
+                            </a>
+                            
+                            <% if (isScheduled) { %>
+                            <!-- For Scheduled visits - Confirm button -->
+                            <button onclick="confirmVisit('<%= property._id %>')" 
+                                    class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center">
+                                <i class="fas fa-check-circle mr-2"></i>Confirm Visit
+                            </button>
+                            
+                            <button onclick="rescheduleVisit('<%= property._id %>')" 
+                                    class="bg-yellow-100 text-yellow-700 px-4 py-2 rounded-lg hover:bg-yellow-200 flex items-center">
+                                <i class="fas fa-calendar-alt mr-2"></i>Reschedule
+                            </button>
+                            <% } %>
+                            
+                            <% if (isPending && !isExpired) { %>
+                            <a href="/buyer/schedule-visit/<%= property._id %>" 
+                               class="bg-green-100 text-green-700 px-4 py-2 rounded-lg hover:bg-green-200 flex items-center">
+                                <i class="fas fa-calendar-day mr-2"></i>Schedule Visit
+                            </a>
+                            
+                            <button onclick="confirmVisit('<%= property._id %>')" 
+                                    class="bg-yellow-100 text-yellow-700 px-4 py-2 rounded-lg hover:bg-yellow-200 flex items-center">
+                                <i class="fas fa-check-circle mr-2"></i>Confirm Visit Now
+                            </button>
+                            <% } %>
+                            
+                            <% if (isConfirmed) { %>
+                            <button onclick="proceedToBooking('<%= property._id %>')" 
+                                    class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 flex items-center">
+                                <i class="fas fa-money-check-alt mr-2"></i>Proceed to Booking
+                            </button>
+                            
+                            <button onclick="viewBookingDetails('<%= property._id %>')" 
+                                    class="bg-indigo-100 text-indigo-700 px-4 py-2 rounded-lg hover:bg-indigo-200 flex items-center">
+                                <i class="fas fa-file-contract mr-2"></i>View Booking
+                            </button>
+                            <% } %>
+                            
+                            <% if (!isConfirmed) { %>
+                            <button onclick="removeFromVisits('<%= property._id %>')" 
+                                    class="bg-red-100 text-red-700 px-4 py-2 rounded-lg hover:bg-red-200 flex items-center">
+                                <i class="fas fa-trash mr-2"></i>Remove
+                            </button>
+                            <% } %>
+                            
+                            <% if (property.broker && property.broker.phone) { %>
+                            <a href="tel:<%= property.broker.phone %>" 
+                               class="bg-teal-100 text-teal-700 px-4 py-2 rounded-lg hover:bg-teal-200 flex items-center">
+                                <i class="fas fa-phone-alt mr-2"></i>Call Broker
+                            </a>
+                            <% } %>
+                        </div>
+                        
+                        <!-- Additional Info -->
+                        <% if (isPending && !isExpired) { %>
+                        <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <p class="text-sm text-yellow-800 flex items-center">
+                                <i class="fas fa-info-circle mr-2"></i>
+                                <b>Reminder:</b> You have <b><%= daysLeft %> days</b> left to schedule and confirm your visit.
+                                Contact broker or schedule directly.
+                            </p>
+                        </div>
+                        <% } %>
+                        
+                        <% if (isExpired) { %>
+                        <div class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <p class="text-sm text-red-800 flex items-center">
+                                <i class="fas fa-exclamation-triangle mr-2"></i>
+                                <b>Note:</b> This visit has expired. The property has been automatically removed from your cart.
+                                You can browse similar properties.
+                            </p>
+                        </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+            <% }); %>
+        </div>
+        <% } %>
+    </div>
+
+    <!-- Success/Error Toast -->
+    <div id="toast" class="fixed top-4 right-4 z-50 hidden p-4 rounded-lg shadow-lg max-w-md"></div>
+
+    <script>
+        // Initialize tabs
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set all visits as default view
+            filterVisits('all');
+        });
+
+        // Filter visits by status with proper tab highlighting
+        function filterVisits(status) {
+            const items = document.querySelectorAll('.visit-item');
+            items.forEach(item => {
+                if (status === 'all' || item.dataset.status === status) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            // Update active tab using data-status attribute
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-b-2', 'border-blue-500', 'text-blue-600');
+                btn.classList.add('text-gray-600');
+
+                if (btn.dataset.status === status) {
+                    btn.classList.add('border-b-2', 'border-blue-500', 'text-blue-600');
+                    btn.classList.remove('text-gray-600');
+                }
+            });
+        }
+
+        // Show toast message
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} 
+                       text-${type === 'success' ? 'green' : 'red'}-500 mr-3"></i>
+                    <span class="text-gray-800">${message}</span>
+                </div>
+            `;
+            toast.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-md bg-${type === 'success' ? 'green' : 'red'}-50 border border-${type === 'success' ? 'green' : 'red'}-200`;
+            toast.classList.remove('hidden');
+            
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Confirm visit function
+        async function confirmVisit(propertyId) {
+            if (!confirm('Are you sure you want to confirm this visit?\n\nOnce confirmed, you will have 60 days to complete the booking.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/buyer/api/visit/confirm', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        propertyId: propertyId,
+                        confirmationMethod: 'manual'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Failed to confirm visit. Please try again.', 'error');
+            }
+        }
+
+        // Reschedule visit function
+        async function rescheduleVisit(propertyId) {
+            const newDate = prompt('Enter new date (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
+            if (!newDate) return;
+            
+            const newTime = prompt('Enter new time (HH:MM in 24hr format):', '10:00');
+            if (!newTime) return;
+            
+            // Validate time format
+            const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+            if (!timeRegex.test(newTime)) {
+                alert('Please enter time in HH:MM format (24hr)');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/buyer/api/visit/reschedule', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        propertyId, 
+                        scheduled_date: newDate,
+                        scheduled_time: newTime
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Failed to reschedule visit. Please try again.', 'error');
+            }
+        }
+
+        // Remove from visits (cart)
+        async function removeFromVisits(propertyId) {
+            if (!confirm('Are you sure you want to remove this property from your visits?\n\nThis will also remove it from your cart.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/buyer/api/cart/remove', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ propertyId })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Failed to remove from visits. Please try again.', 'error');
+            }
+        }
+
+        // Proceed to booking
+        function proceedToBooking(propertyId) {
+            showToast('Proceeding to booking page...', 'success');
+            setTimeout(() => {
+                window.location.href = `/buyer/booking/${propertyId}`;
+            }, 1000);
+        }
+
+        // View booking details
+        function viewBookingDetails(propertyId) {
+            showToast('Loading booking details...', 'success');
+            setTimeout(() => {
+                window.location.href = `/buyer/bookings/${propertyId}`;
+            }, 1000);
+        }
+
+        // Auto-refresh every 5 minutes to update statuses
+        setInterval(() => {
+            const activeVisits = document.querySelectorAll('.visit-item[data-status="pending"], .visit-item[data-status="scheduled"]');
+            if (activeVisits.length > 0) {
+                console.log('Auto-refreshing visits status...');
+                // You can implement a lightweight status check here
+                // For now, we'll just refresh the page
+                // location.reload();
+            }
+        }, 300000); // 5 minutes
+    </script>
+</body>
+</html>

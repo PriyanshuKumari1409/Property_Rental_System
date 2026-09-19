@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pending Approvals - Admin Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .property-card {
+            @apply bg-white rounded-xl shadow border border-gray-200 overflow-hidden transition-all duration-300 hover:shadow-md;
+        }
+        .approval-badge {
+            @apply px-3 py-1 rounded-full text-xs font-semibold;
+        }
+        .badge-pending { @apply bg-yellow-100 text-yellow-800; }
+        .badge-approved { @apply bg-green-100 text-green-800; }
+        .badge-rejected { @apply bg-red-100 text-red-800; }
+        
+        .btn-approve { @apply bg-green-600 hover:bg-green-700 text-white; }
+        .btn-reject { @apply bg-red-600 hover:bg-red-700 text-white; }
+        .btn-request-changes { @apply bg-yellow-600 hover:bg-yellow-700 text-white; }
+        .btn-view { @apply bg-blue-600 hover:bg-blue-700 text-white; }
+        
+        .image-container {
+            @apply h-48 bg-gray-200 relative overflow-hidden;
+        }
+        .image-container img {
+            @apply w-full h-full object-cover transition-transform duration-500 hover:scale-105;
+        }
+        
+        /* Toast notification animations */
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .toast-notification {
+            animation: slideIn 0.3s ease-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-md border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="/admin/dashboard" class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                            <span class="text-white font-bold text-xl">P</span>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold text-gray-900">Propbandhu</h1>
+                            <p class="text-xs text-gray-500">Admin Panel</p>
+                        </div>
+                    </a>
+                </div>
+                
+                <!-- Right Section -->
+                <div class="flex items-center space-x-6">
+                    <!-- Back Button -->
+                    <a href="/admin/properties" class="text-blue-600 hover:text-blue-800 flex items-center">
+                        <i class="fas fa-arrow-left mr-2"></i> Back to Properties
+                    </a>
+                    
+                    <!-- User Profile -->
+                    <div class="flex items-center space-x-3">
+                        <div class="text-right hidden md:block">
+                            <p class="font-medium text-gray-900">Admin User</p>
+                            <p class="text-sm text-gray-500">Administrator</p>
+                        </div>
+                        <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                            A
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Layout -->
+    <div class="flex">
+        <!-- Sidebar -->
+        <div class="w-64 bg-white border-r border-gray-200 min-h-[calc(100vh-4rem)] sticky top-16">
+            <div class="p-4">
+                <!-- Pending Count -->
+                <div class="mb-6 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl">
+                    <p class="text-sm text-gray-600 mb-1">Pending Approvals</p>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-2xl font-bold text-gray-900"><%= pendingCount || 0 %></p>
+                            <p class="text-xs text-gray-500">Properties to review</p>
+                        </div>
+                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                            <i class="fas fa-clock text-yellow-600"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Navigation -->
+                <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Navigation</h3>
+                <ul class="space-y-1">
+                    <li>
+                        <a href="/admin/dashboard" class="block px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100">
+                            <i class="fas fa-tachometer-alt mr-3 text-blue-600"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/approvals" class="block px-4 py-3 rounded-lg bg-blue-50 text-blue-700">
+                            <i class="fas fa-check-circle mr-3 text-yellow-600"></i>
+                            <span>Pending Approvals</span>
+                            <% if (pendingCount > 0) { %>
+                                <span class="absolute right-4 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                                    <%= pendingCount %>
+                                </span>
+                            <% } %>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/users" class="block px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100">
+                            <i class="fas fa-users mr-3 text-green-600"></i>
+                            <span>User Management</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/properties" class="block px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100">
+                            <i class="fas fa-home mr-3 text-purple-600"></i>
+                            <span>Properties</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/commissions" class="block px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100">
+                            <i class="fas fa-money-bill-wave mr-3 text-emerald-600"></i>
+                            <span>Commissions</span>
+                        </a>
+                    </li>
+                </ul>
+                
+                <!-- Approval Stats -->
+                <div class="mt-8 p-4 bg-gray-50 rounded-xl">
+                    <h4 class="text-sm font-medium text-gray-700 mb-3">Approval Statistics</h4>
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-gray-600">Pending:</span>
+                            <span class="font-medium"><%= pendingCount || 0 %></span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-gray-600">Reviewed Today:</span>
+                            <span class="font-medium"><%= reviewedToday || 0 %></span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-gray-600">Average Time:</span>
+                            <span class="font-medium"><%= averageTime || '0h' %></span>
+                        </div>
+                        <div class="pt-2 border-t border-gray-200">
+                            <div class="text-xs text-gray-500">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Properties awaiting your review
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 p-6">
+            <!-- Page Header -->
+            <div class="mb-6">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Pending Approvals</h1>
+                        <p class="text-gray-600 mt-1">Review and approve property listings</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <!-- Bulk Actions -->
+                        <div class="relative">
+                            <select id="bulkAction" class="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                                <option value="">Bulk Actions</option>
+                                <option value="approve">Approve Selected</option>
+                                <option value="request_changes">Request Changes</option>
+                                <option value="reject">Reject Selected</option>
+                            </select>
+                        </div>
+                        <button onclick="applyBulkAction()" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
+                            Apply
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Approval Stats Bar -->
+                <div class="mt-6 bg-white rounded-xl p-4 shadow border border-gray-200">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-yellow-600 pending-count"><%= pendingCount || 0 %></div>
+                            <div class="text-sm text-gray-600">Pending Properties</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-green-600"><%= approvedToday || 0 %></div>
+                            <div class="text-sm text-gray-600">Approved Today</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-blue-600"><%= totalApproved || 0 %></div>
+                            <div class="text-sm text-gray-600">Total Approved</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Properties Grid -->
+            <% if (properties && properties.length > 0) { %>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <% properties.forEach((property, index) => { %>
+                    <div class="property-card" id="property-card-<%= property._id %>">
+                        <div class="image-container">
+                            <% if (property.images && property.images.length > 0) { %>
+                                <img src="<%= property.images.find(img => img.is_primary)?.url || property.images[0].url %>" 
+                                     alt="<%= property.title %>">
+                            <% } else { %>
+                                <div class="w-full h-full flex items-center justify-center bg-gray-100">
+                                    <i class="fas fa-home text-gray-400 text-4xl"></i>
+                                </div>
+                            <% } %>
+                            <div class="absolute top-3 right-3">
+                                <span class="approval-badge badge-pending">
+                                    <i class="fas fa-clock mr-1"></i> Pending
+                                </span>
+                            </div>
+                            <div class="absolute top-3 left-3">
+                                <input type="checkbox" 
+                                       value="<%= property._id %>" 
+                                       class="property-checkbox h-5 w-5 text-yellow-600 border-gray-300 rounded">
+                            </div>
+                        </div>
+                        
+                        <div class="p-4">
+                            <!-- Property Info -->
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">
+                                <%= property.title || 'Untitled Property' %>
+                            </h3>
+                            
+                            <div class="flex items-center text-sm text-gray-600 mb-3">
+                                <i class="fas fa-map-marker-alt mr-2"></i>
+                                <span>
+                                    <% if (property.address && property.address.city) { %>
+                                        <%= property.address.city %>
+                                        <% if (property.address.area) { %>, <%= property.address.area %><% } %>
+                                    <% } else { %>
+                                        Location not specified
+                                    <% } %>
+                                </span>
+                            </div>
+                            
+                            <!-- Price -->
+                            <div class="mb-4">
+                                <div class="text-2xl font-bold text-gray-900">
+                                    ₹<%= property.price ? property.price.toLocaleString('en-IN') : '0' %>
+                                </div>
+                                <div class="text-sm text-gray-500">
+                                    <%= property.price_type === 'fixed' ? 'Fixed Price' : 'Negotiable' %>
+                                </div>
+                            </div>
+                            
+                            <!-- Property Details -->
+                            <div class="grid grid-cols-2 gap-2 mb-4">
+                                <% if (property.bedrooms) { %>
+                                <div class="flex items-center text-sm text-gray-600">
+                                    <i class="fas fa-bed mr-2 text-gray-400"></i>
+                                    <span><%= property.bedrooms %> Beds</span>
+                                </div>
+                                <% } %>
+                                
+                                <% if (property.bathrooms) { %>
+                                <div class="flex items-center text-sm text-gray-600">
+                                    <i class="fas fa-bath mr-2 text-gray-400"></i>
+                                    <span><%= property.bathrooms %> Baths</span>
+                                </div>
+                                <% } %>
+                                
+                                <% if (property.built_up_area) { %>
+                                <div class="flex items-center text-sm text-gray-600">
+                                    <i class="fas fa-arrows-alt mr-2 text-gray-400"></i>
+                                    <span><%= property.built_up_area %> <%= property.area_unit || 'sqft' %></span>
+                                </div>
+                                <% } %>
+                                
+                                <div class="flex items-center text-sm text-gray-600">
+                                    <i class="fas fa-home mr-2 text-gray-400"></i>
+                                    <span><%= property.property_type || 'Residential' %></span>
+                                </div>
+                            </div>
+                            
+                            <!-- Seller Info -->
+                            <div class="border-t border-gray-200 pt-3 mb-4">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-8 w-8">
+                                        <div class="h-8 w-8 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 flex items-center justify-center text-white text-xs font-bold">
+                                            <%= property.seller && property.seller.name ? property.seller.name.charAt(0).toUpperCase() : 'S' %>
+                                        </div>
+                                    </div>
+                                    <div class="ml-3">
+                                        <div class="text-sm font-medium text-gray-900">
+                                            <% if (property.seller && property.seller.name) { %>
+                                                <%= property.seller.name %>
+                                            <% } else if (property.seller) { %>
+                                                Seller ID: <%= property.seller.toString().substring(0, 8) %>...
+                                            <% } else { %>
+                                                Unknown Seller
+                                            <% } %>
+                                        </div>
+                                        <div class="text-xs text-gray-500">
+                                            Submitted: <%= property.createdAt ? new Date(property.createdAt).toLocaleDateString() : 'N/A' %>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div class="flex space-x-2">
+                                <button onclick="quickApprove('<%= property._id %>')" 
+                                        class="btn-approve flex-1 px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center">
+                                    <i class="fas fa-check mr-2"></i> Approve
+                                </button>
+                                
+                                <button onclick="showRequestChangesModal('<%= property._id %>')" 
+                                        class="btn-request-changes px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                
+                                <button onclick="showQuickRejectModal('<%= property._id %>')" 
+                                        class="btn-reject px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                                
+                                <a href="/admin/properties/<%= property._id %>" 
+                                   class="btn-view px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <% }) %>
+                </div>
+                
+                <!-- Pagination or Load More -->
+                <div class="mt-8 flex justify-center">
+                    <button class="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                        Load More Properties
+                    </button>
+                </div>
+                
+            <% } else { %>
+                <!-- Empty State -->
+                <div class="bg-white rounded-xl shadow border border-gray-200 p-12 text-center">
+                    <div class="text-gray-400">
+                        <i class="fas fa-check-circle text-6xl mb-4"></i>
+                        <h3 class="text-xl font-medium text-gray-500 mb-2">All Caught Up!</h3>
+                        <p class="text-gray-400 mb-6">No pending properties to review at the moment.</p>
+                        <a href="/admin/properties" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 inline-flex items-center">
+                            <i class="fas fa-home mr-2"></i> View All Properties
+                        </a>
+                    </div>
+                </div>
+            <% } %>
+        </div>
+    </div>
+
+    <!-- Reject Modal -->
+    <div id="quickRejectModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-xl bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Reject Property</h3>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Reason for rejection</label>
+                    <select id="quickRejectReason" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500">
+                        <option value="">Select a reason</option>
+                        <option value="Incomplete information">Incomplete information</option>
+                        <option value="Poor quality images">Poor quality images</option>
+                        <option value="Suspicious listing">Suspicious listing</option>
+                        <option value="Incorrect pricing">Incorrect pricing</option>
+                        <option value="Duplicate listing">Duplicate listing</option>
+                        <option value="Policy violation">Policy violation</option>
+                        <option value="Other">Other (specify below)</option>
+                    </select>
+                    <textarea id="customRejectReason" rows="2" 
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 mt-2 hidden"
+                              placeholder="Please specify the reason..."></textarea>
+                    <p class="text-xs text-gray-500 mt-1">Seller will NOT be able to edit this property.</p>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button onclick="closeQuickRejectModal()" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button onclick="confirmQuickReject()" class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700">
+                        Reject Property
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Request Changes Modal -->
+    <div id="requestChangesModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-xl bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Request Changes</h3>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Reason for changes needed</label>
+                    <select id="requestChangesReason" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                        <option value="">Select a reason</option>
+                        <option value="Poor quality images">Poor quality images</option>
+                        <option value="Incorrect pricing">Incorrect pricing</option>
+                        <option value="Missing information">Missing information</option>
+                        <option value="Incomplete description">Incomplete description</option>
+                        <option value="Other">Other (specify below)</option>
+                    </select>
+                    <textarea id="customRequestChangesReason" rows="2" 
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 mt-2 hidden"
+                              placeholder="Please specify the required changes..."></textarea>
+                    
+                    <!-- Allowed Fields Selection -->
+                    <div class="mt-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Allowed fields for editing</label>
+                        <div class="space-y-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" class="allowed-field" value="images" checked>
+                                <span class="ml-2 text-sm text-gray-700">Images</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="allowed-field" value="price">
+                                <span class="ml-2 text-sm text-gray-700">Price</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="allowed-field" value="description">
+                                <span class="ml-2 text-sm text-gray-700">Description</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="allowed-field" value="property_details">
+                                <span class="ml-2 text-sm text-gray-700">Property Details</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="allowed-field" value="all_fields" id="allFieldsCheckbox">
+                                <span class="ml-2 text-sm text-gray-700">All Fields</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Edit Time Window -->
+                    <div class="mt-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Edit window for seller</label>
+                        <select id="editWindow" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                            <option value="24">24 hours</option>
+                            <option value="48">48 hours</option>
+                            <option value="72">72 hours</option>
+                            <option value="168">7 days</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">Seller must edit and resubmit within this time</p>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button onclick="closeRequestChangesModal()" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button onclick="confirmRequestChanges()" class="px-4 py-2 bg-yellow-600 text-white rounded-lg text-sm font-medium hover:bg-yellow-700">
+                        Request Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentRejectPropertyId = null;
+        let currentRequestChangesPropertyId = null;
+        let currentBulkActionIds = null;
+        let isBulkRequestChanges = false;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Show custom reason field when "Other" is selected in reject modal
+            const rejectReasonSelect = document.getElementById('quickRejectReason');
+            const customRejectReason = document.getElementById('customRejectReason');
+            
+            if (rejectReasonSelect) {
+                rejectReasonSelect.addEventListener('change', function() {
+                    if (this.value === 'Other') {
+                        customRejectReason.style.display = 'block';
+                        customRejectReason.focus();
+                    } else {
+                        customRejectReason.style.display = 'none';
+                    }
+                });
+            }
+            
+            // Show custom reason field when "Other" is selected in request changes modal
+            const requestChangesReasonSelect = document.getElementById('requestChangesReason');
+            const customRequestChangesReason = document.getElementById('customRequestChangesReason');
+            
+            if (requestChangesReasonSelect) {
+                requestChangesReasonSelect.addEventListener('change', function() {
+                    if (this.value === 'Other') {
+                        customRequestChangesReason.style.display = 'block';
+                        customRequestChangesReason.focus();
+                    } else {
+                        customRequestChangesReason.style.display = 'none';
+                    }
+                });
+            }
+            
+            // Handle "All Fields" checkbox
+            const allFieldsCheckbox = document.getElementById('allFieldsCheckbox');
+            if (allFieldsCheckbox) {
+                allFieldsCheckbox.addEventListener('change', function() {
+                    const otherCheckboxes = document.querySelectorAll('.allowed-field:not(#allFieldsCheckbox)');
+                    otherCheckboxes.forEach(checkbox => {
+                        checkbox.checked = this.checked;
+                        checkbox.disabled = this.checked;
+                    });
+                });
+            }
+            
+            // Handle individual field checkboxes
+            const individualCheckboxes = document.querySelectorAll('.allowed-field:not(#allFieldsCheckbox)');
+            individualCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    if (!this.checked && allFieldsCheckbox) {
+                        allFieldsCheckbox.checked = false;
+                    }
+                });
+            });
+        });
+        
+        function getSelectedProperties() {
+            const selected = [];
+            document.querySelectorAll('.property-checkbox:checked').forEach(checkbox => {
+                selected.push(checkbox.value);
+            });
+            return selected;
+        }
+        
+        function applyBulkAction() {
+            const action = document.getElementById('bulkAction').value;
+            const selected = getSelectedProperties();
+            
+            if (selected.length === 0) {
+                showToast('Please select at least one property.', 'warning');
+                return;
+            }
+            
+            if (!action) {
+                showToast('Please select a bulk action.', 'warning');
+                return;
+            }
+            
+            if (action === 'approve') {
+                if (confirm(`Approve ${selected.length} selected properties?`)) {
+                    bulkApprove(selected);
+                }
+            } else if (action === 'reject') {
+                showBulkRejectModal(selected);
+            } else if (action === 'request_changes') {
+                showBulkRequestChangesModal(selected);
+            }
+        }
+        
+        function bulkApprove(propertyIds) {
+            fetch('/admin/api/properties/bulk-approve', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    propertyIds: propertyIds,
+                    autoGoLive: true 
+                }),
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    const successCount = data.results.filter(r => r.success).length;
+                    showToast(`Successfully approved ${successCount} of ${propertyIds.length} properties!`, 'success');
+                    
+                    // Remove approved properties from view
+                    data.results.forEach(result => {
+                        if (result.success) {
+                            const propertyCard = document.getElementById(`property-card-${result.id}`);
+                            if (propertyCard) {
+                                propertyCard.style.opacity = '0';
+                                propertyCard.style.transform = 'scale(0.95)';
+                                setTimeout(() => {
+                                    propertyCard.remove();
+                                }, 300);
+                            }
+                        }
+                    });
+                    
+                    // Update count after a delay
+                    setTimeout(updatePendingCount, 500);
+                } else {
+                    showToast(`Failed: ${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Bulk approval error:', error);
+                showToast('Failed to process bulk approval', 'error');
+            });
+        }
+        
+        function quickApprove(propertyId) {
+            if (confirm('Approve this property?')) {
+                fetch(`/admin/api/properties/${propertyId}/approve`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ autoGoLive: true }),
+                    credentials: 'same-origin'
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        showToast('Property approved successfully!', 'success');
+                        
+                        // Remove the property card with animation
+                        const propertyCard = document.getElementById(`property-card-${propertyId}`);
+                        if (propertyCard) {
+                            propertyCard.style.opacity = '0';
+                            propertyCard.style.transform = 'scale(0.95)';
+                            setTimeout(() => {
+                                propertyCard.remove();
+                                updatePendingCount();
+                            }, 300);
+                        }
+                    } else {
+                        throw new Error(data.message || 'Failed to approve property');
+                    }
+                })
+                .catch(error => {
+                    console.error('Approval error:', error);
+                    showToast(`Failed to approve property: ${error.message}`, 'error');
+                });
+            }
+        }
+        
+        function showQuickRejectModal(propertyId) {
+            currentRejectPropertyId = propertyId;
+            document.getElementById('quickRejectModal').classList.remove('hidden');
+        }
+        
+        function showRequestChangesModal(propertyId) {
+            currentRequestChangesPropertyId = propertyId;
+            document.getElementById('requestChangesModal').classList.remove('hidden');
+        }
+        
+        function showBulkRejectModal(propertyIds) {
+            currentBulkActionIds = propertyIds;
+            isBulkRequestChanges = false;
+            document.getElementById('quickRejectModal').classList.remove('hidden');
+        }
+        
+        function showBulkRequestChangesModal(propertyIds) {
+            currentBulkActionIds = propertyIds;
+            isBulkRequestChanges = true;
+            document.getElementById('requestChangesModal').classList.remove('hidden');
+        }
+        
+        function closeQuickRejectModal() {
+            document.getElementById('quickRejectModal').classList.add('hidden');
+            document.getElementById('quickRejectReason').value = '';
+            document.getElementById('customRejectReason').value = '';
+            document.getElementById('customRejectReason').style.display = 'none';
+            currentRejectPropertyId = null;
+            currentBulkActionIds = null;
+        }
+        
+        function closeRequestChangesModal() {
+            document.getElementById('requestChangesModal').classList.add('hidden');
+            document.getElementById('requestChangesReason').value = '';
+            document.getElementById('customRequestChangesReason').value = '';
+            document.getElementById('customRequestChangesReason').style.display = 'none';
+            
+            // Reset checkboxes
+            document.querySelectorAll('.allowed-field').forEach(cb => {
+                cb.checked = false;
+                cb.disabled = false;
+            });
+            // Check images by default
+            document.querySelector('.allowed-field[value="images"]').checked = true;
+            
+            currentRequestChangesPropertyId = null;
+            currentBulkActionIds = null;
+            isBulkRequestChanges = false;
+        }
+        
+        function confirmQuickReject() {
+            let reason = document.getElementById('quickRejectReason').value;
+            if (reason === 'Other') {
+                reason = document.getElementById('customRejectReason').value.trim();
+            }
+            
+            if (!reason) {
+                showToast('Please provide a rejection reason.', 'warning');
+                return;
+            }
+            
+            if (currentBulkActionIds && currentBulkActionIds.length > 0) {
+                bulkReject(currentBulkActionIds, reason);
+            } else {
+                singleReject(currentRejectPropertyId, reason);
+            }
+        }
+        
+        function confirmRequestChanges() {
+            let reason = document.getElementById('requestChangesReason').value;
+            if (reason === 'Other') {
+                reason = document.getElementById('customRequestChangesReason').value.trim();
+            }
+            
+            if (!reason) {
+                showToast('Please provide a reason for requested changes.', 'warning');
+                return;
+            }
+            
+            // Get allowed fields
+            const allowedFields = [];
+            document.querySelectorAll('.allowed-field:checked').forEach(cb => {
+                if (cb.value === 'all_fields') {
+                    allowedFields.push('all_fields');
+                } else {
+                    allowedFields.push(cb.value);
+                }
+            });
+            
+            if (allowedFields.length === 0) {
+                showToast('Please select at least one field the seller can edit.', 'warning');
+                return;
+            }
+            
+            const editWindow = parseInt(document.getElementById('editWindow').value);
+            
+            if (currentBulkActionIds && currentBulkActionIds.length > 0) {
+                bulkRequestChanges(currentBulkActionIds, reason, allowedFields, editWindow);
+            } else {
+                singleRequestChanges(currentRequestChangesPropertyId, reason, allowedFields, editWindow);
+            }
+        }
+        
+        function singleReject(propertyId, reason) {
+            fetch(`/admin/api/properties/${propertyId}/reject`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    reason: reason,
+                    allowEdit: false // HARD REJECT - no edit allowed
+                }),
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    showToast('Property rejected successfully! Seller cannot edit this property.', 'success');
+                    
+                    // Remove the property card
+                    const propertyCard = document.getElementById(`property-card-${propertyId}`);
+                    if (propertyCard) {
+                        propertyCard.style.opacity = '0';
+                        propertyCard.style.transform = 'scale(0.95)';
+                        setTimeout(() => {
+                            propertyCard.remove();
+                            updatePendingCount();
+                        }, 300);
+                    }
+                    closeQuickRejectModal();
+                } else {
+                    throw new Error(data.message || 'Failed to reject property');
+                }
+            })
+            .catch(error => {
+                console.error('Rejection error:', error);
+                showToast(`Failed to reject property: ${error.message}`, 'error');
+            });
+        }
+        
+        function singleRequestChanges(propertyId, reason, allowedFields, editWindowHours) {
+            fetch(`/admin/api/properties/${propertyId}/request-changes`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    reason: reason,
+                    allowedFields: allowedFields,
+                    editWindowHours: editWindowHours,
+                    allowEdit: true // SOFT REJECT - edit allowed
+                }),
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    showToast('Changes requested! Seller can edit the property.', 'success');
+                    
+                    // Remove the property card
+                    const propertyCard = document.getElementById(`property-card-${propertyId}`);
+                    if (propertyCard) {
+                        propertyCard.style.opacity = '0';
+                        propertyCard.style.transform = 'scale(0.95)';
+                        setTimeout(() => {
+                            propertyCard.remove();
+                            updatePendingCount();
+                        }, 300);
+                    }
+                    closeRequestChangesModal();
+                } else {
+                    throw new Error(data.message || 'Failed to request changes');
+                }
+            })
+            .catch(error => {
+                console.error('Request changes error:', error);
+                showToast(`Failed to request changes: ${error.message}`, 'error');
+            });
+        }
+        
+        function bulkReject(propertyIds, reason) {
+            let completed = 0;
+            let successCount = 0;
+            let failedCount = 0;
+            
+            showToast(`Processing ${propertyIds.length} rejections...`, 'info');
+            
+            propertyIds.forEach(propertyId => {
+                fetch(`/admin/api/properties/${propertyId}/reject`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        reason: reason,
+                        allowEdit: false
+                    }),
+                    credentials: 'same-origin'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    completed++;
+                    if (data.success) {
+                        successCount++;
+                        // Remove the property card
+                        const propertyCard = document.getElementById(`property-card-${propertyId}`);
+                        if (propertyCard) {
+                            propertyCard.style.opacity = '0';
+                            propertyCard.style.transform = 'scale(0.95)';
+                            setTimeout(() => {
+                                propertyCard.remove();
+                            }, 300);
+                        }
+                    } else {
+                        failedCount++;
+                    }
+                    
+                    // When all done
+                    if (completed === propertyIds.length) {
+                        closeQuickRejectModal();
+                        updatePendingCount();
+                        
+                        if (failedCount === 0) {
+                            showToast(`Successfully rejected all ${successCount} properties!`, 'success');
+                        } else {
+                            showToast(`Rejected ${successCount} of ${propertyIds.length} properties. ${failedCount} failed.`, 'warning');
+                        }
+                    }
+                })
+                .catch(error => {
+                    completed++;
+                    failedCount++;
+                    console.error('Rejection error for property', propertyId, error);
+                    
+                    if (completed === propertyIds.length) {
+                        closeQuickRejectModal();
+                        updatePendingCount();
+                        showToast(`Rejected ${successCount} of ${propertyIds.length} properties. ${failedCount} failed.`, 'error');
+                    }
+                });
+            });
+        }
+        
+        function bulkRequestChanges(propertyIds, reason, allowedFields, editWindowHours) {
+            let completed = 0;
+            let successCount = 0;
+            let failedCount = 0;
+            
+            showToast(`Requesting changes for ${propertyIds.length} properties...`, 'info');
+            
+            propertyIds.forEach(propertyId => {
+                fetch(`/admin/api/properties/${propertyId}/request-changes`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        reason: reason,
+                        allowedFields: allowedFields,
+                        editWindowHours: editWindowHours,
+                        allowEdit: true
+                    }),
+                    credentials: 'same-origin'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    completed++;
+                    if (data.success) {
+                        successCount++;
+                        // Remove the property card
+                        const propertyCard = document.getElementById(`property-card-${propertyId}`);
+                        if (propertyCard) {
+                            propertyCard.style.opacity = '0';
+                            propertyCard.style.transform = 'scale(0.95)';
+                            setTimeout(() => {
+                                propertyCard.remove();
+                            }, 300);
+                        }
+                    } else {
+                        failedCount++;
+                    }
+                    
+                    // When all done
+                    if (completed === propertyIds.length) {
+                        closeRequestChangesModal();
+                        updatePendingCount();
+                        
+                        if (failedCount === 0) {
+                            showToast(`Successfully requested changes for all ${successCount} properties!`, 'success');
+                        } else {
+                            showToast(`Requested changes for ${successCount} of ${propertyIds.length} properties. ${failedCount} failed.`, 'warning');
+                        }
+                    }
+                })
+                .catch(error => {
+                    completed++;
+                    failedCount++;
+                    console.error('Request changes error for property', propertyId, error);
+                    
+                    if (completed === propertyIds.length) {
+                        closeRequestChangesModal();
+                        updatePendingCount();
+                        showToast(`Requested changes for ${successCount} of ${propertyIds.length} properties. ${failedCount} failed.`, 'error');
+                    }
+                });
+            });
+        }
+        
+        function updatePendingCount() {
+            // Update the count in the sidebar and header
+            const pendingCards = document.querySelectorAll('.property-card').length;
+            document.querySelectorAll('.pending-count').forEach(el => {
+                el.textContent = pendingCards;
+            });
+            
+            // Update the pending count badge
+            const badge = document.querySelector('.pending-count-badge');
+            if (badge) {
+                badge.textContent = pendingCards;
+            }
+            
+            // If no more pending properties, show empty state
+            if (pendingCards === 0) {
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            }
+        }
+        
+        function showToast(message, type = 'info') {
+            // Remove any existing toast
+            const existingToast = document.querySelector('.toast-notification');
+            if (existingToast) {
+                existingToast.remove();
+            }
+            
+            // Create toast element
+            const toast = document.createElement('div');
+            toast.className = `toast-notification fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg text-white z-50 transform transition-all duration-300 ${
+                type === 'success' ? 'bg-green-600' :
+                type === 'error' ? 'bg-red-600' :
+                type === 'warning' ? 'bg-yellow-600' :
+                type === 'info' ? 'bg-blue-600' : 'bg-gray-600'
+            }`;
+            toast.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas ${
+                        type === 'success' ? 'fa-check-circle' :
+                        type === 'error' ? 'fa-exclamation-circle' :
+                        type === 'warning' ? 'fa-exclamation-triangle' :
+                        'fa-info-circle'
+                    } mr-2"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            // Auto remove after 3 seconds
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        // Close modals when clicking outside
+        document.addEventListener('click', function(event) {
+            const rejectModal = document.getElementById('quickRejectModal');
+            const requestChangesModal = document.getElementById('requestChangesModal');
+            
+            if (rejectModal && !rejectModal.classList.contains('hidden') && 
+                !rejectModal.contains(event.target) && 
+                !event.target.closest('[onclick*="showQuickRejectModal"]') &&
+                !event.target.closest('[onclick*="showBulkRejectModal"]')) {
+                closeQuickRejectModal();
+            }
+            
+            if (requestChangesModal && !requestChangesModal.classList.contains('hidden') && 
+                !requestChangesModal.contains(event.target) && 
+                !event.target.closest('[onclick*="showRequestChangesModal"]') &&
+                !event.target.closest('[onclick*="showBulkRequestChangesModal"]')) {
+                closeRequestChangesModal();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,430 @@
+   :root {
+            --primary-gradient: linear-gradient(135deg, #8B5CF6 0%, #3B82F6 100%);
+            --success-gradient: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            --warning-gradient: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+            --danger-gradient: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        /* Navigation */
+        .nav-gradient {
+            background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        
+        .nav-item {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 8px 16px;
+            border-radius: 10px;
+        }
+        
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        /* Welcome Banner */
+        .welcome-banner {
+            background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
+            border-radius: 24px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(139, 92, 246, 0.3);
+        }
+        
+        .welcome-banner::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            opacity: 0.3;
+        }
+        
+        /* Stats Cards */
+        .stats-card {
+            background: white;
+            border-radius: 20px;
+            border: 1px solid rgba(229, 231, 235, 0.5);
+            backdrop-filter: blur(10px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border-color: transparent;
+        }
+        
+        .stats-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--color-start), var(--color-end));
+        }
+        
+        .stats-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            transition: all 0.3s ease;
+        }
+        
+        .stats-card:hover .stats-icon {
+            transform: rotate(10deg) scale(1.1);
+        }
+        
+        /* Commission Cards */
+        .commission-card {
+            background: white;
+            border-radius: 20px;
+            border: 1px solid rgba(229, 231, 235, 0.5);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .commission-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border-color: transparent;
+        }
+        
+        .commission-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+            background: linear-gradient(to bottom, var(--status-color), var(--status-color-secondary));
+        }
+        
+        .commission-card.pending::before {
+            --status-color: #F59E0B;
+            --status-color-secondary: #D97706;
+        }
+        
+        .commission-card.approved::before {
+            --status-color: #10B981;
+            --status-color-secondary: #059669;
+        }
+        
+        .commission-card.paid::before {
+            --status-color: #3B82F6;
+            --status-color-secondary: #1D4ED8;
+        }
+        
+        .commission-amount {
+            font-size: 1.75rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #8B5CF6, #3B82F6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 4px rgba(139, 92, 246, 0.1);
+        }
+        
+        /* Status Badges */
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+        }
+        
+        .status-badge:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .status-pending {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.1));
+            color: #B45309;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+        
+        .status-approved {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.1));
+            color: #047857;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        
+        .status-paid {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(29, 78, 216, 0.1));
+            color: #1D4ED8;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+        
+        /* Buttons */
+        .btn-primary {
+            background: linear-gradient(135deg, #8B5CF6, #6366F1);
+            color: white;
+            padding: 14px 28px;
+            border-radius: 14px;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: none;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(139, 92, 246, 0.4);
+        }
+        
+        .btn-primary:active {
+            transform: translateY(-1px);
+        }
+        
+        .btn-outline {
+            border: 2px solid #6366F1;
+            color: #6366F1;
+            padding: 12px 24px;
+            border-radius: 14px;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: transparent;
+        }
+        
+        .btn-outline:hover {
+            background: #6366F1;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.2);
+        }
+        
+        /* Timeline */
+        .timeline-item {
+            position: relative;
+            padding-left: 40px;
+            margin-bottom: 24px;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 12px;
+            top: 0;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 4px solid white;
+            box-shadow: 0 0 0 4px currentColor;
+            z-index: 2;
+        }
+        
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: 16px;
+            bottom: -24px;
+            width: 2px;
+            background: currentColor;
+            opacity: 0.3;
+        }
+        
+        .timeline-item:last-child::after {
+            display: none;
+        }
+        
+        .timeline-item.pending::before {
+            color: #F59E0B;
+        }
+        
+        .timeline-item.success::before {
+            color: #10B981;
+        }
+        
+        .timeline-item.info::before {
+            color: #6366F1;
+        }
+        
+        /* Property Image */
+        .property-image {
+            width: 100px;
+            height: 100px;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 3px solid white;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .commission-card:hover .property-image {
+            transform: scale(1.05);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Empty State */
+        .empty-state {
+            padding: 80px 20px;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7));
+            border-radius: 24px;
+            border: 3px dashed rgba(99, 102, 241, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        
+        .empty-state i {
+            font-size: 80px;
+            background: linear-gradient(135deg, #8B5CF6, #6366F1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+        }
+        
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .animate-fade-in-up {
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .welcome-banner {
+                padding: 20px !important;
+            }
+            
+            .welcome-banner h1 {
+                font-size: 24px !important;
+            }
+            
+            .stats-card {
+                margin-bottom: 16px;
+            }
+            
+            .property-image {
+                width: 80px;
+                height: 80px;
+            }
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(241, 245, 249, 0.5);
+            border-radius: 5px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #8B5CF6, #6366F1);
+            border-radius: 5px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #7C3AED, #4F46E5);
+        }
+        
+        /* Quick Actions */
+        .quick-action {
+            padding: 24px;
+            border-radius: 16px;
+            text-align: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: white;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .quick-action::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.05), rgba(99, 102, 241, 0.05));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .quick-action:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border-color: #6366F1;
+        }
+        
+        .quick-action:hover::before {
+            opacity: 1;
+        }
+        
+        .quick-action i {
+            font-size: 36px;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #8B5CF6, #6366F1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .quick-action:hover i {
+            transform: scale(1.2);
+        }
+        
+        /* Loading Animation */
+        .loading-shimmer {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+            100% {
+                background-position: 200% 0;
+            }
+        }

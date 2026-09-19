@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Propbandhu</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/admindashboard.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Top Navigation -->
+    <nav class="bg-white shadow-md border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                            <span class="text-white font-bold text-xl">P</span>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold text-gray-900">Propbandhu</h1>
+                            <p class="text-xs text-gray-500">Admin Panel</p>
+                        </div>
+                    </a>
+                </div>
+                
+                <!-- Right Section -->
+                <div class="flex items-center space-x-6">
+                    <!-- Search -->
+                    <div class="hidden md:block">
+                        <div class="relative">
+                            <input type="text" 
+                                   placeholder="Search..." 
+                                   class="w-64 pl-10 pr-4 py-2 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Notifications Dropdown -->
+                    <div class="relative">
+                        <button id="notificationDropdownBtn" 
+                                class="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors relative">
+                            <i class="fas fa-bell text-gray-600"></i>
+                            <% if (unreadCount && unreadCount > 0) { %>
+                                <span class="notification-badge absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-xs text-white font-bold">
+                                    <%= unreadCount > 9 ? '9+' : unreadCount %>
+                                </span>
+                            <% } else { %>
+                                <span class="notification-badge absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-xs text-white font-bold hidden">
+                                    0
+                                </span>
+                            <% } %>
+                        </button>
+                        
+                        <!-- Notifications Dropdown Menu -->
+                        <div id="notificationDropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-20 max-h-96 overflow-y-auto">
+                            <div class="px-4 py-3 border-b border-gray-200">
+                                <h3 class="font-semibold text-gray-900">Notifications</h3>
+                                <p class="text-xs text-gray-500 mt-1"><%= unreadCount || 0 %> unread</p>
+                            </div>
+                            
+                            <div id="notificationList">
+                                <!-- Notifications will be loaded via AJAX -->
+                                <div class="px-4 py-8 text-center">
+                                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-3"></div>
+                                    <p class="text-gray-500 text-sm">Loading notifications...</p>
+                                </div>
+                            </div>
+                            
+                            <div class="border-t border-gray-200 px-4 py-3">
+                                <a href="/admin/notifications" class="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center justify-center">
+                                    <i class="fas fa-eye mr-2"></i>View All Notifications
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- User Profile -->
+                    <div class="flex items-center space-x-3">
+                        <div class="text-right hidden md:block">
+                            <p class="font-medium text-gray-900"><%= user ? user.name : 'Admin' %></p>
+                            <p class="text-sm text-gray-500">Administrator</p>
+                        </div>
+                        <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                            <%= user && user.name ? user.name.charAt(0).toUpperCase() : 'A' %>
+                        </div>
+                        <div class="relative">
+                            <button onclick="toggleDropdown()" class="text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div id="profileDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-10">
+                                <a href="/admin/profile" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-user mr-2"></i>Profile
+                                </a>
+                                <a href="/admin/notifications" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-bell mr-2"></i>Notifications
+                                    <% if (unreadCount && unreadCount > 0) { %>
+                                        <span class="inline-flex items-center justify-center ml-2 w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full">
+                                            <%= unreadCount > 9 ? '9+' : unreadCount %>
+                                        </span>
+                                    <% } %>
+                                </a>
+                                <a href="/admin/settings" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-cog mr-2"></i>Settings
+                                </a>
+                                <hr class="my-2 border-gray-200">
+                                <a href="/logout" class="block px-4 py-2 text-red-600 hover:bg-red-50">
+                                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Layout -->
+    <div class="flex">
+        <!-- Sidebar -->
+        <div class="w-64 bg-white border-r border-gray-200 min-h-[calc(100vh-4rem)] sticky top-16">
+            <div class="p-4">
+                <!-- Quick Stats -->
+                <div class="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl">
+                    <p class="text-sm text-gray-600 mb-1">Pending Approvals</p>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-2xl font-bold text-gray-900">
+                                <%= stats.pendingApprovals || 0 %>
+                            </p>
+                            <p class="text-xs text-gray-500">Properties to review</p>
+                        </div>
+                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                            <i class="fas fa-clock text-yellow-600"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Navigation -->
+                <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Navigation</h3>
+                <ul class="space-y-1">
+                    <li>
+                        <a href="/admin/dashboard" class="sidebar-link <%= activePage === 'dashboard' ? 'active' : '' %> block px-4 py-3 rounded-lg">
+                            <i class="fas fa-tachometer-alt mr-3 text-blue-600"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/approvals" class="sidebar-link <%= activePage === 'approvals' ? 'active' : '' %> block px-4 py-3 rounded-lg relative">
+                            <i class="fas fa-check-circle mr-3 text-yellow-600"></i>
+                            <span>Pending Approvals</span>
+                            <% if (stats.pendingApprovals > 0) { %>
+                                <span class="absolute right-4 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                                    <%= stats.pendingApprovals %>
+                                </span>
+                            <% } %>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/users" class="sidebar-link <%= activePage === 'users' ? 'active' : '' %> block px-4 py-3 rounded-lg">
+                            <i class="fas fa-users mr-3 text-green-600"></i>
+                            <span>User Management</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/properties" class="sidebar-link <%= activePage === 'properties' ? 'active' : '' %> block px-4 py-3 rounded-lg">
+                            <i class="fas fa-home mr-3 text-purple-600"></i>
+                            <span>Properties</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/commissions" class="sidebar-link <%= activePage === 'commissions' ? 'active' : '' %> block px-4 py-3 rounded-lg">
+                            <i class="fas fa-money-bill-wave mr-3 text-emerald-600"></i>
+                            <span>Commissions</span>
+                        </a>
+                    </li>
+                    <!-- Notifications Link -->
+                    <li>
+                        <a href="/admin/notifications" class="sidebar-link <%= activePage === 'notifications' ? 'active' : '' %> block px-4 py-3 rounded-lg relative">
+                            <i class="fas fa-bell mr-3 text-indigo-600"></i>
+                            <span>Notifications</span>
+                            <% if (unreadCount && unreadCount > 0) { %>
+                                <span class="notification-badge-sidebar absolute right-4 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                                    <%= unreadCount > 9 ? '9+' : unreadCount %>
+                                </span>
+                            <% } %>
+                        </a>
+                    </li>
+                </ul>
+                
+                <!-- System -->
+                <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 mt-6">System</h3>
+                <ul class="space-y-1">
+                    <li>
+                        <a href="/admin/analytics" class="sidebar-link <%= activePage === 'analytics' ? 'active' : '' %> block px-4 py-3 rounded-lg">
+                            <i class="fas fa-chart-line mr-3 text-indigo-600"></i>
+                            <span>Analytics</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/reports" class="sidebar-link <%= activePage === 'reports' ? 'active' : '' %> block px-4 py-3 rounded-lg">
+                            <i class="fas fa-file-alt mr-3 text-orange-600"></i>
+                            <span>Reports</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/settings" class="sidebar-link <%= activePage === 'settings' ? 'active' : '' %> block px-4 py-3 rounded-lg">
+                            <i class="fas fa-cog mr-3 text-gray-600"></i>
+                            <span>Settings</span>
+                        </a>
+                    </li>
+                </ul>
+                
+                <!-- System Status -->
+                <div class="mt-8 p-4 bg-gray-50 rounded-xl">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-sm font-medium text-gray-700">System Status</span>
+                        <span class="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full">
+                            <% if (stats.totalProperties > 0) { %>
+                                Active
+                            <% } else { %>
+                                No Data
+                            <% } %>
+                        </span>
+                    </div>
+                    <div class="space-y-2">
+                        <div>
+                            <div class="flex justify-between text-xs text-gray-600 mb-1">
+                                <span>Properties</span>
+                                <span><%= stats.totalProperties || 0 %></span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: <%= Math.min((stats.totalProperties || 0) * 10, 100) %>%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs text-gray-600 mb-1">
+                                <span>Users</span>
+                                <span><%= stats.totalUsers || 0 %></span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: <%= Math.min((stats.totalUsers || 0) * 5, 100) %>%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs text-gray-600 mb-1">
+                                <span>Notifications</span>
+                                <span><%= unreadCount || 0 %> unread</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: <%= Math.min((unreadCount || 0) * 20, 100) %>%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 p-6">
+            <!-- Welcome Header -->
+            <div class="mb-6">
+                <h1 class="text-2xl font-bold text-gray-900">Welcome back, <%= user ? user.name : 'Admin' %>! 👋</h1>
+                <p class="text-gray-600 mt-1">Here's what's happening with your platform today.</p>
+                <div class="flex items-center mt-2 text-sm text-gray-500">
+                    <i class="far fa-calendar-alt mr-2"></i>
+                    <span id="currentDate"><%= new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) %></span>
+                    <span class="mx-2">•</span>
+                    <i class="far fa-clock mr-2"></i>
+                    <span id="currentTime"><%= new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) %></span>
+                </div>
+            </div>
+            
+            <!-- Stats Cards Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Users Card -->
+                <div class="dashboard-card bg-white rounded-2xl p-6">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Total Users</p>
+                            <h3 class="text-3xl font-bold text-gray-900">
+                                <%= stats.totalUsers || 0 %>
+                            </h3>
+                        </div>
+                        <div class="p-3 bg-blue-50 rounded-xl">
+                            <i class="fas fa-users text-blue-600 text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-center text-sm">
+                        <span class="text-green-600 font-medium mr-2">
+                            <i class="fas fa-user-plus mr-1"></i><%= stats.recentUsers ? stats.recentUsers.length : 0 %> new
+                        </span>
+                        <span class="text-gray-500">this week</span>
+                    </div>
+                </div>
+                
+                <!-- Properties Card -->
+                <div class="dashboard-card bg-white rounded-2xl p-6">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Total Properties</p>
+                            <h3 class="text-3xl font-bold text-gray-900">
+                                <%= stats.totalProperties || 0 %>
+                            </h3>
+                        </div>
+                        <div class="p-3 bg-green-50 rounded-xl">
+                            <i class="fas fa-home text-green-600 text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-center text-sm">
+                        <span class="text-green-600 font-medium mr-2">
+                            <i class="fas fa-plus mr-1"></i><%= stats.recentProperties ? stats.recentProperties.length : 0 %> new
+                        </span>
+                        <span class="text-gray-500">this week</span>
+                    </div>
+                </div>
+                
+                <!-- Pending Approvals Card -->
+                <div class="dashboard-card bg-white rounded-2xl p-6">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Pending Approvals</p>
+                            <h3 class="text-3xl font-bold text-gray-900">
+                                <%= stats.pendingApprovals || 0 %>
+                            </h3>
+                        </div>
+                        <div class="p-3 bg-yellow-50 rounded-xl">
+                            <i class="fas fa-clock text-yellow-600 text-xl"></i>
+                        </div>
+                    </div>
+                    <a href="/admin/approvals" class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 font-medium">
+                        Review Now
+                        <i class="fas fa-arrow-right ml-1 text-xs"></i>
+                    </a>
+                </div>
+                
+                <!-- Notifications Card -->
+                <div class="dashboard-card bg-white rounded-2xl p-6">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Unread Notifications</p>
+                            <h3 class="text-3xl font-bold text-gray-900">
+                                <%= unreadCount || 0 %>
+                            </h3>
+                        </div>
+                        <div class="p-3 bg-indigo-50 rounded-xl">
+                            <i class="fas fa-bell text-indigo-600 text-xl"></i>
+                        </div>
+                    </div>
+                    <a href="/admin/notifications" class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 font-medium">
+                        View All
+                        <i class="fas fa-arrow-right ml-1 text-xs"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Charts and Analytics -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <!-- Pending Properties -->
+                <div class="dashboard-card bg-white rounded-2xl p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-lg font-semibold text-gray-900">Pending Approvals</h3>
+                        <% if (stats.pendingProperties && stats.pendingProperties.length > 0) { %>
+                            <a href="/admin/approvals" class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                                View All <i class="fas fa-arrow-right ml-1"></i>
+                            </a>
+                        <% } %>
+                    </div>
+                    <div class="space-y-4">
+                        <% if (stats.pendingProperties && stats.pendingProperties.length > 0) { %>
+                            <% stats.pendingProperties.forEach((property, index) => { %>
+                                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center text-white font-medium mr-3">
+                                            <i class="fas fa-home text-sm"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-medium text-gray-900"><%= property.title || 'Untitled Property' %></h4>
+                                            <p class="text-sm text-gray-500">
+                                                <% if (property.seller && property.seller.name) { %>
+                                                    By: <%= property.seller.name %>
+                                                <% } else { %>
+                                                    Seller: Unknown
+                                                <% } %>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-3">
+                                        <span class="px-3 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                                            Pending
+                                        </span>
+                                        <a href="/admin/properties/<%= property._id %>" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                            Review
+                                        </a>
+                                    </div>
+                                </div>
+                            <% }) %>
+                        <% } else { %>
+                            <div class="text-center py-8">
+                                <i class="fas fa-check-circle text-green-500 text-4xl mb-3"></i>
+                                <p class="text-gray-500">No pending approvals</p>
+                                <p class="text-sm text-gray-400 mt-1">All properties have been reviewed</p>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+                
+                <!-- Recent Users -->
+                <div class="dashboard-card bg-white rounded-2xl p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-6">Recent Users</h3>
+                    <div class="space-y-4">
+                        <% if (stats.recentUsers && stats.recentUsers.length > 0) { %>
+                            <% stats.recentUsers.forEach((user, index) => { %>
+                                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 bg-gradient-to-r from-blue-400 to-blue-600 rounded-lg flex items-center justify-center text-white font-medium mr-3">
+                                            <%= user.name ? user.name.charAt(0).toUpperCase() : 'U' %>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-medium text-gray-900"><%= user.name || 'Unknown User' %></h4>
+                                            <p class="text-sm text-gray-500"><%= user.email || 'No email' %></p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-3">
+                                        <span class="px-3 py-1 text-xs font-medium rounded-full 
+                                            <%= user.role === 'buyer' ? 'bg-blue-100 text-blue-800' :
+                                               user.role === 'seller' ? 'bg-green-100 text-green-800' :
+                                               user.role === 'broker' ? 'bg-purple-100 text-purple-800' :
+                                               user.role === 'admin' ? 'bg-red-100 text-red-800' :
+                                               'bg-gray-100 text-gray-800' %>">
+                                            <%= user.role || 'user' %>
+                                        </span>
+                                        <span class="px-2 py-1 text-xs rounded-full 
+                                            <%= user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
+                                            <%= user.is_active ? 'active' : 'inactive' %>
+                                        </span>
+                                    </div>
+                                </div>
+                            <% }) %>
+                        <% } else { %>
+                            <div class="text-center py-8">
+                                <i class="fas fa-users text-blue-500 text-4xl mb-3"></i>
+                                <p class="text-gray-500">No recent users</p>
+                                <p class="text-sm text-gray-400 mt-1">No new user registrations</p>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Properties & Quick Actions -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Recent Properties -->
+                <div class="lg:col-span-2">
+                    <div class="dashboard-card bg-white rounded-2xl p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-lg font-semibold text-gray-900">Recent Properties</h3>
+                            <a href="/admin/properties" class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                                View All <i class="fas fa-arrow-right ml-1"></i>
+                            </a>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead>
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200">
+                                    <% if (stats.recentProperties && stats.recentProperties.length > 0) { %>
+                                        <% stats.recentProperties.forEach((property, index) => { %>
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-4 py-3 whitespace-nowrap">
+                                                <div class="font-medium text-gray-900">
+                                                    <%= property.title || 'Untitled Property' %>
+                                                </div>
+                                                <div class="text-xs text-gray-500">
+                                                    <% if (property.seller && property.seller.name) { %>
+                                                        <%= property.seller.name %>
+                                                    <% } else if (property.seller) { %>
+                                                        Seller ID: <%= property.seller.toString().substring(0, 8) %>...
+                                                    <% } else { %>
+                                                        No seller
+                                                    <% } %>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-3 whitespace-nowrap">
+                                                <span class="font-medium">
+                                                    <% if (property.price) { %>
+                                                        ₹<%= property.price.toLocaleString('en-IN') %>
+                                                    <% } else { %>
+                                                        N/A
+                                                    <% } %>
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-3 whitespace-nowrap">
+                                                <div class="text-sm text-gray-500">
+                                                    <% if (property.address && property.address.city) { %>
+                                                        <%= property.address.city %>
+                                                        <% if (property.address.area) { %>, <%= property.address.area %><% } %>
+                                                    <% } else { %>
+                                                        Location not set
+                                                    <% } %>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-3 whitespace-nowrap">
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                    <%= property.status === 'approved' ? 'bg-green-100 text-green-800' : 
+                                                       property.status === 'live' ? 'bg-blue-100 text-blue-800' :
+                                                       property.status === 'pending_approval' ? 'bg-yellow-100 text-yellow-800' :
+                                                       property.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                                                       property.status === 'suspended' ? 'bg-orange-100 text-orange-800' :
+                                                       'bg-gray-100 text-gray-800' %>">
+                                                    <%= property.status ? property.status.replace('_', ' ') : 'unknown' %>
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-3 whitespace-nowrap">
+                                                <a href="/admin/properties/<%= property._id %>" 
+                                                   class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                                    View Details
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        <% }) %>
+                                    <% } else { %>
+                                        <tr>
+                                            <td colspan="5" class="px-4 py-8 text-center text-gray-500">
+                                                <i class="fas fa-home text-3xl text-gray-300 mb-3"></i>
+                                                <p>No properties found.</p>
+                                                <p class="text-sm text-gray-400 mt-1">Properties will appear here once added by sellers</p>
+                                            </td>
+                                        </tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div>
+                    <div class="dashboard-card bg-white rounded-2xl p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-6">Quick Actions</h3>
+                        <div class="space-y-4">
+                            <a href="/admin/approvals" class="flex items-center p-4 bg-yellow-50 hover:bg-yellow-100 rounded-xl transition-colors group">
+                                <div class="w-12 h-12 bg-yellow-100 group-hover:bg-yellow-200 rounded-lg flex items-center justify-center mr-4 transition-colors">
+                                    <i class="fas fa-check-circle text-yellow-600 text-lg"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-gray-900">Review Approvals</h4>
+                                    <p class="text-sm text-gray-500">
+                                        <%= stats.pendingApprovals || 0 %> pending properties
+                                    </p>
+                                </div>
+                            </a>
+                            
+                            <a href="/admin/users" class="flex items-center p-4 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors group">
+                                <div class="w-12 h-12 bg-blue-100 group-hover:bg-blue-200 rounded-lg flex items-center justify-center mr-4 transition-colors">
+                                    <i class="fas fa-users text-blue-600 text-lg"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-gray-900">Manage Users</h4>
+                                    <p class="text-sm text-gray-500">
+                                        <%= stats.totalUsers || 0 %> total users
+                                    </p>
+                                </div>
+                            </a>
+                            
+                            <a href="/admin/properties" class="flex items-center p-4 bg-green-50 hover:bg-green-100 rounded-xl transition-colors group">
+                                <div class="w-12 h-12 bg-green-100 group-hover:bg-green-200 rounded-lg flex items-center justify-center mr-4 transition-colors">
+                                    <i class="fas fa-home text-green-600 text-lg"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-gray-900">View Properties</h4>
+                                    <p class="text-sm text-gray-500">
+                                        <%= stats.totalProperties || 0 %> total properties
+                                    </p>
+                                </div>
+                            </a>
+                            
+                            <!-- Notifications Quick Action -->
+                            <a href="/admin/notifications" class="flex items-center p-4 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors group">
+                                <div class="w-12 h-12 bg-indigo-100 group-hover:bg-indigo-200 rounded-lg flex items-center justify-center mr-4 transition-colors">
+                                    <i class="fas fa-bell text-indigo-600 text-lg"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-gray-900">View Notifications</h4>
+                                    <p class="text-sm text-gray-500">
+                                        <%= unreadCount || 0 %> unread notifications
+                                    </p>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- System Status -->
+                    <div class="dashboard-card bg-white rounded-2xl p-6 mt-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">System Status</h3>
+                        <div class="space-y-3">
+                            <div class="p-3 bg-blue-50 border-l-4 border-blue-500 rounded-lg">
+                                <div class="flex items-start">
+                                    <i class="fas fa-database text-blue-500 mt-1 mr-3"></i>
+                                    <div>
+                                        <p class="font-medium text-gray-900">Database Connected</p>
+                                        <p class="text-sm text-gray-600 mt-1">
+                                            <%= stats.totalProperties || 0 %> properties, 
+                                            <%= stats.totalUsers || 0 %> users
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-3 bg-green-50 border-l-4 border-green-500 rounded-lg">
+                                <div class="flex items-start">
+                                    <i class="fas fa-server text-green-500 mt-1 mr-3"></i>
+                                    <div>
+                                        <p class="font-medium text-gray-900">System Operational</p>
+                                        <p class="text-sm text-gray-600 mt-1">All services running normally</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <% if (unreadCount && unreadCount > 0) { %>
+                                <div class="p-3 bg-indigo-50 border-l-4 border-indigo-500 rounded-lg">
+                                    <div class="flex items-start">
+                                        <i class="fas fa-bell text-indigo-500 mt-1 mr-3"></i>
+                                        <div>
+                                            <p class="font-medium text-gray-900">Unread Notifications</p>
+                                            <p class="text-sm text-gray-600 mt-1">
+                                                <%= unreadCount %> unread notifications
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            <% } %>
+                            <% if (stats.pendingApprovals > 0) { %>
+                                <div class="p-3 bg-yellow-50 border-l-4 border-yellow-500 rounded-lg">
+                                    <div class="flex items-start">
+                                        <i class="fas fa-exclamation-triangle text-yellow-500 mt-1 mr-3"></i>
+                                        <div>
+                                            <p class="font-medium text-gray-900">Pending Approvals</p>
+                                            <p class="text-sm text-gray-600 mt-1">
+                                                <%= stats.pendingApprovals %> properties need review
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Toggle dropdowns
+        function toggleDropdown() {
+            const dropdown = document.getElementById('profileDropdown');
+            dropdown.classList.toggle('hidden');
+        }
+        
+        // Toggle notification dropdown
+        function toggleNotificationDropdown() {
+            const dropdown = document.getElementById('notificationDropdown');
+            dropdown.classList.toggle('hidden');
+            
+            // Load notifications when dropdown is opened
+            if (!dropdown.classList.contains('hidden')) {
+                loadRecentNotifications();
+            }
+        }
+        
+        // Load recent notifications for dropdown
+        async function loadRecentNotifications() {
+            try {
+                const response = await fetch('/admin/api/notifications/recent');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const notificationList = document.getElementById('notificationList');
+                    if (data.notifications.length === 0) {
+                        notificationList.innerHTML = `
+                            <div class="px-4 py-8 text-center">
+                                <i class="fas fa-bell-slash text-3xl text-gray-300 mb-3"></i>
+                                <p class="text-gray-500">No notifications yet</p>
+                                <p class="text-sm text-gray-400 mt-1">You're all caught up!</p>
+                            </div>
+                        `;
+                    } else {
+                        notificationList.innerHTML = data.notifications.map(notification => `
+                            <a href="/admin/notifications#notification-${notification.id}" 
+                               class="block px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 ${!notification.is_read ? 'bg-blue-50' : ''}">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0 mr-3">
+                                        <div class="w-8 h-8 rounded-full ${!notification.is_read ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'} flex items-center justify-center">
+                                            <i class="fas fa-${getNotificationIcon(notification.type)} text-sm"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium text-gray-900 truncate">${notification.title}</p>
+                                        <p class="text-sm text-gray-500 mt-1">${notification.message}</p>
+                                        <div class="flex items-center justify-between mt-2">
+                                            <span class="text-xs text-gray-400">${notification.time_ago}</span>
+                                            ${!notification.is_read ? '<span class="text-xs bg-blue-500 text-white px-1 py-0.5 rounded">New</span>' : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        `).join('');
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+                document.getElementById('notificationList').innerHTML = `
+                    <div class="px-4 py-8 text-center">
+                        <i class="fas fa-exclamation-triangle text-3xl text-red-300 mb-3"></i>
+                        <p class="text-gray-500">Failed to load notifications</p>
+                        <p class="text-sm text-gray-400 mt-1">Please try again later</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Helper function to get icon for notification type
+        function getNotificationIcon(type) {
+            const icons = {
+                'edit_request': 'edit',
+                'property_submitted': 'home',
+                'property_approved': 'check-circle',
+                'property_rejected': 'times-circle',
+                'property_changes_requested': 'exclamation-circle',
+                'edit_permission_granted': 'unlock-alt',
+                'property_added_to_cart': 'shopping-cart',
+                'system_alert': 'info-circle',
+                'payment_received': 'money-bill-wave',
+                'visit_reminder': 'calendar-check',
+                'booking_window_expiring': 'clock',
+                'cart_item_expired': 'shopping-bag',
+                'commission_earned': 'money-check',
+                'property_lock': 'lock',
+                'property_unlock': 'unlock',
+                'document_request': 'file-alt',
+                'document_uploaded': 'file-upload',
+                'document_approved': 'file-check',
+                'document_rejected': 'file-times',
+                'property_sold': 'handshake',
+                'property_viewed': 'eye',
+                'inquiry_received': 'question-circle',
+                'booking_confirmed': 'calendar-check',
+                'payment_reminder': 'clock'
+            };
+            return icons[type] || 'bell';
+        }
+        
+        // Update notification badge in real-time
+        function updateNotificationBadge() {
+            fetch('/admin/api/notifications/unread-count')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const badges = document.querySelectorAll('.notification-badge, .notification-badge-sidebar');
+                        badges.forEach(badge => {
+                            if (data.count > 0) {
+                                badge.textContent = data.count > 9 ? '9+' : data.count;
+                                badge.style.display = 'flex';
+                            } else {
+                                badge.style.display = 'none';
+                            }
+                        });
+                    }
+                })
+                .catch(error => console.error('Error updating badge:', error));
+        }
+        
+        // Update time every minute
+        function updateTime() {
+            const now = new Date();
+            const timeElement = document.getElementById('currentTime');
+            if (timeElement) {
+                timeElement.textContent = now.toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+            }
+        }
+        
+        // Update date
+        function updateDate() {
+            const now = new Date();
+            const dateElement = document.getElementById('currentDate');
+            if (dateElement) {
+                dateElement.textContent = now.toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+            }
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateTime();
+            updateDate();
+            setInterval(updateTime, 60000);
+            setInterval(updateNotificationBadge, 30000); // Update badge every 30 seconds
+            
+            // Initialize notification dropdown toggle
+            const notificationBtn = document.getElementById('notificationDropdownBtn');
+            if (notificationBtn) {
+                notificationBtn.addEventListener('click', toggleNotificationDropdown);
+            }
+            
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', function(event) {
+                // Profile dropdown
+                const profileDropdown = document.getElementById('profileDropdown');
+                const profileBtn = event.target.closest('button[onclick="toggleDropdown()"]');
+                
+                if (!profileDropdown.classList.contains('hidden') && !profileDropdown.contains(event.target) && !profileBtn) {
+                    profileDropdown.classList.add('hidden');
+                }
+                
+                // Notification dropdown
+                const notificationDropdown = document.getElementById('notificationDropdown');
+                const notificationBtn = document.getElementById('notificationDropdownBtn');
+                
+                if (!notificationDropdown.classList.contains('hidden') && 
+                    !notificationDropdown.contains(event.target) && 
+                    !notificationBtn.contains(event.target)) {
+                    notificationDropdown.classList.add('hidden');
+                }
+            });
+            
+            // Add active class to sidebar links
+            const currentPath = window.location.pathname;
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                }
+            });
+            
+            // Initial notification badge update
+            updateNotificationBadge();
+        });
+
+        function viewProperty(propertyId) {
+            window.location.href = `/admin/properties/${propertyId}`;
+        }
+
+        function viewUser(userId) {
+            window.location.href = `/admin/users/${userId}`;
+        }
+    
+        function viewCommission(commissionId) {
+            window.location.href = `/admin/commissions/${commissionId}`;
+        }
+    </script>
+</body>
+</html>

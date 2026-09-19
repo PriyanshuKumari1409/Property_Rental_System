@@ -1,0 +1,1058 @@
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add New Property - Seller Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        .image-preview-container {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+        .image-preview-container:hover {
+            border-color: #3b82f6;
+        }
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center">
+                        <span class="text-xl font-bold text-gray-900">Propbandhu Seller</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/seller/dashboard" class="text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-home mr-1"></i>Dashboard
+                    </a>
+                    <a href="/seller/dashboard" class="text-blue-600 font-medium">
+                        <i class="fas fa-building mr-1"></i>Properties
+                    </a>
+                    <a href="/seller/analytics" class="text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-chart-line mr-1"></i>Analytics
+                    </a>
+                    <a href="/logout" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+                        <i class="fas fa-sign-out-alt mr-1"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- Page Header -->
+        <div class="mb-8">
+            <h1 class="text-2xl font-bold text-gray-900 mb-2">Add New Property</h1>
+            <p class="text-gray-600">Fill in the property details below. All properties require admin approval before going live.</p>
+        </div>
+
+        <!-- Progress Steps -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">1</div>
+                    <span class="font-medium text-blue-600">Basic Details</span>
+                </div>
+                <div class="flex-1 h-1 bg-gray-200 mx-4"></div>
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-gray-200 text-gray-600 rounded-full flex items-center justify-center font-bold">2</div>
+                    <span class="font-medium text-gray-600">Property Details</span>
+                </div>
+                <div class="flex-1 h-1 bg-gray-200 mx-4"></div>
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-gray-200 text-gray-600 rounded-full flex items-center justify-center font-bold">3</div>
+                    <span class="font-medium text-gray-600">Images & Documents</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Property Form -->
+        <form id="propertyForm" class="bg-white rounded-xl shadow p-6" enctype="multipart/form-data">
+            <!-- Step 1: Basic Information -->
+            <div id="step1" class="space-y-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-4 border-b pb-2">Basic Information</h2>
+                
+                <!-- Property Title -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Property Title *</label>
+                    <input type="text" name="title" required
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="e.g., Luxury 3BHK Apartment in Prime Location">
+                    <p class="text-xs text-gray-500 mt-1">Make it descriptive and attractive</p>
+                </div>
+
+                <!-- Property Type -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Property Type *</label>
+                        <select name="property_type" required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Select Type</option>
+                            <option value="Residential">Residential</option>
+                            <option value="Commercial">Commercial</option>
+                            <option value="Plot">Plot</option>
+                            <option value="Agricultural">Agricultural</option>
+                            <option value="Industrial">Industrial</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Sub Type *</label>
+                        <select name="sub_type" required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Select Sub Type</option>
+                            <!-- Options will be populated based on property_type -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+                    <textarea name="description" rows="4" required
+                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="Describe your property in detail (minimum 50 characters)"></textarea>
+                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>Include features, amenities, and unique selling points</span>
+                        <span id="descCount">0/5000</span>
+                    </div>
+                </div>
+
+                <!-- Short Description -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Short Description</label>
+                    <input type="text" name="short_description"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="Brief summary (max 200 characters)">
+                    <p class="text-xs text-gray-500 mt-1">Shown in property cards</p>
+                </div>
+
+                <!-- Next Button -->
+                <div class="flex justify-end">
+                    <button type="button" onclick="nextStep(2)" 
+                            class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                        Next: Property Details <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2: Property Details -->
+            <div id="step2" class="space-y-6 hidden">
+                <h2 class="text-xl font-bold text-gray-900 mb-4 border-b pb-2">Property Details</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Price -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Price (₹) *</label>
+                        <input type="number" name="price" required min="1000"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                               placeholder="e.g., 5000000">
+                    </div>
+
+                    <!-- Price Type -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Price Type</label>
+                        <select name="price_type"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="fixed">Fixed Price</option>
+                            <option value="negotiable">Negotiable</option>
+                            <option value="auction">Auction</option>
+                        </select>
+                    </div>
+
+                    <!-- Bedrooms, Bathrooms, Balconies -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Bedrooms</label>
+                        <input type="number" name="bedrooms" min="0" max="50"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Bathrooms</label>
+                        <input type="number" name="bathrooms" min="0" max="50"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Balconies</label>
+                        <input type="number" name="balconies" min="0" max="20"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <!-- Area Details -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Built-up Area *</label>
+                        <div class="flex">
+                            <input type="number" name="built_up_area" required min="1"
+                                   class="flex-1 px-4 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <select name="area_unit"
+                                    class="w-24 px-2 border border-l-0 border-gray-300 rounded-r-lg bg-gray-50">
+                                <option value="sqft">sq ft</option>
+                                <option value="sqm">sq m</option>
+                                <option value="acre">acre</option>
+                                <option value="hectare">hectare</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Carpet Area</label>
+                        <input type="number" name="carpet_area" min="0"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <!-- Floor Details -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Floor Number</label>
+                        <input type="number" name="floor_number" min="0"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Total Floors</label>
+                        <input type="number" name="total_floors" min="0"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <!-- Age and Furnishing -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Age of Property (years)</label>
+                        <input type="number" name="age_of_property" min="0" max="100"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Furnishing</label>
+                        <select name="furnishing"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="unfurnished">Unfurnished</option>
+                            <option value="semi_furnished">Semi Furnished</option>
+                            <option value="fully_furnished">Fully Furnished</option>
+                        </select>
+                    </div>
+
+                    <!-- Facing -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Facing</label>
+                        <select name="facing"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Select Facing</option>
+                            <option value="North">North</option>
+                            <option value="South">South</option>
+                            <option value="East">East</option>
+                            <option value="West">West</option>
+                            <option value="North-East">North-East</option>
+                            <option value="North-West">North-West</option>
+                            <option value="South-East">South-East</option>
+                            <option value="South-West">South-West</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="flex justify-between">
+                    <button type="button" onclick="prevStep(1)" 
+                            class="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400">
+                        <i class="fas fa-arrow-left mr-2"></i> Back
+                    </button>
+                    <button type="button" onclick="nextStep(3)" 
+                            class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                        Next: Location & Images <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 3: Location & Images -->
+            <div id="step3" class="space-y-6 hidden">
+                <h2 class="text-xl font-bold text-gray-900 mb-4 border-b pb-2">Location & Media</h2>
+                
+                <!-- Address -->
+                <div class="space-y-4">
+                    <h3 class="font-medium text-gray-900">Property Address</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Street</label>
+                            <input type="text" name="address[street]"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Landmark</label>
+                            <input type="text" name="address[landmark]"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        
+                        <!-- City Dropdown -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">City *</label>
+                            <select id="citySelect" name="address[city]" required
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    onchange="updateLocations()">
+                                <option value="">Select City</option>
+                                <option value="Noida">Noida</option>
+                                <option value="Ghaziabad">Ghaziabad</option>
+                                <option value="Gorakhpur">Gorakhpur</option>
+                            </select>
+                        </div>
+
+                        <!-- Location Dropdown -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Locations *</label>
+                            <select id="locationSelect" name="address[areas][]" multiple required
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-32">
+                                <option value="">Please select a city first</option>
+                            </select>
+                            <p id="locationCount" class="text-xs text-gray-500 mt-1">
+                                Hold Ctrl (Windows) / Cmd (Mac) to select multiple locations
+                            </p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">State *</label>
+                            <input type="text" id="stateInput" name="address[state]" required
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Pincode</label>
+                            <input type="text" name="address[pincode]" pattern="[0-9]{6}"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Amenities -->
+<div class="space-y-4">
+    <h3 class="font-medium text-gray-900">Amenities</h3>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <!-- Basic Amenities -->
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Swimming Pool"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Swimming Pool</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Gym"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Gym</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Park"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Park</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Power Backup"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Power Backup</span>
+        </label>
+        
+        <!-- Security Amenities -->
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="24/7 Security"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">24/7 Security</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="CCTV Surveillance"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">CCTV Surveillance</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Security Guard"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Security Guard</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Intercom"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Intercom</span>
+        </label>
+        
+        <!-- Community Amenities -->
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Club House"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Club House</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Community Hall"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Community Hall</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Children's Play Area"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Children's Play Area</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Jogging Track"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Jogging Track</span>
+        </label>
+        
+        <!-- Water & Environment -->
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Rain Water Harvesting"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Rain Water Harvesting</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Water Purifier"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Water Purifier</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Garden"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Garden</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Waste Disposal"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Waste Disposal</span>
+        </label>
+        
+        <!-- Transportation -->
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Lift"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Lift/Elevator</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Car Parking"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Car Parking</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Bike Parking"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Bike Parking</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Visitor Parking"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Visitor Parking</span>
+        </label>
+        
+        <!-- Maintenance & Services -->
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Maintenance Staff"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Maintenance Staff</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Housekeeping"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Housekeeping</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Fire Safety"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Fire Safety</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Medical Center"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Medical Center</span>
+        </label>
+        
+        <!-- Recreational -->
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Tennis Court"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Tennis Court</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Badminton Court"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Badminton Court</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Indoor Games"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Indoor Games</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Yoga/Meditation Area"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Yoga/Meditation Area</span>
+        </label>
+        
+        <!-- Commercial Amenities -->
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Shopping Center"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Shopping Center</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Restaurant/Cafe"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Restaurant/Cafe</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="ATM"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">ATM</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Bank"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Bank</span>
+        </label>
+        
+        <!-- Educational & Healthcare -->
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="School"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">School</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Hospital"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Hospital</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Pharmacy"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Pharmacy</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Day Care Center"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Day Care Center</span>
+        </label>
+        
+        <!-- Technology -->
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="High Speed Internet"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">High Speed Internet</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Wi-Fi"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Wi-Fi</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Cable TV"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Cable TV</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Video Door Phone"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Video Door Phone</span>
+        </label>
+        
+        <!-- Pet Amenities -->
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Pet Friendly"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Pet Friendly</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Pet Park"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Pet Park</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" name="amenities" value="Pet Grooming"
+                   class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Pet Grooming</span>
+        </label>
+    </div>
+</div>
+
+                <!-- Single Image Upload -->
+                <div class="space-y-4">
+                    <h3 class="font-medium text-gray-900">Property Image</h3>
+                    <p class="text-sm text-gray-600 mb-2">Upload one image of your property (Max 10MB)</p>
+                    
+                    <!-- Hidden file input -->
+                    <input type="file" id="imageInput" name="images" accept="image/*" class="hidden" 
+                           onchange="handleImageUpload(this)">
+                    
+                    <!-- Image preview container -->
+                    <div class="image-preview-container" onclick="document.getElementById('imageInput').click()">
+                        <div id="imagePlaceholder" class="text-center">
+                            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
+                            <p class="text-gray-600">Click to upload image</p>
+                            <p class="text-sm text-gray-500 mt-1">Supports JPG, PNG, WebP</p>
+                        </div>
+                        <img id="imagePreview" class="image-preview hidden" alt="Property preview">
+                    </div>
+                    
+                    <!-- Remove image button -->
+                    <button type="button" id="removeImageBtn" class="hidden text-red-600 hover:text-red-800 text-sm"
+                            onclick="removeImage()">
+                        <i class="fas fa-times mr-1"></i> Remove Image
+                    </button>
+                </div>
+
+               
+
+                <!-- Terms and Submit -->
+                <div class="space-y-4 border-t pt-4">
+                    <div class="flex items-start space-x-2">
+                        <input type="checkbox" id="terms" required
+                               class="mt-1 rounded text-blue-600 focus:ring-blue-500">
+                        <label for="terms" class="text-sm text-gray-700">
+                            I confirm that all information provided is accurate. This property will be submitted for admin approval and will go live only after approval.
+                        </label>
+                    </div>
+
+                    <!-- Navigation Buttons -->
+                    <div class="flex justify-between">
+                        <button type="button" onclick="prevStep(2)" 
+                                class="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400">
+                            <i class="fas fa-arrow-left mr-2"></i> Back
+                        </button>
+                        <button type="submit" id="submitBtn"
+                                class="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 flex items-center">
+                            <i class="fas fa-paper-plane mr-2"></i> Submit for Approval
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <!-- Progress Indicator -->
+        <div class="mt-6 text-center">
+            <div class="inline-block bg-blue-50 px-4 py-2 rounded-lg">
+                <span class="text-blue-600 font-medium">Important:</span>
+                <span class="text-gray-600 ml-2">Properties require admin approval before appearing on the platform</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        let selectedImage = null;
+        let documentCount = 1;
+        
+        // Property type to sub-type mapping
+        const propertyTypes = {
+            'Residential': ['Apartment', 'Independent House', 'Villa', 'Penthouse', 'Studio', 'Farmhouse'],
+            'Commercial': ['Office Space', 'Shop', 'Showroom', 'Warehouse', 'Industrial Building'],
+            'Plot': ['Residential Plot', 'Commercial Plot', 'Agricultural Land', 'Industrial Plot'],
+            'Agricultural': ['Farm Land', 'Orchard', 'Plantation'],
+            'Industrial': ['Factory', 'Manufacturing Unit', 'Storage Unit']
+        };
+        
+        // City to Locations mapping with extended locations
+        const cityLocationMap = {
+            Noida: [
+                "Sector 62", "Sector 18", "Sector 15", "Sector 50",
+                "Sector 76", "Sector 137", "Sector 128",
+                "Sector 44", "Greater Noida West", "Noida Extension"
+            ],
+            Ghaziabad: [
+                "Indirapuram", "Vaishali", "Raj Nagar",
+                "Raj Nagar Extension", "Crossings Republik",
+                "Kavi Nagar", "Sanjay Nagar", "Shastri Nagar",
+                "Mohan Nagar", "Vasundhara"
+            ],
+            Gorakhpur: [
+                "Golghar", "Medical Road", "Rustampur",
+                "Taramandal", "Chargawan", "Basharatpur",
+                "Betiahata", "Civil Lines", "Transport Nagar",
+                "Padri Bazar"
+            ]
+        };
+        
+        // City to State mapping
+        const cityStateMap = {
+            'Noida': 'Uttar Pradesh',
+            'Ghaziabad': 'Uttar Pradesh',
+            'Gorakhpur': 'Uttar Pradesh'
+        };
+        
+        // Handle single image upload
+        function handleImageUpload(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                
+                // Check file size (10MB limit)
+                if (file.size > 10 * 1024 * 1024) {
+                    alert('File is too large. Maximum size is 10MB.');
+                    input.value = '';
+                    return;
+                }
+                
+                // Check file type
+                if (!file.type.match('image.*')) {
+                    alert('Please select an image file.');
+                    input.value = '';
+                    return;
+                }
+                
+                selectedImage = file;
+                
+                // Show preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('imagePlaceholder').classList.add('hidden');
+                    document.getElementById('imagePreview').src = e.target.result;
+                    document.getElementById('imagePreview').classList.remove('hidden');
+                    document.getElementById('removeImageBtn').classList.remove('hidden');
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        // Remove selected image
+        function removeImage() {
+            document.getElementById('imageInput').value = '';
+            document.getElementById('imagePreview').src = '';
+            document.getElementById('imagePreview').classList.add('hidden');
+            document.getElementById('imagePlaceholder').classList.remove('hidden');
+            document.getElementById('removeImageBtn').classList.add('hidden');
+            selectedImage = null;
+        }
+        
+        // Update locations based on selected city
+        function updateLocations() {
+            const city = document.getElementById('citySelect').value;
+            const locationSelect = document.getElementById('locationSelect');
+            const locationCount = document.getElementById('locationCount');
+            const stateInput = document.getElementById('stateInput');
+            
+            // Clear existing options
+            locationSelect.innerHTML = '';
+            
+            if (city && cityLocationMap[city]) {
+                // Enable location dropdown
+                locationSelect.disabled = false;
+                
+                // Add all locations for the selected city
+                cityLocationMap[city].forEach(location => {
+                    const option = document.createElement('option');
+                    option.value = location;
+                    option.textContent = location;
+                    locationSelect.appendChild(option);
+                });
+                
+                // Auto-fill state based on city
+                if (cityStateMap[city] && !stateInput.value) {
+                    stateInput.value = cityStateMap[city];
+                }
+                
+                // Update location count text
+                updateLocationCount();
+            } else {
+                // Disable location dropdown and show default option
+                locationSelect.disabled = true;
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'Please select a city first';
+                locationSelect.appendChild(option);
+                locationCount.textContent = 'Hold Ctrl (Windows) / Cmd (Mac) to select multiple locations';
+            }
+        }
+        
+        // Update location selection count
+        function updateLocationCount() {
+            const locationSelect = document.getElementById('locationSelect');
+            const locationCount = document.getElementById('locationCount');
+            const selectedCount = locationSelect ? 
+                Array.from(locationSelect.selectedOptions).filter(opt => opt.value).length : 0;
+            
+            if (selectedCount > 0) {
+                locationCount.textContent = `${selectedCount} location(s) selected. Hold Ctrl (Windows) / Cmd (Mac) to select multiple`;
+            } else {
+                locationCount.textContent = 'Hold Ctrl (Windows) / Cmd (Mac) to select multiple locations';
+            }
+        }
+        
+        // Form submission
+        document.getElementById('propertyForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Submitting...';
+            submitBtn.disabled = true;
+            
+            try {
+                const formData = new FormData();
+                
+                // Add basic form fields
+                formData.append('title', document.querySelector('input[name="title"]').value);
+                formData.append('property_type', document.querySelector('select[name="property_type"]').value);
+                formData.append('sub_type', document.querySelector('select[name="sub_type"]').value);
+                formData.append('description', document.querySelector('textarea[name="description"]').value);
+                formData.append('short_description', document.querySelector('input[name="short_description"]').value || '');
+                formData.append('price', document.querySelector('input[name="price"]').value);
+                formData.append('price_type', document.querySelector('select[name="price_type"]').value);
+                
+                // Add property details
+                const details = ['bedrooms', 'bathrooms', 'balconies', 'built_up_area', 'carpet_area', 
+                                'floor_number', 'total_floors', 'age_of_property', 'furnishing', 'facing'];
+                details.forEach(field => {
+                    const element = document.querySelector(`[name="${field}"]`);
+                    if (element && element.value) {
+                        formData.append(field, element.value);
+                    }
+                });
+                
+                // Add area unit
+                formData.append('area_unit', document.querySelector('select[name="area_unit"]').value);
+                
+                // Add address fields (FIXED: Removed city from array)
+                const addressFields = ['street', 'landmark', 'state', 'pincode'];
+                addressFields.forEach(field => {
+                    const element = document.querySelector(`input[name="address[${field}]"]`);
+                    if (element) {
+                        formData.append(`address[${field}]`, element.value || '');
+                    }
+                });
+                
+                // Add city from dropdown (only once)
+                const citySelect = document.getElementById('citySelect');
+                if (citySelect) {
+                    formData.append('address[city]', citySelect.value);
+                }
+                
+                // Add selected locations (areas)
+                const locationSelect = document.getElementById('locationSelect');
+                if (locationSelect) {
+                    const selectedLocations = Array.from(locationSelect.selectedOptions)
+                        .map(option => option.value)
+                        .filter(value => value !== '');
+                    
+                    // Add each location separately
+                    selectedLocations.forEach(location => {
+                        formData.append('address[areas][]', location);
+                    });
+                }
+                
+                // Add amenities
+                document.querySelectorAll('input[name="amenities"]:checked').forEach(checkbox => {
+                    formData.append('amenities', checkbox.value);
+                });
+                
+                // Add single image if selected
+                if (selectedImage) {
+                    formData.append('images', selectedImage);
+                }
+                
+                // Add documents
+                document.querySelectorAll('input[name^="documents["]').forEach((input, index) => {
+                    if (input.files && input.files[0]) {
+                        formData.append(`documents[${index}][file]`, input.files[0]);
+                        const typeSelect = document.querySelector(`select[name="documents[${index}][type]"]`);
+                        if (typeSelect) {
+                            formData.append(`documents[${index}][type]`, typeSelect.value);
+                        }
+                    }
+                });
+                
+                console.log('Submitting form with image:', selectedImage ? selectedImage.name : 'No image');
+                
+                // Submit to server
+                const response = await fetch('/seller/properties/add', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('Property submitted successfully! It will be reviewed by admin.');
+                    window.location.href = '/seller/properties';
+                } else {
+                    alert('Error: ' + data.message);
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to submit property. Please try again.');
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+        
+        // Step navigation
+        function nextStep(step) {
+            // Validate current step
+            if (!validateStep(currentStep)) {
+                return;
+            }
+            
+            document.getElementById('step' + currentStep).classList.add('hidden');
+            document.getElementById('step' + step).classList.remove('hidden');
+            
+            // Update progress indicator
+            updateProgress(step);
+            currentStep = step;
+        }
+        
+        function prevStep(step) {
+            document.getElementById('step' + currentStep).classList.add('hidden');
+            document.getElementById('step' + step).classList.remove('hidden');
+            
+            updateProgress(step);
+            currentStep = step;
+        }
+        
+        function updateProgress(step) {
+            // Reset all steps
+            document.querySelectorAll('.flex.items-center.space-x-2').forEach((el, index) => {
+                const circle = el.querySelector('div');
+                const text = el.querySelector('span');
+                
+                if (index + 1 === step) {
+                    circle.className = 'w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold';
+                    text.className = 'font-medium text-blue-600';
+                } else if (index + 1 < step) {
+                    circle.className = 'w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center font-bold';
+                    text.className = 'font-medium text-green-600';
+                } else {
+                    circle.className = 'w-8 h-8 bg-gray-200 text-gray-600 rounded-full flex items-center justify-center font-bold';
+                    text.className = 'font-medium text-gray-600';
+                }
+            });
+        }
+        
+        function validateStep(step) {
+            if (step === 1) {
+                const title = document.querySelector('input[name="title"]').value;
+                const propertyType = document.querySelector('select[name="property_type"]').value;
+                const description = document.querySelector('textarea[name="description"]').value;
+                
+                if (!title || !propertyType || description.length < 50) {
+                    alert('Please fill all required fields. Description must be at least 50 characters.');
+                    return false;
+                }
+            }
+            
+            if (step === 2) {
+                const price = document.querySelector('input[name="price"]').value;
+                const builtUpArea = document.querySelector('input[name="built_up_area"]').value;
+                
+                if (!price || price < 1000 || !builtUpArea || builtUpArea < 1) {
+                    alert('Please enter valid price and built-up area (minimum 1).');
+                    return false;
+                }
+            }
+            
+            if (step === 3) {
+                const city = document.getElementById('citySelect').value;
+                const locationSelect = document.getElementById('locationSelect');
+                const selectedLocations = locationSelect ? Array.from(locationSelect.selectedOptions) : [];
+                
+                if (!city) {
+                    alert('Please select a city.');
+                    return false;
+                }
+                
+                if (selectedLocations.length === 0 || 
+                    (selectedLocations.length === 1 && selectedLocations[0].value === '')) {
+                    alert('Please select at least one location.');
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+        
+        // Update description character count
+        document.querySelector('textarea[name="description"]').addEventListener('input', function(e) {
+            const count = e.target.value.length;
+            document.getElementById('descCount').textContent = `${count}/5000`;
+        });
+        
+        // Update sub-type options based on property type
+        document.querySelector('select[name="property_type"]').addEventListener('change', function(e) {
+            const type = e.target.value;
+            const subTypeSelect = document.querySelector('select[name="sub_type"]');
+            
+            subTypeSelect.innerHTML = '<option value="">Select Sub Type</option>';
+            
+            if (type && propertyTypes[type]) {
+                propertyTypes[type].forEach(subType => {
+                    const option = document.createElement('option');
+                    option.value = subType;
+                    option.textContent = subType;
+                    subTypeSelect.appendChild(option);
+                });
+            }
+        });
+        
+        // Document management
+        function addDocument() {
+            const container = document.getElementById('documentUpload');
+            const div = document.createElement('div');
+            div.className = 'flex items-center space-x-3';
+            div.innerHTML = `
+                <select name="documents[${documentCount}][type]" 
+                        class="px-4 py-2 border border-gray-300 rounded-lg">
+                    <option value="ownership">Ownership Proof</option>
+                    <option value="plan">Building Plan</option>
+                    <option value="certificate">Certificate</option>
+                    <option value="tax">Tax Receipt</option>
+                    <option value="other">Other</option>
+                </select>
+                <input type="file" name="documents[${documentCount}][file]" 
+                       accept=".pdf,.jpg,.jpeg,.png"
+                       class="flex-1 px-4 py-2 border border-gray-300 rounded-lg">
+                <button type="button" onclick="removeDocument(${documentCount})" class="text-red-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            container.appendChild(div);
+            documentCount++;
+        }
+        
+        // FIXED: Safe document removal
+        function removeDocument(index) {
+            const el = document.querySelector(`[name="documents[${index}][type]"]`);
+            if (el && el.parentElement) {
+                el.parentElement.remove();
+            }
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateLocations();
+            
+            // Add event listener for location selection changes
+            const locationSelect = document.getElementById('locationSelect');
+            if (locationSelect) {
+                locationSelect.addEventListener('change', updateLocationCount);
+            }
+            
+            // Add event listener for city change (for state auto-fill)
+            const citySelect = document.getElementById('citySelect');
+            if (citySelect) {
+                citySelect.addEventListener('change', function() {
+                    const stateInput = document.getElementById('stateInput');
+                    const city = this.value;
+                    if (cityStateMap[city] && !stateInput.value) {
+                        stateInput.value = cityStateMap[city];
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html> 

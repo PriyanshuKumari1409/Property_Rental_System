@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Admin Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+    <style>
+        .status-badge {
+            @apply px-3 py-1 rounded-full text-xs font-semibold;
+        }
+        .status-pending { @apply bg-yellow-100 text-yellow-800; }
+        .status-approved { @apply bg-green-100 text-green-800; }
+        .status-paid { @apply bg-blue-100 text-blue-800; }
+        .status-rejected { @apply bg-red-100 text-red-800; }
+        
+        .commission-type {
+            @apply px-2 py-1 rounded text-xs font-medium;
+        }
+        .type-adder { @apply bg-purple-100 text-purple-800; }
+        .type-seller { @apply bg-indigo-100 text-indigo-800; }
+        
+        .amount-positive { @apply text-green-600 font-semibold; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation (Same structure) -->
+    <nav class="bg-white shadow-md border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="/admin/dashboard" class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                            <span class="text-white font-bold text-xl">P</span>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold text-gray-900">Propbandhu</h1>
+                            <p class="text-xs text-gray-500">Admin Panel</p>
+                        </div>
+                    </a>
+                </div>
+                
+                <!-- Right Section -->
+                <div class="flex items-center space-x-6">
+                    <!-- User Profile -->
+                    <div class="flex items-center space-x-3">
+                        <div class="text-right hidden md:block">
+                            <p class="font-medium text-gray-900"><%= user ? user.name : 'Admin' %></p>
+                            <p class="text-sm text-gray-500">Administrator</p>
+                        </div>
+                        <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                            <%= user && user.name ? user.name.charAt(0).toUpperCase() : 'A' %>
+                        </div>
+                        <div class="relative">
+                            <button onclick="toggleDropdown()" class="text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div id="profileDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-10">
+                                <a href="/admin/dashboard" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                                </a>
+                                <a href="/admin/profile" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-user mr-2"></i>Profile
+                                </a>
+                                <hr class="my-2 border-gray-200">
+                                <a href="/logout" class="block px-4 py-2 text-red-600 hover:bg-red-50">
+                                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Layout -->
+    <div class="flex">
+        <!-- Sidebar -->
+        <div class="w-64 bg-white border-r border-gray-200 min-h-[calc(100vh-4rem)] sticky top-16">
+            <div class="p-4">
+                <!-- Commission Summary -->
+                <div class="mb-6 p-4 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl">
+                    <p class="text-sm text-gray-600 mb-1">Total Commission</p>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-2xl font-bold text-gray-900">₹<%= summary.totalAmount ? summary.totalAmount.toLocaleString('en-IN') : '0' %></p>
+                            <p class="text-xs text-gray-500">All commissions</p>
+                        </div>
+                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                            <i class="fas fa-money-bill-wave text-emerald-600"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Navigation -->
+                <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Navigation</h3>
+                <ul class="space-y-1">
+                    <li>
+                        <a href="/admin/dashboard" class="sidebar-link block px-4 py-3 rounded-lg">
+                            <i class="fas fa-tachometer-alt mr-3 text-blue-600"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/approvals" class="sidebar-link block px-4 py-3 rounded-lg">
+                            <i class="fas fa-check-circle mr-3 text-yellow-600"></i>
+                            <span>Pending Approvals</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/users" class="sidebar-link block px-4 py-3 rounded-lg">
+                            <i class="fas fa-users mr-3 text-green-600"></i>
+                            <span>User Management</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/properties" class="sidebar-link block px-4 py-3 rounded-lg">
+                            <i class="fas fa-home mr-3 text-purple-600"></i>
+                            <span>Properties</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/commissions" class="sidebar-link active block px-4 py-3 rounded-lg">
+                            <i class="fas fa-money-bill-wave mr-3 text-emerald-600"></i>
+                            <span>Commissions</span>
+                            <% if (summary.pendingCount > 0) { %>
+                                <span class="absolute right-4 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                                    <%= summary.pendingCount %>
+                                </span>
+                            <% } %>
+                        </a>
+                    </li>
+                </ul>
+                
+                <!-- Commission Filters -->
+                <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 mt-6">Filters</h3>
+                <div class="space-y-2">
+                    <a href="/admin/commissions" 
+                       class="block px-4 py-2 text-sm rounded-lg <%= !statusFilter && !brokerFilter ? 'bg-emerald-50 text-emerald-600' : 'text-gray-600 hover:bg-gray-50' %>">
+                        <i class="fas fa-layer-group mr-2"></i> All Commissions
+                    </a>
+                    <a href="/admin/commissions?status=pending" 
+                       class="block px-4 py-2 text-sm rounded-lg <%= statusFilter === 'pending' ? 'bg-yellow-50 text-yellow-600' : 'text-gray-600 hover:bg-gray-50' %>">
+                        <i class="fas fa-clock mr-2"></i> Pending (<%= summary.pendingCount || 0 %>)
+                    </a>
+                    <a href="/admin/commissions?status=approved" 
+                       class="block px-4 py-2 text-sm rounded-lg <%= statusFilter === 'approved' ? 'bg-green-50 text-green-600' : 'text-gray-600 hover:bg-gray-50' %>">
+                        <i class="fas fa-check mr-2"></i> Approved (<%= summary.approvedCount || 0 %>)
+                    </a>
+                    <a href="/admin/commissions?status=paid" 
+                       class="block px-4 py-2 text-sm rounded-lg <%= statusFilter === 'paid' ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50' %>">
+                        <i class="fas fa-money-bill mr-2"></i> Paid (<%= summary.paidCount || 0 %>)
+                    </a>
+                    
+                    <!-- Broker Filter -->
+                    <% if (brokers && brokers.length > 0) { %>
+                    <div class="mt-4">
+                        <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Filter by Broker</label>
+                        <select id="brokerFilter" onchange="filterByBroker(this.value)" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            <option value="">All Brokers</option>
+                            <% brokers.forEach(broker => { %>
+                                <option value="<%= broker._id %>" <%= brokerFilter === broker._id.toString() ? 'selected' : '' %>>
+                                    <%= broker.name %> (<%= broker.email %>)
+                                </option>
+                            <% }) %>
+                        </select>
+                    </div>
+                    <% } %>
+                </div>
+                
+                <!-- Commission Stats -->
+                <div class="mt-8 p-4 bg-gray-50 rounded-xl">
+                    <h4 class="text-sm font-medium text-gray-700 mb-3">Commission Summary</h4>
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-gray-600">Pending Amount:</span>
+                            <span class="font-medium">₹<%= summary.pendingAmount ? summary.pendingAmount.toLocaleString('en-IN') : '0' %></span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-gray-600">Approved Amount:</span>
+                            <span class="font-medium">₹<%= summary.approvedAmount ? summary.approvedAmount.toLocaleString('en-IN') : '0' %></span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-gray-600">Paid Amount:</span>
+                            <span class="font-medium">₹<%= summary.paidAmount ? summary.paidAmount.toLocaleString('en-IN') : '0' %></span>
+                        </div>
+                        <div class="pt-2 border-t border-gray-200">
+                            <div class="flex justify-between text-sm font-medium">
+                                <span>Total:</span>
+                                <span class="text-emerald-600">₹<%= summary.totalAmount ? summary.totalAmount.toLocaleString('en-IN') : '0' %></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 p-6">
+            <!-- Page Header -->
+            <div class="mb-6">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Commission Management</h1>
+                        <p class="text-gray-600 mt-1">Manage broker commissions and payments</p>
+                    </div>
+                    <div class="flex space-x-3">
+                        <!-- Date Range Filter -->
+                        <div class="flex items-center space-x-2">
+                            <input type="date" id="startDate" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            <span class="text-gray-400">to</span>
+                            <input type="date" id="endDate" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            <button onclick="applyDateFilter()" class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700">
+                                Apply
+                            </button>
+                        </div>
+                        <!-- Pay Selected Button -->
+                        <button onclick="paySelected()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center">
+                            <i class="fas fa-money-bill-wave mr-2"></i> Pay Selected
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                    <div class="bg-white rounded-xl p-4 shadow border border-gray-200">
+                        <div class="flex items-center">
+                            <div class="p-3 bg-yellow-50 rounded-lg mr-4">
+                                <i class="fas fa-clock text-yellow-600"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Pending Commissions</p>
+                                <p class="text-2xl font-bold text-gray-900"><%= summary.pendingCount || 0 %></p>
+                                <p class="text-sm text-gray-600">₹<%= summary.pendingAmount ? summary.pendingAmount.toLocaleString('en-IN') : '0' %></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl p-4 shadow border border-gray-200">
+                        <div class="flex items-center">
+                            <div class="p-3 bg-green-50 rounded-lg mr-4">
+                                <i class="fas fa-check-circle text-green-600"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Approved Commissions</p>
+                                <p class="text-2xl font-bold text-gray-900"><%= summary.approvedCount || 0 %></p>
+                                <p class="text-sm text-gray-600">₹<%= summary.approvedAmount ? summary.approvedAmount.toLocaleString('en-IN') : '0' %></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl p-4 shadow border border-gray-200">
+                        <div class="flex items-center">
+                            <div class="p-3 bg-blue-50 rounded-lg mr-4">
+                                <i class="fas fa-money-bill text-blue-600"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Paid Commissions</p>
+                                <p class="text-2xl font-bold text-gray-900"><%= summary.paidCount || 0 %></p>
+                                <p class="text-sm text-gray-600">₹<%= summary.paidAmount ? summary.paidAmount.toLocaleString('en-IN') : '0' %></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Commissions Table -->
+            <div class="bg-white rounded-xl shadow overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                    <div class="text-sm text-gray-700">
+                        Showing <span class="font-medium"><%= commissions.length %></span> commissions
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="selectAll" onchange="toggleSelectAll()" class="h-4 w-4 text-emerald-600 border-gray-300 rounded">
+                        <label for="selectAll" class="text-sm text-gray-700">Select All</label>
+                    </div>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table id="commissionsTable" class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Select</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Commission ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Broker</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <% if (commissions && commissions.length > 0) { %>
+                                <% commissions.forEach((commission, index) => { %>
+                                <tr class="hover:bg-gray-50" id="commission-<%= commission._id %>">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <input type="checkbox" 
+                                               value="<%= commission._id %>" 
+                                               class="commission-checkbox h-4 w-4 text-emerald-600 border-gray-300 rounded"
+                                               <%= commission.status !== 'pending' ? 'disabled' : '' %>>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-mono text-gray-900">
+                                            #<%= commission._id.toString().substring(18, 24).toUpperCase() %>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 h-8 w-8">
+                                                <div class="h-8 w-8 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 flex items-center justify-center text-white text-xs font-bold">
+                                                    <%= commission.broker && commission.broker.name ? commission.broker.name.charAt(0).toUpperCase() : 'B' %>
+                                                </div>
+                                            </div>
+                                            <div class="ml-3">
+                                                <div class="text-sm font-medium text-gray-900">
+                                                    <%= commission.broker ? commission.broker.name : 'Unknown Broker' %>
+                                                </div>
+                                                <div class="text-xs text-gray-500">
+                                                    <% if (commission.broker && commission.broker.email) { %>
+                                                        <%= commission.broker.email %>
+                                                    <% } else if (commission.broker && commission.broker.phone) { %>
+                                                        <%= commission.broker.phone %>
+                                                    <% } else { %>
+                                                        N/A
+                                                    <% } %>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm text-gray-900">
+                                            <% if (commission.property && commission.property.title) { %>
+                                                <%= commission.property.title %>
+                                            <% } else { %>
+                                                Property Not Found
+                                            <% } %>
+                                        </div>
+                                        <div class="text-xs text-gray-500">
+                                            <% if (commission.property && commission.property.price) { %>
+                                                ₹<%= commission.property.price.toLocaleString('en-IN') %>
+                                            <% } %>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="commission-type type-<%= commission.commission_type || 'adder' %>">
+                                            <%= commission.commission_type === 'adder' ? 'Adder' : 'Seller' %>
+                                        </span>
+                                        <div class="text-xs text-gray-500 mt-1">
+                                            <%= commission.rate || 0 %>%
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-lg font-bold amount-positive">
+                                            ₹<%= commission.amount ? commission.amount.toLocaleString('en-IN') : '0' %>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="status-badge status-<%= commission.status || 'pending' %>">
+                                            <%= commission.status ? commission.status.charAt(0).toUpperCase() + commission.status.slice(1) : 'Pending' %>
+                                        </span>
+                                        <% if (commission.approved_by) { %>
+                                            <div class="text-xs text-gray-500 mt-1">
+                                                Approved by Admin
+                                            </div>
+                                        <% } %>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <%= commission.created_at ? new Date(commission.created_at).toLocaleDateString() : 'N/A' %>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <div class="flex space-x-2">
+                                            <% if (commission.status === 'pending') { %>
+                                                <button onclick="approveCommission('<%= commission._id %>')" 
+                                                        class="text-green-600 hover:text-green-900">
+                                                    <i class="fas fa-check"></i> Approve
+                                                </button>
+                                                <button onclick="showOverrideModal('<%= commission._id %>', '<%= commission.amount %>')" 
+                                                        class="text-orange-600 hover:text-orange-900">
+                                                    <i class="fas fa-edit"></i> Override
+                                                </button>
+                                            <% } else if (commission.status === 'approved') { %>
+                                                <button onclick="markAsPaid('<%= commission._id %>')" 
+                                                        class="text-blue-600 hover:text-blue-900">
+                                                    <i class="fas fa-money-bill-wave"></i> Mark Paid
+                                                </button>
+                                            <% } %>
+                                            <a href="/admin/commissions/<%= commission._id %>" 
+                                               class="text-gray-600 hover:text-gray-900">
+                                                <i class="fas fa-eye"></i> View
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <% }) %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="9" class="px-6 py-12 text-center">
+                                        <div class="text-gray-400">
+                                            <i class="fas fa-money-bill-wave text-4xl mb-3"></i>
+                                            <p class="text-lg font-medium text-gray-500">No commissions found</p>
+                                            <p class="text-sm text-gray-400 mt-1">
+                                                <% if (statusFilter || brokerFilter) { %>
+                                                    No commissions match your filters
+                                                <% } else { %>
+                                                    No commissions have been generated yet
+                                                <% } %>
+                                            </p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Override Amount Modal -->
+    <div id="overrideModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-xl bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Override Commission Amount</h3>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">New Amount (₹)</label>
+                    <input type="number" id="newAmount" step="0.01" min="0" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Reason for override</label>
+                    <textarea id="overrideReason" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" 
+                              placeholder="Explain why you're overriding the amount..."></textarea>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button onclick="closeOverrideModal()" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button onclick="confirmOverride()" class="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700">
+                        Override Amount
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification (same as properties page) -->
+    <div id="toast" class="hidden fixed top-5 right-5 z-50 max-w-sm w-full bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+        <!-- Toast content same as properties page -->
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script>
+        let currentOverrideCommissionId = null;
+        let currentOriginalAmount = null;
+        
+        $(document).ready(function() {
+            $('#commissionsTable').DataTable({
+                "paging": false,
+                "searching": false,
+                "info": false,
+                "order": [[7, 'desc']] // Sort by Created date descending
+            });
+        });
+        
+        function toggleDropdown() {
+            const dropdown = document.getElementById('profileDropdown');
+            dropdown.classList.toggle('hidden');
+        }
+        
+        function filterByBroker(brokerId) {
+            const url = new URL(window.location.href);
+            if (brokerId) {
+                url.searchParams.set('broker', brokerId);
+            } else {
+                url.searchParams.delete('broker');
+            }
+            window.location.href = url.toString();
+        }
+        
+        function applyDateFilter() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            if (startDate && endDate) {
+                const url = new URL(window.location.href);
+                url.searchParams.set('startDate', startDate);
+                url.searchParams.set('endDate', endDate);
+                window.location.href = url.toString();
+            } else if (startDate || endDate) {
+                showToast('warning', 'Date Range Required', 'Please select both start and end dates.');
+            }
+        }
+        
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll');
+            const checkboxes = document.querySelectorAll('.commission-checkbox:not(:disabled)');
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAll.checked;
+            });
+        }
+        
+        function getSelectedCommissions() {
+            const selected = [];
+            document.querySelectorAll('.commission-checkbox:checked').forEach(checkbox => {
+                selected.push(checkbox.value);
+            });
+            return selected;
+        }
+        
+        function paySelected() {
+            const selected = getSelectedCommissions();
+            if (selected.length === 0) {
+                showToast('warning', 'No Selection', 'Please select at least one commission to pay.');
+                return;
+            }
+            
+            if (confirm(`Are you sure you want to mark ${selected.length} commission(s) as paid?`)) {
+                fetch('/admin/api/commissions/bulk-pay', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ commissionIds: selected })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('success', 'Payment Processed', `${selected.length} commission(s) marked as paid.`);
+                        // Reload the page to reflect changes
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showToast('error', 'Payment Failed', data.message);
+                    }
+                })
+                .catch(error => {
+                    showToast('error', 'Error', 'Failed to process payments.');
+                });
+            }
+        }
+        
+        function approveCommission(commissionId) {
+            if (confirm('Are you sure you want to approve this commission?')) {
+                fetch(`/admin/api/commissions/${commissionId}/approve`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('success', 'Commission Approved', 'The commission has been approved.');
+                        // Update the row
+                        updateCommissionStatus(commissionId, 'approved');
+                    } else {
+                        showToast('error', 'Approval Failed', data.message);
+                    }
+                })
+                .catch(error => {
+                    showToast('error', 'Error', 'Failed to approve commission.');
+                });
+            }
+        }
+        
+        function markAsPaid(commissionId) {
+            if (confirm('Are you sure you want to mark this commission as paid?')) {
+                fetch(`/admin/api/commissions/${commissionId}/mark-paid`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('success', 'Marked as Paid', 'The commission has been marked as paid.');
+                        updateCommissionStatus(commissionId, 'paid');
+                    } else {
+                        showToast('error', 'Failed', data.message);
+                    }
+                })
+                .catch(error => {
+                    showToast('error', 'Error', 'Failed to mark as paid.');
+                });
+            }
+        }
+        
+        function showOverrideModal(commissionId, currentAmount) {
+            currentOverrideCommissionId = commissionId;
+            currentOriginalAmount = currentAmount;
+            document.getElementById('newAmount').value = currentAmount;
+            document.getElementById('overrideModal').classList.remove('hidden');
+        }
+        
+        function closeOverrideModal() {
+            document.getElementById('overrideModal').classList.add('hidden');
+            document.getElementById('newAmount').value = '';
+            document.getElementById('overrideReason').value = '';
+            currentOverrideCommissionId = null;
+            currentOriginalAmount = null;
+        }
+        
+        function confirmOverride() {
+            const newAmount = parseFloat(document.getElementById('newAmount').value);
+            const reason = document.getElementById('overrideReason').value.trim();
+            
+            if (!newAmount || newAmount <= 0) {
+                showToast('error', 'Invalid Amount', 'Please enter a valid amount.');
+                return;
+            }
+            
+            if (!reason || reason.length < 10) {
+                showToast('error', 'Reason Required', 'Please provide a reason (at least 10 characters).');
+                return;
+            }
+            
+            fetch(`/admin/api/commissions/${currentOverrideCommissionId}/override`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    newAmount: newAmount,
+                    reason: reason
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('success', 'Amount Overridden', 'Commission amount has been updated.');
+                    closeOverrideModal();
+                    // Update the amount in the table
+                    const amountCell = document.querySelector(`#commission-${currentOverrideCommissionId} .amount-positive`);
+                    if (amountCell) {
+                        amountCell.textContent = `₹${newAmount.toLocaleString('en-IN')}`;
+                    }
+                } else {
+                    showToast('error', 'Override Failed', data.message);
+                }
+            })
+            .catch(error => {
+                showToast('error', 'Error', 'Failed to override amount.');
+            });
+        }
+        
+        function updateCommissionStatus(commissionId, newStatus) {
+            const row = document.getElementById(`commission-${commissionId}`);
+            if (!row) return;
+            
+            // Update status badge
+            const statusBadge = row.querySelector('.status-badge');
+            if (statusBadge) {
+                statusBadge.className = `status-badge status-${newStatus}`;
+                statusBadge.textContent = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+            }
+            
+            // Disable checkbox if not pending
+            const checkbox = row.querySelector('.commission-checkbox');
+            if (checkbox && newStatus !== 'pending') {
+                checkbox.disabled = true;
+                checkbox.checked = false;
+            }
+            
+            // Update actions
+            const actionsCell = row.querySelector('td:last-child');
+            if (actionsCell) {
+                let newActions = '';
+                if (newStatus === 'approved') {
+                    newActions = `
+                        <button onclick="markAsPaid('${commissionId}')" class="text-blue-600 hover:text-blue-900">
+                            <i class="fas fa-money-bill-wave"></i> Mark Paid
+                        </button>
+                        <a href="/admin/commissions/${commissionId}" class="text-gray-600 hover:text-gray-900 ml-3">
+                            <i class="fas fa-eye"></i> View
+                        </a>
+                    `;
+                } else if (newStatus === 'paid') {
+                    newActions = `
+                        <span class="text-green-600">Paid</span>
+                        <a href="/admin/commissions/${commissionId}" class="text-gray-600 hover:text-gray-900 ml-3">
+                            <i class="fas fa-eye"></i> View
+                        </a>
+                    `;
+                } else {
+                    newActions = `
+                        <a href="/admin/commissions/${commissionId}" class="text-gray-600 hover:text-gray-900">
+                            <i class="fas fa-eye"></i> View
+                        </a>
+                    `;
+                }
+                actionsCell.innerHTML = newActions;
+            }
+        }
+        
+        // Toast functions (same as properties page)
+        function showToast(type, title, message) {
+            // Same toast implementation as properties page
+            console.log(`[${type.toUpperCase()}] ${title}: ${message}`);
+            alert(`${title}: ${message}`); // Simplified for now
+        }
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('profileDropdown');
+            const profileBtn = event.target.closest('button[onclick="toggleDropdown()"]');
+            
+            if (!dropdown.classList.contains('hidden') && !dropdown.contains(event.target) && !profileBtn) {
+                dropdown.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

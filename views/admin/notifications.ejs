@@ -1,0 +1,1726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Propbandhu Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .notification-item.unread {
+            border-left: 4px solid #3b82f6;
+            background-color: #f0f9ff;
+        }
+        
+        .notification-item.read {
+            border-left: 4px solid #e5e7eb;
+        }
+        
+        .type-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        
+        /* NOTIFICATION TYPE STYLES */
+        .property_deleted { background-color: #fee2e2; color: #991b1b; }
+        .edit_request { background-color: #fef3c7; color: #92400e; }
+        .property_submitted { background-color: #dbeafe; color: #1e40af; }
+        .property_approved { background-color: #d1fae5; color: #065f46; }
+        .property_rejected { background-color: #fee2e2; color: #991b1b; }
+        .property_changes_requested { background-color: #fef3c7; color: #92400e; }
+        .property_resubmitted { background-color: #fef3c7; color: #92400e; }
+        .edit_permission_granted { background-color: #f3e8ff; color: #7c3aed; }
+        
+        /* CART ACTIVITY TYPES - NEW */
+        .property_added_to_cart { background-color: #fce7f3; color: #be185d; }
+        .cart_item_removed { background-color: #fee2e2; color: #991b1b; }
+        
+        /* Other types */
+        .system_alert { background-color: #f3f4f6; color: #374151; }
+        .payment_received { background-color: #d1fae5; color: #065f46; }
+        .visit_reminder { background-color: #e0e7ff; color: #3730a3; }
+        .booking_window_expiring { background-color: #fef3c7; color: #92400e; }
+        .cart_item_expired { background-color: #fee2e2; color: #991b1b; }
+        .commission_earned { background-color: #d1fae5; color: #065f46; }
+        .property_lock { background-color: #fee2e2; color: #991b1b; }
+        .property_unlock { background-color: #d1fae5; color: #065f46; }
+        .document_uploaded { background-color: #d1fae5; color: #065f46; }
+        .document_request { background-color: #dbeafe; color: #1e40af; }
+        
+        .priority-high { border-color: #ef4444; }
+        .priority-medium { border-color: #f59e0b; }
+        .priority-low { border-color: #10b981; }
+        .priority-urgent { border-color: #dc2626; }
+        
+        /* Property details styling */
+        .property-details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 10px;
+        }
+        
+        .property-detail-item {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 12px;
+        }
+        
+        .detail-label {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        
+        .detail-value {
+            font-size: 14px;
+            color: #111827;
+            font-weight: 600;
+        }
+        
+        .property-image {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .property-section {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .section-title {
+            color: #374151;
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title i {
+            margin-right: 8px;
+            color: #4f46e5;
+        }
+        
+        .amenities-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 8px;
+        }
+        
+        .amenity-item {
+            display: flex;
+            align-items: center;
+            padding: 6px 10px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        
+        .amenity-item i {
+            color: #10b981;
+            margin-right: 8px;
+            font-size: 14px;
+        }
+        
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        
+        .collapsible-content.expanded {
+            max-height: 1000px;
+        }
+        
+        /* Quick stats for notifications */
+        .quick-stat {
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .stat-new { background: #d1fae5; color: #065f46; }
+        .stat-edit { background: #fef3c7; color: #92400e; }
+        .stat-delete { background: #fee2e2; color: #991b1b; }
+        .stat-draft { background: #dbeafe; color: #1e40af; }
+        .stat-cart { background: #fce7f3; color: #be185d; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- DEBUG: Check what data we have -->
+    <% if (notifications && notifications.length > 0) { %>
+    <script>
+        console.log('DEBUG: First notification data:', <%- JSON.stringify(notifications[0]) %>);
+        console.log('DEBUG: Notification types:', <%- JSON.stringify(notifications.map(n => n.type)) %>);
+    </script>
+    <% } %>
+
+    <!-- Top Navigation -->
+    <nav class="bg-white shadow-md border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="/admin/dashboard" class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                            <span class="text-white font-bold text-xl">P</span>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold text-gray-900">Propbandhu</h1>
+                            <p class="text-xs text-gray-500">Admin Panel</p>
+                        </div>
+                    </a>
+                </div>
+                
+                <!-- Right Section -->
+                <div class="flex items-center space-x-6">
+                    <!-- Notifications -->
+                    <div class="relative">
+                        <a href="/admin/notifications" class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-bell text-blue-600"></i>
+                            <% if (unreadCount > 0) { %>
+                                <span class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
+                                    <%= unreadCount > 9 ? '9+' : unreadCount %>
+                                </span>
+                            <% } %>
+                        </a>
+                    </div>
+                    
+                    <!-- User Profile -->
+                    <div class="flex items-center space-x-3">
+                        <div class="text-right hidden md:block">
+                            <p class="font-medium text-gray-900"><%= user ? user.name : 'Admin' %></p>
+                            <p class="text-sm text-gray-500">Administrator</p>
+                        </div>
+                        <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                            <%= user && user.name ? user.name.charAt(0).toUpperCase() : 'A' %>
+                        </div>
+                        <a href="/logout" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- Page Header -->
+        <div class="mb-8">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Notifications</h1>
+                    <p class="text-gray-600 mt-1">Manage and view all system notifications</p>
+                </div>
+                <div class="flex space-x-3">
+                    <% if (unreadCount > 0) { %>
+                    <button onclick="markAllAsRead()" 
+                            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-check-double mr-2"></i>Mark All as Read
+                    </button>
+                    <% } %>
+                    <button onclick="clearAllNotifications()" 
+                            class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">
+                        <i class="fas fa-trash-alt mr-2"></i>Clear All
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Quick Stats -->
+            <div class="flex flex-wrap gap-2 mt-4">
+                <% 
+                const newProperties = notifications ? notifications.filter(n => n.type === 'property_submitted').length : 0;
+                const editRequests = notifications ? notifications.filter(n => n.type === 'edit_request').length : 0;
+                const deletedProperties = notifications ? notifications.filter(n => n.type === 'property_deleted').length : 0;
+                const draftSubmissions = notifications ? notifications.filter(n => n.type === 'property_resubmitted' || n.message?.includes('draft')).length : 0;
+                const cartActivity = notifications ? notifications.filter(n => n.type === 'property_added_to_cart' || n.type === 'cart_item_removed').length : 0;
+                %>
+                <% if (newProperties > 0) { %>
+                <span class="quick-stat stat-new">
+                    <i class="fas fa-home mr-1"></i>New Properties: <%= newProperties %>
+                </span>
+                <% } %>
+                <% if (editRequests > 0) { %>
+                <span class="quick-stat stat-edit">
+                    <i class="fas fa-edit mr-1"></i>Edit Requests: <%= editRequests %>
+                </span>
+                <% } %>
+                <% if (deletedProperties > 0) { %>
+                <span class="quick-stat stat-delete">
+                    <i class="fas fa-trash-alt mr-1"></i>Deleted: <%= deletedProperties %>
+                </span>
+                <% } %>
+                <% if (draftSubmissions > 0) { %>
+                <span class="quick-stat stat-draft">
+                    <i class="fas fa-file-alt mr-1"></i>Drafts: <%= draftSubmissions %>
+                </span>
+                <% } %>
+                <% if (cartActivity > 0) { %>
+                <span class="quick-stat stat-cart">
+                    <i class="fas fa-shopping-cart mr-1"></i>Cart Activity: <%= cartActivity %>
+                </span>
+                <% } %>
+            </div>
+            
+            <!-- Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mt-6">
+                <div class="bg-white rounded-xl shadow p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Total</p>
+                            <p class="text-2xl font-bold text-gray-900"><%= totalNotifications || 0 %></p>
+                        </div>
+                        <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-bell text-gray-600"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Unread</p>
+                            <p class="text-2xl font-bold text-red-600"><%= unreadCount || 0 %></p>
+                        </div>
+                        <div class="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-envelope text-red-600"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Edit Requests</p>
+                            <p class="text-2xl font-bold text-yellow-600">
+                                <%= editRequests %>
+                            </p>
+                        </div>
+                        <div class="w-10 h-10 bg-yellow-50 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-edit text-yellow-600"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Cart Activity</p>
+                            <p class="text-2xl font-bold text-pink-600">
+                                <%= cartActivity %>
+                            </p>
+                        </div>
+                        <div class="w-10 h-10 bg-pink-50 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-shopping-cart text-pink-600"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">High Priority</p>
+                            <p class="text-2xl font-bold text-orange-600">
+                                <%= notifications ? notifications.filter(n => n.priority === 'high' || n.priority === 'urgent').length : 0 %>
+                            </p>
+                        </div>
+                        <div class="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-exclamation-triangle text-orange-600"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-white rounded-xl shadow mb-6 p-4">
+            <div class="flex flex-col md:flex-row md:items-center justify-between space-y-4 md:space-y-0">
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="filterNotifications('all')" 
+                            class="filter-btn px-4 py-2 rounded-lg bg-blue-100 text-blue-700 font-medium active">
+                        All (<%= totalNotifications || 0 %>)
+                    </button>
+                    <button onclick="filterNotifications('unread')" 
+                            class="filter-btn px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-50">
+                        Unread (<%= unreadCount || 0 %>)
+                    </button>
+                    <button onclick="filterNotifications('edit_request')" 
+                            class="filter-btn px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-50">
+                        Edit Requests (<%= editRequests %>)
+                    </button>
+                    <button onclick="filterNotifications('property_submitted')" 
+                            class="filter-btn px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-50">
+                        New Properties (<%= newProperties %>)
+                    </button>
+                    <button onclick="filterNotifications('property_deleted')" 
+                            class="filter-btn px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-50">
+                        Deleted (<%= deletedProperties %>)
+                    </button>
+                    <!-- NEW: Cart Activity Filter -->
+                    <button onclick="filterNotifications('cart_activity')" 
+                            class="filter-btn px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-50">
+                        <i class="fas fa-shopping-cart mr-1 text-pink-500"></i>
+                        Cart Activity (<%= cartActivity %>)
+                    </button>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <div class="relative">
+                        <input type="text" 
+                               placeholder="Search notifications..." 
+                               id="searchNotifications"
+                               class="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notifications List -->
+        <% if (!notifications || notifications.length === 0) { %>
+        <div class="text-center py-16 bg-white rounded-xl shadow">
+            <i class="fas fa-bell-slash text-gray-300 text-6xl mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-700 mb-2">No Notifications</h3>
+            <p class="text-gray-600">You don't have any notifications yet.</p>
+            <p class="text-sm text-gray-400 mt-1">Notifications will appear here when there's activity.</p>
+        </div>
+        <% } else { %>
+        <div class="space-y-4" id="notificationsList">
+            <% notifications.forEach(notification => { 
+                const notificationData = notification.data || {};
+                const hasPropertyTitle = notificationData.property_title;
+                const hasPropertyId = notificationData.property_id;
+                const hasPropertyData = notificationData.property_data || {};
+                const isCartActivity = notification.type === 'property_added_to_cart' || notification.type === 'cart_item_removed';
+                const isAddToCart = notification.type === 'property_added_to_cart' && notificationData.action !== 'removed_from_cart';
+                const isRemoveFromCart = notification.type === 'cart_item_removed' || notificationData.action === 'removed_from_cart';
+                
+                // Determine what to show based on notification type
+                let showPropertyDetails = false;
+                let propertyTitle = '';
+                let propertyId = '';
+                
+                if (hasPropertyTitle) {
+                    propertyTitle = notificationData.property_title;
+                    propertyId = notificationData.property_id || '';
+                    showPropertyDetails = true;
+                } else if (notificationData.title) {
+                    propertyTitle = notificationData.title;
+                    propertyId = notificationData._id || '';
+                    showPropertyDetails = true;
+                }
+            %>
+            <div class="notification-item <%= notification.is_read ? 'read' : 'unread' %> 
+                        bg-white rounded-xl shadow p-6 border border-gray-200 
+                        <%= isCartActivity ? (isAddToCart ? 'border-l-4 border-l-pink-500' : 'border-l-4 border-l-red-500') : '' %>" 
+                 data-notification="<%= notification._id %>"
+                 data-type="<%= notification.type %>"
+                 data-action="<%= notificationData.action || '' %>">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-start space-x-4">
+                        <!-- Icon with cart activity indicator -->
+                        <div class="relative">
+                            <div class="w-12 h-12 rounded-full flex items-center justify-center
+                                <%= getNotificationIconClass(notification.type) %>">
+                                <i class="<%= getNotificationIcon(notification.type, isCartActivity, isAddToCart) %> text-lg"></i>
+                            </div>
+                            <% if (isCartActivity) { %>
+                                <span class="absolute -bottom-1 -right-1 w-5 h-5 <%= isAddToCart ? 'bg-pink-600' : 'bg-red-600' %> text-white rounded-full flex items-center justify-center">
+                                    <i class="<%= isAddToCart ? 'fas fa-cart-plus' : 'fas fa-cart-arrow-down' %> text-xs"></i>
+                                </span>
+                            <% } %>
+                        </div>
+                        
+                        <!-- Content -->
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-3 mb-2">
+                                <h3 class="font-bold text-gray-900"><%= notification.title %></h3>
+                                <span class="type-badge <%= notification.type %>">
+                                    <%= formatNotificationType(notification.type) %>
+                                </span>
+                                <% if (isCartActivity) { %>
+                                    <span class="type-badge <%= isAddToCart ? 'property_added_to_cart' : 'cart_item_removed' %>">
+                                        <i class="<%= isAddToCart ? 'fas fa-cart-plus' : 'fas fa-cart-arrow-down' %> mr-1"></i>
+                                        <%= isAddToCart ? 'Added to Cart' : 'Removed from Cart' %>
+                                    </span>
+                                <% } %>
+                                <% if (notification.priority === 'high' || notification.priority === 'urgent') { %>
+                                <span class="text-xs font-medium px-2 py-1 rounded-full 
+                                    <%= notification.priority === 'urgent' ? 'bg-red-100 text-red-800' : 'bg-orange-100 text-orange-800' %>">
+                                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                                    <%= notification.priority === 'urgent' ? 'URGENT' : 'HIGH' %>
+                                </span>
+                                <% } %>
+                            </div>
+                            
+                            <p class="text-gray-600 mb-3"><%= notification.message %></p>
+                            
+                            <!-- CART ACTIVITY DETAILS -->
+                            <% if (isCartActivity && notificationData) { %>
+                            <div class="mt-3 p-4 <%= isAddToCart ? 'bg-pink-50 border-pink-200' : 'bg-red-50 border-red-200' %> rounded-lg border">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    <% if (notificationData.property_title) { %>
+                                    <div>
+                                        <span class="text-xs text-gray-500 block">Property</span>
+                                        <span class="font-medium"><%= notificationData.property_title %></span>
+                                    </div>
+                                    <% } %>
+                                    
+                                    <% if (notificationData.buyer_name) { %>
+                                    <div>
+                                        <span class="text-xs text-gray-500 block">Buyer</span>
+                                        <span class="font-medium"><%= notificationData.buyer_name %></span>
+                                        <% if (notificationData.buyer_id) { %>
+                                        <span class="text-xs text-gray-400 block">ID: <%= getShortId(notificationData.buyer_id) %></span>
+                                        <% } %>
+                                    </div>
+                                    <% } %>
+                                    
+                                    <% if (notificationData.seller_name) { %>
+                                    <div>
+                                        <span class="text-xs text-gray-500 block">Seller</span>
+                                        <span class="font-medium"><%= notificationData.seller_name %></span>
+                                    </div>
+                                    <% } %>
+                                    
+                                    <% if (notificationData.broker_name) { %>
+                                    <div>
+                                        <span class="text-xs text-gray-500 block">Broker</span>
+                                        <span class="font-medium"><%= notificationData.broker_name %></span>
+                                    </div>
+                                    <% } %>
+                                    
+                                    <% if (notificationData.added_at) { %>
+                                    <div>
+                                        <span class="text-xs text-gray-500 block"><%= isAddToCart ? 'Added' : 'Removed' %> At</span>
+                                        <span class="font-medium"><%= formatDate(notificationData.added_at || notificationData.removed_at) %></span>
+                                    </div>
+                                    <% } %>
+                                    
+                                    <% if (notificationData.expires_at && isAddToCart) { %>
+                                    <div>
+                                        <span class="text-xs text-gray-500 block">Cart Expires</span>
+                                        <span class="font-medium <%= new Date(notificationData.expires_at) < new Date() ? 'text-red-600' : '' %>">
+                                            <%= formatDate(notificationData.expires_at) %>
+                                        </span>
+                                    </div>
+                                    <% } %>
+                                    
+                                    <% if (notificationData.property_price) { %>
+                                    <div>
+                                        <span class="text-xs text-gray-500 block">Price</span>
+                                        <span class="font-medium">₹<%= notificationData.property_price.toLocaleString() %></span>
+                                    </div>
+                                    <% } %>
+                                </div>
+                                
+                                <!-- Roles Summary -->
+                                <div class="mt-3 pt-3 border-t <%= isAddToCart ? 'border-pink-200' : 'border-red-200' %>">
+                                    <span class="text-xs text-gray-500 block mb-2">Notifications Sent To:</span>
+                                    <div class="flex flex-wrap gap-2">
+                                        <% if (notificationData.buyer_id) { %>
+                                        <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                                            <i class="fas fa-user mr-1"></i>Buyer
+                                        </span>
+                                        <% } %>
+                                        <% if (notificationData.seller_id) { %>
+                                        <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
+                                            <i class="fas fa-user-tie mr-1"></i>Seller
+                                        </span>
+                                        <% } %>
+                                        <% if (notificationData.broker_id) { %>
+                                        <span class="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
+                                            <i class="fas fa-handshake mr-1"></i>Broker
+                                        </span>
+                                        <% } %>
+                                        <span class="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs">
+                                            <i class="fas fa-shield-alt mr-1"></i>Admin
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <% } %>
+                            
+                            <!-- PROPERTY DETAILS SECTION (FOR PROPERTY-RELATED NOTIFICATIONS) -->
+                            <% if (showPropertyDetails && !isCartActivity && ['property_submitted', 'property_deleted', 'property_resubmitted', 'edit_request'].includes(notification.type)) { %>
+                            <div class="mt-4">
+                                <button onclick="togglePropertyDetails('<%= notification._id %>')" 
+                                        class="text-sm text-blue-600 hover:text-blue-800 font-medium mb-2 flex items-center">
+                                    <i class="fas fa-home mr-2"></i>
+                                    <% if (notification.type === 'property_deleted') { %>
+                                        Show Deleted Property Details
+                                    <% } else if (notification.type === 'edit_request') { %>
+                                        Show Property Request Details
+                                    <% } else if (notification.type === 'property_resubmitted') { %>
+                                        Show Resubmitted Property
+                                    <% } else { %>
+                                        Show Property Details
+                                    <% } %>
+                                    <i class="fas fa-chevron-down ml-1 text-xs"></i>
+                                    <i class="fas fa-chevron-up ml-1 text-xs hidden"></i>
+                                </button>
+                                
+                                <div id="propertyDetails-<%= notification._id %>" class="collapsible-content">
+                                    <div class="property-section">
+                                        <!-- Basic Information -->
+                                        <div class="property-section">
+                                            <div class="section-title">
+                                                <i class="fas fa-info-circle"></i>
+                                                <% if (notification.type === 'property_deleted') { %>
+                                                    Deleted Property Information
+                                                <% } else if (notification.type === 'edit_request') { %>
+                                                    Edit Request Details
+                                                <% } else if (notification.type === 'property_resubmitted') { %>
+                                                    Resubmitted Property Details
+                                                <% } else { %>
+                                                    Property Information
+                                                <% } %>
+                                            </div>
+                                            <div class="property-details-grid">
+                                                <% if (propertyTitle) { %>
+                                                <div class="property-detail-item">
+                                                    <div class="detail-label">Property Title</div>
+                                                    <div class="detail-value"><%= propertyTitle %></div>
+                                                </div>
+                                                <% } %>
+                                                
+                                                <% if (propertyId) { %>
+                                                <div class="property-detail-item">
+                                                    <div class="detail-label">Property ID</div>
+                                                    <div class="detail-value"><%= getShortId(propertyId) %></div>
+                                                </div>
+                                                <% } %>
+                                                
+                                                <!-- Price Info -->
+                                                <% if (notificationData.price) { %>
+                                                <div class="property-detail-item">
+                                                    <div class="detail-label">Price</div>
+                                                    <div class="detail-value">
+                                                        ₹<%= notificationData.price.toLocaleString('en-IN') %>
+                                                        <% if (notificationData.price_type) { %>
+                                                        <span class="text-xs text-gray-500 ml-1">
+                                                            (<%= notificationData.price_type === 'fixed' ? 'Fixed' : 'Negotiable' %>)
+                                                        </span>
+                                                        <% } %>
+                                                    </div>
+                                                </div>
+                                                <% } %>
+                                                
+                                                <!-- Location Info -->
+                                                <% if (notificationData.location || notificationData.address) { %>
+                                                <div class="property-detail-item">
+                                                    <div class="detail-label">Location</div>
+                                                    <div class="detail-value">
+                                                        <% if (notificationData.location) { %>
+                                                            <%= notificationData.location %>
+                                                        <% } else if (notificationData.address && notificationData.address.city) { %>
+                                                            <%= notificationData.address.city %>, <%= notificationData.address.state || '' %>
+                                                        <% } else if (hasPropertyData && hasPropertyData.address) { %>
+                                                            <%= hasPropertyData.address.city || '' %>, <%= hasPropertyData.address.state || '' %>
+                                                        <% } else { %>
+                                                            Location not specified
+                                                        <% } %>
+                                                    </div>
+                                                </div>
+                                                <% } %>
+                                                
+                                                <!-- Status -->
+                                                <% const status = notificationData.property_status || notificationData.status || (hasPropertyData ? hasPropertyData.status : ''); %>
+                                                <% if (status) { %>
+                                                <div class="property-detail-item">
+                                                    <div class="detail-label">Status</div>
+                                                    <div class="detail-value">
+                                                        <span class="px-2 py-1 rounded-full text-xs 
+                                                            <%= status === 'pending_approval' ? 'bg-yellow-100 text-yellow-800' :
+                                                               status === 'approved' ? 'bg-green-100 text-green-800' :
+                                                               status === 'rejected' ? 'bg-red-100 text-red-800' :
+                                                               status === 'draft' ? 'bg-blue-100 text-blue-800' :
+                                                               status === 'changes_requested' ? 'bg-orange-100 text-orange-800' :
+                                                               status === 'deleted' ? 'bg-red-100 text-red-800' :
+                                                               'bg-gray-100 text-gray-800' %>">
+                                                            <%= status ? status.replace('_', ' ') : 'Unknown' %>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <% } %>
+                                                
+                                                <!-- Seller Info -->
+                                                <% if (notificationData.seller_name) { %>
+                                                <div class="property-detail-item">
+                                                    <div class="detail-label">
+                                                        <%= notification.type === 'property_deleted' ? 'Deleted By' : 'Seller' %>
+                                                    </div>
+                                                    <div class="detail-value"><%= notificationData.seller_name %></div>
+                                                </div>
+                                                <% } %>
+                                                
+                                                <!-- Date Info -->
+                                                <% if (notificationData.deleted_at) { %>
+                                                <div class="property-detail-item">
+                                                    <div class="detail-label">Deleted At</div>
+                                                    <div class="detail-value"><%= formatDate(notificationData.deleted_at) %></div>
+                                                </div>
+                                                <% } %>
+                                                
+                                                <% if (notificationData.submitted_at) { %>
+                                                <div class="property-detail-item">
+                                                    <div class="detail-label">Submitted At</div>
+                                                    <div class="detail-value"><%= formatDate(notificationData.submitted_at) %></div>
+                                                </div>
+                                                <% } %>
+                                                
+                                                <!-- Edit Request Reason -->
+                                                <% if (notificationData.reason && notification.type === 'edit_request') { %>
+                                                <div class="property-detail-item" style="grid-column: 1 / -1;">
+                                                    <div class="detail-label">Edit Request Reason</div>
+                                                    <div class="detail-value text-gray-700"><%= notificationData.reason %></div>
+                                                </div>
+                                                <% } %>
+                                                
+                                                <!-- Changes Made (for resubmissions) -->
+                                                <% if (notificationData.changes_made && notification.type === 'property_resubmitted') { %>
+                                                <div class="property-detail-item" style="grid-column: 1 / -1;">
+                                                    <div class="detail-label">Changes Made</div>
+                                                    <div class="detail-value">
+                                                        <ul class="list-disc pl-5 text-gray-700">
+                                                            <% if (Array.isArray(notificationData.changes_made)) { %>
+                                                                <% notificationData.changes_made.forEach(field => { %>
+                                                                <li><%= field %></li>
+                                                                <% }) %>
+                                                            <% } else { %>
+                                                                <li><%= notificationData.changes_made %></li>
+                                                            <% } %>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                                <% } %>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Action Buttons -->
+                                        <div class="flex space-x-3 mt-4 pt-4 border-t border-gray-200">
+                                            <!-- For deleted properties -->
+                                            <% if (notification.type === 'property_deleted') { %>
+                                                <% if (notificationData.action_url) { %>
+                                                <a href="<%= notificationData.action_url %>" 
+                                                   class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                                                    <i class="fas fa-list mr-2"></i> View Deleted Properties
+                                                </a>
+                                                <% } %>
+                                            <% } %>
+                                            
+                                            <!-- For edit requests -->
+                                            <% if (notification.type === 'edit_request' && propertyId) { %>
+                                            <a href="/admin/properties/<%= propertyId %>" 
+                                               class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                                                <i class="fas fa-eye mr-2"></i> Review Property
+                                            </a>
+                                            <% } %>
+                                            
+                                            <!-- For property submissions -->
+                                            <% if (notification.type === 'property_submitted' && propertyId) { %>
+                                            <a href="/admin/properties/<%= propertyId %>" 
+                                               class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center">
+                                                <i class="fas fa-check-circle mr-2"></i> Approve/Reject
+                                            </a>
+                                            <% } %>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <% } %>
+                            
+                            <!-- Metadata -->
+                            <div class="flex items-center space-x-4 text-sm text-gray-500 mt-4 pt-4 border-t border-gray-100">
+                                <span>
+                                    <i class="far fa-clock mr-1"></i>
+                                    <%= timeAgo(new Date(notification.createdAt)) %>
+                                    (<%= formatDate(notification.createdAt) %>)
+                                </span>
+                                <% if (notification.sender && notification.sender.name) { %>
+                                <span>
+                                    <i class="fas fa-user mr-1"></i>
+                                    <%= notification.sender.name %>
+                                </span>
+                                <% } %>
+                                <% if (propertyTitle && !isCartActivity) { %>
+                                <span>
+                                    <i class="fas fa-home mr-1"></i>
+                                    <%= propertyTitle %>
+                                </span>
+                                <% } %>
+                                <% if (isCartActivity && notificationData.buyer_name) { %>
+                                <span class="<%= isAddToCart ? 'text-pink-600' : 'text-red-600' %>">
+                                    <i class="fas fa-user mr-1"></i>
+                                    Buyer: <%= notificationData.buyer_name %>
+                                </span>
+                                <% } %>
+                            </div>
+                            
+                            <!-- Additional Data -->
+                            <% if (notificationData.reason && notification.type !== 'edit_request' && !isCartActivity) { %>
+                            <div class="mt-3 p-3 bg-gray-50 rounded-lg">
+                                <p class="text-sm text-gray-700">
+                                    <span class="font-medium">Reason:</span> <%= notificationData.reason %>
+                                </p>
+                            </div>
+                            <% } %>
+                        </div>
+                    </div>
+                    
+                    <!-- Actions -->
+                    <div class="flex flex-col items-end space-y-2">
+                        <% if (!notification.is_read) { %>
+                        <button onclick="markAsRead('<%= notification._id %>', this)"
+                                class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                            <i class="fas fa-check mr-1"></i>Mark as Read
+                        </button>
+                        <% } else { %>
+                        <span class="text-sm text-green-600">
+                            <i class="fas fa-check-circle mr-1"></i>Read
+                        </span>
+                        <% } %>
+                        
+                        <div class="flex space-x-2">
+                            <!-- Edit Request Specific Actions -->
+                            <% if (notification.type === 'edit_request' && propertyId) { %>
+                            <button onclick="approveEditRequest('<%= notification._id %>', '<%= propertyId %>', '<%= notificationData.seller_name || "Seller" %>', '<%= propertyTitle %>')"
+                                    class="text-sm text-green-600 hover:text-green-800 font-medium">
+                                <i class="fas fa-check mr-1"></i>Approve
+                            </button>
+                            <button onclick="rejectEditRequest('<%= notification._id %>', '<%= propertyId %>', '<%= notificationData.seller_name || "Seller" %>', '<%= propertyTitle %>')"
+                                    class="text-sm text-red-600 hover:text-red-800 font-medium">
+                                <i class="fas fa-times mr-1"></i>Reject
+                            </button>
+                            <% } %>
+                            
+                            <!-- Action URL for other notifications -->
+                            <% if (notificationData.action_url && notification.type !== 'edit_request') { %>
+                            <a href="<%= notificationData.action_url %>" 
+                               class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                                <i class="fas fa-external-link-alt mr-1"></i>
+                                <% if (notification.type === 'property_deleted') { %>
+                                    View Deleted
+                                <% } else { %>
+                                    View
+                                <% } %>
+                            </a>
+                            <% } else if (propertyId && ['property_submitted', 'property_resubmitted'].includes(notification.type)) { %>
+                            <a href="/admin/properties/<%= propertyId %>" 
+                               class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                                <i class="fas fa-external-link-alt mr-1"></i>Review
+                            </a>
+                            <% } %>
+                            
+                            <button onclick="deleteNotification('<%= notification._id %>', this)"
+                                    class="text-sm text-gray-600 hover:text-red-800 font-medium">
+                                <i class="fas fa-trash-alt mr-1"></i>Delete
+                            </button>
+                        </div>
+                        
+                        <!-- Contact buttons for cart activity -->
+                        <% if (isCartActivity && notificationData.buyer_id) { %>
+                        <div class="flex space-x-2 mt-2">
+                            <a href="/admin/users/<%= notificationData.buyer_id %>" 
+                               class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200">
+                                <i class="fas fa-user mr-1"></i>View Buyer
+                            </a>
+                            <% if (notificationData.seller_id) { %>
+                            <a href="/admin/users/<%= notificationData.seller_id %>" 
+                               class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200">
+                                <i class="fas fa-user-tie mr-1"></i>Seller
+                            </a>
+                            <% } %>
+                            <% if (notificationData.broker_id) { %>
+                            <a href="/admin/users/<%= notificationData.broker_id %>" 
+                               class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded hover:bg-purple-200">
+                                <i class="fas fa-handshake mr-1"></i>Broker
+                            </a>
+                            <% } %>
+                        </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+            <% }); %>
+        </div>
+        
+        <!-- Pagination -->
+        <% if (totalPages > 1) { %>
+        <div class="mt-8 flex justify-center">
+            <nav class="flex items-center space-x-2">
+                <% if (currentPage > 1) { %>
+                <a href="?page=<%= currentPage - 1 %>" 
+                   class="px-3 py-2 border rounded-lg text-gray-700 hover:bg-gray-50">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                <% } %>
+                
+                <% for (let i = 1; i <= totalPages; i++) { %>
+                    <% if (i === currentPage) { %>
+                    <span class="px-3 py-2 bg-blue-600 text-white rounded-lg font-medium">
+                        <%= i %>
+                    </span>
+                    <% } else if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) { %>
+                    <a href="?page=<%= i %>" 
+                       class="px-3 py-2 border rounded-lg text-gray-700 hover:bg-gray-50">
+                        <%= i %>
+                    </a>
+                    <% } else if (i === currentPage - 3 || i === currentPage + 3) { %>
+                    <span class="px-3 py-2 text-gray-500">...</span>
+                    <% } %>
+                <% } %>
+                
+                <% if (currentPage < totalPages) { %>
+                <a href="?page=<%= currentPage + 1 %>" 
+                   class="px-3 py-2 border rounded-lg text-gray-700 hover:bg-gray-50">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+                <% } %>
+            </nav>
+        </div>
+        <% } %>
+        <% } %>
+    </div>
+
+    <script>
+        // ========== HELPER FUNCTIONS ==========
+        
+        function getNotificationIcon(type, isCartActivity, isAddToCart) {
+            if (isCartActivity) {
+                return isAddToCart ? 'fas fa-cart-plus' : 'fas fa-cart-arrow-down';
+            }
+            
+            const icons = {
+                'property_deleted': 'fas fa-trash-alt',
+                'edit_request': 'fas fa-edit',
+                'property_submitted': 'fas fa-home',
+                'property_approved': 'fas fa-check-circle',
+                'property_rejected': 'fas fa-times-circle',
+                'property_changes_requested': 'fas fa-exclamation-circle',
+                'property_resubmitted': 'fas fa-redo',
+                'edit_permission_granted': 'fas fa-unlock-alt',
+                'property_added_to_cart': 'fas fa-shopping-cart',
+                'cart_item_removed': 'fas fa-cart-arrow-down',
+                'system_alert': 'fas fa-info-circle',
+                'payment_received': 'fas fa-money-bill-wave',
+                'visit_reminder': 'fas fa-calendar-check',
+                'booking_window_expiring': 'fas fa-clock',
+                'cart_item_expired': 'fas fa-shopping-bag',
+                'commission_earned': 'fas fa-money-check',
+                'property_lock': 'fas fa-lock',
+                'property_unlock': 'fas fa-unlock',
+                'document_uploaded': 'fas fa-file-upload',
+                'document_request': 'fas fa-file-alt'
+            };
+            return icons[type] || 'fas fa-bell';
+        }
+
+        function getNotificationIconClass(type) {
+            const classes = {
+                'property_deleted': 'bg-red-100 text-red-600',
+                'edit_request': 'bg-yellow-100 text-yellow-600',
+                'property_submitted': 'bg-blue-100 text-blue-600',
+                'property_approved': 'bg-green-100 text-green-600',
+                'property_rejected': 'bg-red-100 text-red-600',
+                'property_changes_requested': 'bg-orange-100 text-orange-600',
+                'property_resubmitted': 'bg-yellow-100 text-yellow-600',
+                'edit_permission_granted': 'bg-purple-100 text-purple-600',
+                'property_added_to_cart': 'bg-pink-100 text-pink-600',
+                'cart_item_removed': 'bg-red-100 text-red-600',
+                'system_alert': 'bg-gray-100 text-gray-600',
+                'payment_received': 'bg-emerald-100 text-emerald-600',
+                'visit_reminder': 'bg-indigo-100 text-indigo-600',
+                'booking_window_expiring': 'bg-yellow-100 text-yellow-600',
+                'cart_item_expired': 'bg-red-100 text-red-600',
+                'commission_earned': 'bg-green-100 text-green-600',
+                'property_lock': 'bg-red-100 text-red-600',
+                'property_unlock': 'bg-green-100 text-green-600',
+                'document_uploaded': 'bg-green-100 text-green-600',
+                'document_request': 'bg-blue-100 text-blue-600'
+            };
+            return classes[type] || 'bg-gray-100 text-gray-600';
+        }
+
+        function formatNotificationType(type) {
+            if (!type) return '';
+            return type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        }
+
+        function formatDate(date) {
+            if (!date) return 'N/A';
+            return new Date(date).toLocaleString('en-IN', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function getShortId(id) {
+            if (!id) return 'N/A';
+            const idStr = id.toString();
+            return idStr.length > 8 ? idStr.substring(0, 8) + '...' : idStr;
+        }
+
+        function timeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            
+            let interval = Math.floor(seconds / 31536000);
+            if (interval >= 1) return interval + 'y ago';
+            
+            interval = Math.floor(seconds / 2592000);
+            if (interval >= 1) return interval + 'mo ago';
+            
+            interval = Math.floor(seconds / 86400);
+            if (interval >= 1) return interval + 'd ago';
+            
+            interval = Math.floor(seconds / 3600);
+            if (interval >= 1) return interval + 'h ago';
+            
+            interval = Math.floor(seconds / 60);
+            if (interval >= 1) return interval + 'm ago';
+            
+            return 'Just now';
+        }
+
+        // Toggle property details
+        function togglePropertyDetails(notificationId) {
+            const content = document.getElementById(`propertyDetails-${notificationId}`);
+            const button = event.currentTarget;
+            const chevronDown = button.querySelector('.fa-chevron-down');
+            const chevronUp = button.querySelector('.fa-chevron-up');
+            
+            if (content.classList.contains('expanded')) {
+                content.classList.remove('expanded');
+                chevronDown.classList.remove('hidden');
+                chevronUp.classList.add('hidden');
+            } else {
+                content.classList.add('expanded');
+                chevronDown.classList.add('hidden');
+                chevronUp.classList.remove('hidden');
+            }
+        }
+
+        // Filter Notifications
+        function filterNotifications(filter) {
+            const allItems = document.querySelectorAll('.notification-item');
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            
+            // Update active filter button
+            filterButtons.forEach(btn => btn.classList.remove('bg-blue-100', 'text-blue-700', 'font-medium'));
+            filterButtons.forEach(btn => btn.classList.add('border', 'text-gray-700'));
+            event.target.classList.remove('border', 'text-gray-700');
+            event.target.classList.add('bg-blue-100', 'text-blue-700', 'font-medium');
+            
+            let visibleCount = 0;
+            
+            allItems.forEach(item => {
+                const type = item.getAttribute('data-type');
+                const action = item.getAttribute('data-action');
+                const isUnread = item.classList.contains('unread');
+                const isCartActivity = type === 'property_added_to_cart' || type === 'cart_item_removed';
+                
+                let shouldShow = false;
+                
+                if (filter === 'all') shouldShow = true;
+                else if (filter === 'unread' && isUnread) shouldShow = true;
+                else if (filter === 'cart_activity' && isCartActivity) shouldShow = true;
+                else if (filter === type) shouldShow = true;
+                
+                if (shouldShow) {
+                    item.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            // Show message if no notifications visible
+            const existingEmptyState = document.getElementById('filter-empty-state');
+            if (existingEmptyState) existingEmptyState.remove();
+            
+            if (visibleCount === 0) {
+                const notificationsList = document.getElementById('notificationsList');
+                const emptyState = document.createElement('div');
+                emptyState.id = 'filter-empty-state';
+                emptyState.className = 'text-center py-16 bg-white rounded-xl shadow';
+                emptyState.innerHTML = `
+                    <i class="fas fa-filter text-gray-300 text-6xl mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">No Notifications Found</h3>
+                    <p class="text-gray-600">No notifications match your filter criteria.</p>
+                    <button onclick="filterNotifications('all')" 
+                            class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        Show All Notifications
+                    </button>
+                `;
+                notificationsList.parentNode.insertBefore(emptyState, notificationsList.nextSibling);
+            }
+        }
+
+        // Search Notifications
+        document.getElementById('searchNotifications').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const allItems = document.querySelectorAll('.notification-item');
+            let visibleCount = 0;
+            
+            allItems.forEach(item => {
+                const title = item.querySelector('h3').textContent.toLowerCase();
+                const message = item.querySelector('p.text-gray-600').textContent.toLowerCase();
+                
+                if (title.includes(searchTerm) || message.includes(searchTerm)) {
+                    item.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            // Show message if no notifications found
+            const existingEmptyState = document.getElementById('search-empty-state');
+            if (existingEmptyState) existingEmptyState.remove();
+            
+            if (visibleCount === 0 && searchTerm.length > 0) {
+                const notificationsList = document.getElementById('notificationsList');
+                const emptyState = document.createElement('div');
+                emptyState.id = 'search-empty-state';
+                emptyState.className = 'text-center py-16 bg-white rounded-xl shadow';
+                emptyState.innerHTML = `
+                    <i class="fas fa-search text-gray-300 text-6xl mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">No Results Found</h3>
+                    <p class="text-gray-600">No notifications match your search for "<strong>${searchTerm}</strong>"</p>
+                    <button onclick="document.getElementById('searchNotifications').value='';filterNotifications('all')" 
+                            class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        Clear Search
+                    </button>
+                `;
+                notificationsList.parentNode.insertBefore(emptyState, notificationsList.nextSibling);
+            }
+        });
+
+        // ========== NOTIFICATION ACTIONS ==========
+
+        async function markAsRead(notificationId, button) {
+            try {
+                showLoading('Marking as read...');
+                
+                const response = await fetch(`/admin/notifications/${notificationId}/read`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': '<%= token %>'
+                    }
+                });
+                
+                const data = await response.json();
+                hideLoading();
+                
+                if (data.success) {
+                    // Update UI
+                    const notificationItem = button ? button.closest('.notification-item') : 
+                                                      document.querySelector(`[data-notification="${notificationId}"]`);
+                    if (notificationItem) {
+                        notificationItem.classList.remove('unread');
+                        notificationItem.classList.add('read');
+                        
+                        if (button) {
+                            button.outerHTML = '<span class="text-sm text-green-600"><i class="fas fa-check-circle mr-1"></i>Read</span>';
+                        } else {
+                            const markBtn = notificationItem.querySelector('button[onclick^="markAsRead"]');
+                            if (markBtn) {
+                                markBtn.outerHTML = '<span class="text-sm text-green-600"><i class="fas fa-check-circle mr-1"></i>Read</span>';
+                            }
+                        }
+                        
+                        // Update unread count
+                        updateUnreadCount(-1);
+                        
+                        showToast('Success', 'Notification marked as read', 'success');
+                    }
+                } else {
+                    showToast('Error', data.message || 'Failed to mark as read', 'error');
+                }
+            } catch (error) {
+                hideLoading();
+                console.error('Error marking as read:', error);
+                showToast('Error', 'Failed to mark notification as read', 'error');
+            }
+        }
+
+        async function markAllAsRead() {
+            const result = await Swal.fire({
+                title: 'Mark all as read?',
+                text: 'This will mark all your notifications as read.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, mark all as read',
+                cancelButtonText: 'Cancel'
+            });
+            
+            if (result.isConfirmed) {
+                try {
+                    showLoading('Marking all as read...');
+                    
+                    const response = await fetch('/admin/notifications/read-all', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-Token': '<%= token %>'
+                        }
+                    });
+                    
+                    const data = await response.json();
+                    hideLoading();
+                    
+                    if (data.success) {
+                        // Update all notifications in UI
+                        document.querySelectorAll('.notification-item.unread').forEach(item => {
+                            item.classList.remove('unread');
+                            item.classList.add('read');
+                            
+                            const markBtn = item.querySelector('button[onclick^="markAsRead"]');
+                            if (markBtn) {
+                                markBtn.outerHTML = '<span class="text-sm text-green-600"><i class="fas fa-check-circle mr-1"></i>Read</span>';
+                            }
+                        });
+                        
+                        // Update unread count
+                        updateUnreadCount(0);
+                        
+                        showToast('Success', 'All notifications marked as read', 'success');
+                    } else {
+                        showToast('Error', data.message || 'Failed to mark all as read', 'error');
+                    }
+                } catch (error) {
+                    hideLoading();
+                    console.error('Error marking all as read:', error);
+                    showToast('Error', 'Failed to mark all as read', 'error');
+                }
+            }
+        }
+
+        async function deleteNotification(notificationId, button) {
+            const result = await Swal.fire({
+                title: 'Delete notification?',
+                text: 'This action cannot be undone.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'Cancel'
+            });
+            
+            if (result.isConfirmed) {
+                try {
+                    showLoading('Deleting notification...');
+                    
+                    const response = await fetch(`/admin/notifications/${notificationId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-Token': '<%= token %>'
+                        }
+                    });
+                    
+                    const data = await response.json();
+                    hideLoading();
+                    
+                    if (data.success) {
+                        // Remove from UI
+                        const notificationItem = button.closest('.notification-item');
+                        notificationItem.style.opacity = '0';
+                        notificationItem.style.transform = 'translateX(100px)';
+                        
+                        setTimeout(() => {
+                            notificationItem.remove();
+                            
+                            // Update counts
+                            const totalCount = document.querySelectorAll('.notification-item').length;
+                            if (totalCount === 0) {
+                                showEmptyState();
+                            }
+                            
+                            // Check if was unread
+                            if (notificationItem.classList.contains('unread')) {
+                                updateUnreadCount(-1);
+                            }
+                            
+                            updateTotalCount(totalCount);
+                        }, 300);
+                        
+                        showToast('Success', 'Notification deleted successfully', 'success');
+                    } else {
+                        showToast('Error', data.message || 'Failed to delete notification', 'error');
+                    }
+                } catch (error) {
+                    hideLoading();
+                    console.error('Error deleting notification:', error);
+                    showToast('Error', 'Failed to delete notification', 'error');
+                }
+            }
+        }
+
+        async function clearAllNotifications() {
+            const result = await Swal.fire({
+                title: 'Clear all notifications?',
+                text: 'This will permanently delete all your notifications. This action cannot be undone.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, clear all!',
+                cancelButtonText: 'Cancel'
+            });
+            
+            if (result.isConfirmed) {
+                try {
+                    showLoading('Clearing all notifications...');
+                    
+                    const response = await fetch('/admin/notifications', {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-Token': '<%= token %>'
+                        }
+                    });
+                    
+                    const data = await response.json();
+                    hideLoading();
+                    
+                    if (data.success) {
+                        // Remove all notifications from UI
+                        const notificationsList = document.getElementById('notificationsList');
+                        notificationsList.innerHTML = `
+                            <div class="text-center py-16 bg-white rounded-xl shadow" id="empty-state">
+                                <i class="fas fa-bell-slash text-gray-300 text-6xl mb-4"></i>
+                                <h3 class="text-xl font-semibold text-gray-700 mb-2">No Notifications</h3>
+                                <p class="text-gray-600">You don't have any notifications yet.</p>
+                                <p class="text-sm text-gray-400 mt-1">Notifications will appear here when there's activity.</p>
+                            </div>
+                        `;
+                        
+                        // Update stats
+                        updateUnreadCount(0);
+                        updateTotalCount(0);
+                        
+                        showToast('Success', 'All notifications cleared successfully', 'success');
+                    } else {
+                        showToast('Error', data.message || 'Failed to clear all notifications', 'error');
+                    }
+                } catch (error) {
+                    hideLoading();
+                    console.error('Error clearing all notifications:', error);
+                    showToast('Error', 'Failed to clear all notifications', 'error');
+                }
+            }
+        }
+
+        // ========== EDIT REQUEST ACTIONS ==========
+
+        async function approveEditRequest(notificationId, propertyId, sellerName, propertyTitle) {
+            const { value: formValues } = await Swal.fire({
+                title: 'Approve Edit Request',
+                html: `
+                    <div class="text-left space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Select Allowed Fields</label>
+                            <div id="fieldCheckboxes" class="space-y-2 max-h-60 overflow-y-auto p-2 border rounded">
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="allFields" class="mr-2" onchange="toggleAllFields()">
+                                    <span class="text-sm">All Fields (Full Access)</span>
+                                </label>
+                                <hr class="my-2">
+                                <div id="fieldList"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Edit Duration</label>
+                            <select id="duration" class="w-full px-3 py-2 border rounded-lg">
+                                <option value="24">24 Hours</option>
+                                <option value="48">48 Hours (2 Days)</option>
+                                <option value="72" selected>72 Hours (3 Days)</option>
+                                <option value="168">168 Hours (7 Days)</option>
+                                <option value="custom">Custom</option>
+                            </select>
+                            <div id="customDuration" class="hidden mt-2">
+                                <input type="number" id="customHours" placeholder="Enter hours" 
+                                       class="w-full px-3 py-2 border rounded-lg" min="1" max="720">
+                                <p class="text-xs text-gray-500 mt-1">Maximum 30 days (720 hours)</p>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Admin Remarks (Optional)</label>
+                            <textarea id="adminRemark" rows="2" 
+                                      placeholder="Add any remarks for the seller..."
+                                      class="w-full px-3 py-2 border rounded-lg"></textarea>
+                        </div>
+                    </div>
+                `,
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: 'Approve Edit Request',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#6b7280',
+                width: '600px',
+                didOpen: () => {
+                    // Populate field list
+                    const fieldList = document.getElementById('fieldList');
+                    const fields = [
+                        'title', 'description', 'price', 'price_type', 'bedrooms', 'bathrooms',
+                        'built_up_area', 'area_unit', 'furnishing', 'location', 'property_type',
+                        'ownership', 'floor', 'total_floors', 'age_of_property', 'facing',
+                        'parking', 'water_supply', 'electricity', 'amenities', 'images',
+                        'documents', 'contact_name', 'contact_phone', 'contact_email'
+                    ];
+                    
+                    fieldList.innerHTML = fields.map(field => `
+                        <label class="flex items-center">
+                            <input type="checkbox" name="allowed_fields" value="${field}" class="mr-2 field-checkbox">
+                            <span class="text-sm">${field.replace('_', ' ')}</span>
+                        </label>
+                    `).join('');
+                    
+                    // Handle duration change
+                    document.getElementById('duration').addEventListener('change', function(e) {
+                        const customDiv = document.getElementById('customDuration');
+                        customDiv.classList.toggle('hidden', e.target.value !== 'custom');
+                    });
+                },
+                preConfirm: () => {
+                    // Get selected fields
+                    const allFieldsCheckbox = document.getElementById('allFields');
+                    const fieldCheckboxes = document.querySelectorAll('.field-checkbox:checked');
+                    const durationSelect = document.getElementById('duration');
+                    const customHours = document.getElementById('customHours');
+                    const adminRemark = document.getElementById('adminRemark');
+                    
+                    let allowedFields = [];
+                    let durationHours = 72;
+                    
+                    if (allFieldsCheckbox.checked) {
+                        allowedFields = ['*']; // Full access
+                    } else {
+                        allowedFields = Array.from(fieldCheckboxes).map(cb => cb.value);
+                    }
+                    
+                    if (durationSelect.value === 'custom') {
+                        durationHours = parseInt(customHours.value) || 72;
+                        if (durationHours < 1 || durationHours > 720) {
+                            Swal.showValidationMessage('Please enter a valid duration (1-720 hours)');
+                            return false;
+                        }
+                    } else {
+                        durationHours = parseInt(durationSelect.value);
+                    }
+                    
+                    if (allowedFields.length === 0 && !allFieldsCheckbox.checked) {
+                        Swal.showValidationMessage('Please select at least one field to allow editing');
+                        return false;
+                    }
+                    
+                    return {
+                        allowed_fields: allowedFields,
+                        duration_hours: durationHours,
+                        admin_remark: adminRemark.value.trim()
+                    };
+                }
+            });
+            
+            if (!formValues) return;
+            
+            try {
+                showLoading('Approving edit request...');
+                
+                const response = await fetch(`/admin/notifications/${notificationId}/approve-edit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': '<%= token %>'
+                    },
+                    body: JSON.stringify({
+                        allowed_fields: formValues.allowed_fields,
+                        duration_hours: formValues.duration_hours,
+                        admin_remark: formValues.admin_remark
+                    })
+                });
+                
+                const data = await response.json();
+                hideLoading();
+                
+                if (data.success) {
+                    // Mark notification as read
+                    await markAsRead(notificationId, null);
+                    
+                    showToast('Success', `Edit access granted to ${sellerName} for "${propertyTitle}"`, 'success');
+                    
+                    // Remove notification from UI after delay
+                    setTimeout(() => {
+                        const notificationItem = document.querySelector(`[data-notification="${notificationId}"]`);
+                        if (notificationItem) {
+                            notificationItem.style.opacity = '0';
+                            setTimeout(() => notificationItem.remove(), 500);
+                        }
+                        updateUnreadCount(-1);
+                    }, 2000);
+                } else {
+                    showToast('Error', data.message || 'Failed to approve edit request', 'error');
+                }
+            } catch (error) {
+                hideLoading();
+                console.error('Error approving edit request:', error);
+                showToast('Error', 'Failed to approve edit request', 'error');
+            }
+        }
+
+        async function rejectEditRequest(notificationId, propertyId, sellerName, propertyTitle) {
+            const { value: reason } = await Swal.fire({
+                title: 'Reject Edit Request',
+                html: `
+                    <p class="text-gray-600 mb-4">
+                        Reject edit request from <strong>${sellerName}</strong> for property: <strong>"${propertyTitle}"</strong>
+                    </p>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Rejection Reason (Required)</label>
+                    <textarea id="rejectionReason" rows="3" 
+                              placeholder="Explain why you are rejecting this edit request..."
+                              class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                              required></textarea>
+                `,
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: 'Reject Request',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                preConfirm: () => {
+                    const reason = document.getElementById('rejectionReason').value.trim();
+                    if (!reason) {
+                        Swal.showValidationMessage('Please provide a rejection reason');
+                        return false;
+                    }
+                    return { reason };
+                }
+            });
+            
+            if (!reason) return;
+            
+            try {
+                showLoading('Rejecting edit request...');
+                
+                const response = await fetch(`/admin/notifications/${notificationId}/reject-edit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': '<%= token %>'
+                    },
+                    body: JSON.stringify({ reason: reason.reason })
+                });
+                
+                const data = await response.json();
+                hideLoading();
+                
+                if (data.success) {
+                    // Mark notification as read
+                    await markAsRead(notificationId, null);
+                    
+                    showToast('Rejected', `Edit request from ${sellerName} has been rejected`, 'info');
+                    
+                    // Remove notification from UI after delay
+                    setTimeout(() => {
+                        const notificationItem = document.querySelector(`[data-notification="${notificationId}"]`);
+                        if (notificationItem) {
+                            notificationItem.style.opacity = '0';
+                            setTimeout(() => notificationItem.remove(), 500);
+                        }
+                        updateUnreadCount(-1);
+                    }, 2000);
+                } else {
+                    showToast('Error', data.message || 'Failed to reject edit request', 'error');
+                }
+            } catch (error) {
+                hideLoading();
+                console.error('Error rejecting edit request:', error);
+                showToast('Error', 'Failed to reject edit request', 'error');
+            }
+        }
+
+        // Helper function for field selection
+        function toggleAllFields() {
+            const allFieldsCheckbox = document.getElementById('allFields');
+            const fieldCheckboxes = document.querySelectorAll('.field-checkbox');
+            
+            fieldCheckboxes.forEach(cb => {
+                cb.checked = allFieldsCheckbox.checked;
+                cb.disabled = allFieldsCheckbox.checked;
+            });
+        }
+
+        // ========== UTILITY FUNCTIONS ==========
+
+        function updateUnreadCount(change) {
+            const unreadBadges = document.querySelectorAll('.bg-red-500');
+            const unreadStat = document.querySelector('p.text-2xl.font-bold.text-red-600');
+            const unreadFilter = document.querySelector('button[onclick="filterNotifications(\'unread\')"]');
+            
+            unreadBadges.forEach(badge => {
+                let currentCount = parseInt(badge.textContent.replace('9+', '10'));
+                
+                if (change === 0) {
+                    currentCount = 0;
+                } else {
+                    currentCount += change;
+                }
+                
+                if (currentCount <= 0) {
+                    badge.remove();
+                } else {
+                    badge.textContent = currentCount > 9 ? '9+' : currentCount;
+                }
+            });
+            
+            if (unreadStat) {
+                let currentCount = parseInt(unreadStat.textContent);
+                
+                if (change === 0) {
+                    currentCount = 0;
+                } else {
+                    currentCount += change;
+                }
+                
+                unreadStat.textContent = currentCount;
+            }
+            
+            if (unreadFilter) {
+                const text = unreadFilter.textContent;
+                const regex = /\((\d+)\)/;
+                if (regex.test(text)) {
+                    let currentCount = parseInt(text.match(regex)[1]);
+                    
+                    if (change === 0) {
+                        currentCount = 0;
+                    } else {
+                        currentCount += change;
+                    }
+                    
+                    unreadFilter.textContent = text.replace(regex, `(${currentCount})`);
+                }
+            }
+        }
+
+        function updateTotalCount(newTotal) {
+            const totalStat = document.querySelector('p.text-2xl.font-bold.text-gray-900:first-of-type');
+            const totalFilter = document.querySelector('button[onclick="filterNotifications(\'all\')"]');
+            
+            if (totalStat) {
+                totalStat.textContent = newTotal;
+            }
+            
+            if (totalFilter) {
+                const text = totalFilter.textContent;
+                const regex = /\((\d+)\)/;
+                if (regex.test(text)) {
+                    totalFilter.textContent = text.replace(regex, `(${newTotal})`);
+                }
+            }
+        }
+
+        function showEmptyState() {
+            const notificationsList = document.getElementById('notificationsList');
+            notificationsList.innerHTML = `
+                <div class="text-center py-16 bg-white rounded-xl shadow">
+                    <i class="fas fa-bell-slash text-gray-300 text-6xl mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">No Notifications</h3>
+                    <p class="text-gray-600">You don't have any notifications yet.</p>
+                    <p class="text-sm text-gray-400 mt-1">Notifications will appear here when there's activity.</p>
+                </div>
+            `;
+        }
+
+        function showLoading(message = 'Processing...') {
+            // Create loading overlay
+            const loading = document.createElement('div');
+            loading.id = 'loading-overlay';
+            loading.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            loading.innerHTML = `
+                <div class="bg-white p-6 rounded-lg shadow-xl text-center">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p class="text-gray-700">${message}</p>
+                </div>
+            `;
+            
+            document.body.appendChild(loading);
+        }
+
+        function hideLoading() {
+            const loading = document.getElementById('loading-overlay');
+            if (loading) {
+                loading.remove();
+            }
+        }
+
+        function showToast(title, message, type = 'info') {
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.addEventListener('mouseenter', Swal.stopTimer)
+                    toast.addEventListener('mouseleave', Swal.resumeTimer)
+                }
+            });
+            
+            Toast.fire({
+                icon: type === 'error' ? 'error' : type === 'success' ? 'success' : 'info',
+                title: message
+            });
+        }
+
+        // Initialize property detail buttons
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add chevron-up icons to all property detail buttons
+            document.querySelectorAll('[onclick^="togglePropertyDetails"]').forEach(button => {
+                const chevronDown = button.querySelector('.fa-chevron-down');
+                if (chevronDown) {
+                    const chevronUp = document.createElement('i');
+                    chevronUp.className = 'fas fa-chevron-up ml-1 text-xs hidden';
+                    button.appendChild(chevronUp);
+                }
+            });
+            
+            // Set initial filter button active state
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            if (filterButtons.length > 0) {
+                filterButtons[0].classList.add('bg-blue-100', 'text-blue-700', 'font-medium');
+                filterButtons[0].classList.remove('border', 'text-gray-700');
+            }
+        });
+    </script>
+</body>
+</html>

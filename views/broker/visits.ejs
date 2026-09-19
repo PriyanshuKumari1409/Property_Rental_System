@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Propbandhu</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Custom styles for countdown and status indicators */
+        .status-badge {
+            @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+        }
+        .status-pending { @apply bg-yellow-100 text-yellow-800; }
+        .status-scheduled { @apply bg-blue-100 text-blue-800; }
+        .status-confirmed { @apply bg-green-100 text-green-800; }
+        .status-expired { @apply bg-red-100 text-red-800; }
+        
+        .property-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .property-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .days-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 10;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .countdown-critical {
+            color: #dc2626;
+            font-weight: 900;
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Broker Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/broker/dashboard" class="flex items-center">
+                        <span class="text-xl font-bold text-gray-900">Propbandhu Broker</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-gray-700 font-medium">🤝 Broker: <%= user.name %></span>
+                    <a href="/broker/dashboard" class="text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-tachometer-alt mr-1"></i>Dashboard
+                    </a>
+                    <a href="/broker/properties" class="text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-home mr-1"></i>Properties
+                    </a>
+                    <a href="/broker/visits" class="text-gray-600 hover:text-blue-600 <%= activePage === 'visits' ? 'text-blue-600 font-semibold' : '' %>">
+                        <i class="fas fa-calendar-day mr-1"></i>Visits
+                    </a>
+                    <a href="/broker/commissions" class="text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-money-bill-wave mr-1"></i>Commissions
+                    </a>
+                    <a href="/logout" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+                        <i class="fas fa-sign-out-alt mr-1"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- Page Header -->
+        <div class="mb-8">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Buyers' Cart Items</h1>
+                    <p class="text-gray-600 mt-2">Properties currently in buyers' carts - schedule visits here</p>
+                </div>
+                <div class="flex space-x-3">
+                    <a href="/broker/visits?status=pending" 
+                       class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition flex items-center">
+                        <i class="fas fa-plus-circle mr-2"></i>Schedule Visit
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Cart Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                <div class="bg-white rounded-xl shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-blue-100 rounded-lg">
+                            <i class="fas fa-shopping-cart text-blue-600 text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-500">Items in Carts</p>
+                            <p class="text-2xl font-bold text-gray-900"><%= stats?.total || 0 %></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-yellow-100 rounded-lg">
+                            <i class="fas fa-clock text-yellow-600 text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-500">Pending Schedule</p>
+                            <p class="text-2xl font-bold text-yellow-600"><%= stats.pending %></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-indigo-100 rounded-lg">
+                            <i class="fas fa-calendar-day text-indigo-600 text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-500">Scheduled</p>
+                            <p class="text-2xl font-bold text-indigo-600"><%= stats.scheduled %></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-green-100 rounded-lg">
+                            <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-500">Confirmed</p>
+                            <p class="text-2xl font-bold text-green-600"><%= stats.confirmed %></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-white rounded-xl shadow p-6 mb-6">
+            <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                    <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        <option value="all" <%= filters.status === 'all' ? 'selected' : '' %>>All Status</option>
+                        <option value="pending" <%= filters.status === 'pending' ? 'selected' : '' %>>Pending</option>
+                        <option value="scheduled" <%= filters.status === 'scheduled' ? 'selected' : '' %>>Scheduled</option>
+                        <option value="confirmed" <%= filters.status === 'confirmed' ? 'selected' : '' %>>Confirmed</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Property Type</label>
+                    <select name="type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        <option value="all" <%= filters.type === 'all' ? 'selected' : '' %>>All Properties</option>
+                        <option value="added" <%= filters.type === 'added' ? 'selected' : '' %>>Added by Me</option>
+                        <option value="assigned" <%= filters.type === 'assigned' ? 'selected' : '' %>>Assigned to Me</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Days Left</label>
+                    <select name="days" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        <option value="all" <%= filters.days === 'all' ? 'selected' : '' %>>All</option>
+                        <option value="urgent" <%= filters.days === 'urgent' ? 'selected' : '' %>>Urgent (≤3 days)</option>
+                        <option value="normal" <%= filters.days === 'normal' ? 'selected' : '' %>>Normal (>3 days)</option>
+                    </select>
+                </div>
+                
+                <div class="flex items-end">
+                    <div class="flex space-x-3 w-full">
+                        <button type="submit" class="flex-1 bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">
+                            <i class="fas fa-filter mr-2"></i>Apply
+                        </button>
+                        <a href="/broker/visits" class="flex-1 bg-gray-200 text-gray-800 px-6 py-2 rounded-lg font-semibold hover:bg-gray-300 transition text-center">
+                            <i class="fas fa-times mr-2"></i>Clear
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Cart Items - ONLY properties that are in buyers' carts -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-xl font-bold text-gray-900">Properties in Buyers' Carts (<%= visits.length %>)</h2>
+                <p class="text-gray-500 mt-1">Buyers have 7 days to schedule a visit from adding to cart</p>
+            </div>
+
+            <% if (!visits || visits.length === 0) { %>
+                <div class="text-center py-12">
+                    <i class="fas fa-shopping-cart text-gray-300 text-6xl mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">No properties in carts</h3>
+                    <p class="text-gray-600">There are no properties currently in buyers' carts matching your filters</p>
+                    <div class="mt-4 flex justify-center space-x-4">
+                        <a href="/broker/dashboard" class="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">
+                            <i class="fas fa-tachometer-alt mr-2"></i>Go to Dashboard
+                        </a>
+                        <% if (filters.status !== 'all' || filters.type !== 'all') { %>
+                        <a href="/broker/visits" class="inline-block bg-gray-200 text-gray-800 px-6 py-2 rounded-lg font-semibold hover:bg-gray-300 transition">
+                            <i class="fas fa-times mr-2"></i>Clear Filters
+                        </a>
+                        <% } %>
+                    </div>
+                </div>
+            <% } else { %>
+                <div class="divide-y divide-gray-200">
+                    <% visits.forEach(visit => { 
+                        const property = visit.property;
+                        const buyer = visit.buyer;
+                        
+                        // Calculate days left using added_at from cart (7 days window)
+                        const addedDate = new Date(visit.added_at);
+                        const expiryDate = new Date(addedDate);
+                        expiryDate.setDate(expiryDate.getDate() + 7);
+                        const now = new Date();
+                        const daysLeft = Math.max(0, Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24)));
+                        
+                        // Status colors
+                        const statusColors = {
+                            'pending': 'bg-yellow-100 text-yellow-800',
+                            'scheduled': 'bg-indigo-100 text-indigo-800',
+                            'confirmed': 'bg-green-100 text-green-800'
+                        };
+                        
+                        // Format price
+                        const formattedPrice = property.price ? 
+                            new Intl.NumberFormat('en-IN', {
+                                style: 'currency',
+                                currency: 'INR',
+                                maximumFractionDigits: 0
+                            }).format(property.price) : 'Price not available';
+                        
+                        // Format address
+                        const address = property.address ? 
+                            (property.address.area || property.address.street || '') + 
+                            (property.address.city ? ', ' + property.address.city : '') : 
+                            'Location not specified';
+                    %>
+                    <div class="p-6 property-card">
+                        <div class="flex flex-col lg:flex-row gap-6">
+                            <!-- Property Image with Days Badge -->
+                            <div class="lg:w-1/4 relative">
+                                <% if (property.images && property.images.length > 0) { %>
+                                <img src="<%= property.images[0].url %>" 
+                                     alt="<%= property.title %>" 
+                                     class="w-full h-48 object-cover rounded-lg">
+                                <% } else { %>
+                                <div class="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-home text-gray-400 text-4xl"></i>
+                                </div>
+                                <% } %>
+                                
+                                <!-- Days Left Badge -->
+                                <div class="days-badge">
+                                    <% if (daysLeft > 3) { %>
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                            <i class="fas fa-clock mr-1"></i><%= daysLeft %> days left
+                                        </span>
+                                    <% } else if (daysLeft > 0) { %>
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                                            <i class="fas fa-exclamation-triangle mr-1"></i><%= daysLeft %> days left
+                                        </span>
+                                    <% } else { %>
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                                            <i class="fas fa-exclamation-circle mr-1"></i>Expired
+                                        </span>
+                                    <% } %>
+                                </div>
+                                
+                                <!-- Cart Indicator -->
+                                <div class="absolute bottom-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
+                                    <i class="fas fa-shopping-cart mr-1"></i>
+                                    In Cart
+                                </div>
+                            </div>
+
+                            <!-- Property Details -->
+                            <div class="lg:w-3/4">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h3 class="text-xl font-bold text-gray-900">
+                                            <%= property.title %>
+                                        </h3>
+                                        <p class="text-gray-600 mt-1">
+                                            <i class="fas fa-map-marker-alt mr-2 text-blue-500"></i>
+                                            <%= address %>
+                                        </p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-2xl font-bold text-blue-600">
+                                            <%= formattedPrice %>
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Buyer Info -->
+                                <div class="mt-4 p-4 bg-blue-50 rounded-lg">
+                                    <div class="flex items-center mb-2">
+                                        <i class="fas fa-user text-blue-600 mr-2"></i>
+                                        <h4 class="font-semibold text-blue-900">Buyer Information</h4>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <p class="text-sm text-gray-600">Name</p>
+                                            <p class="font-medium text-gray-900"><%= buyer.name %></p>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm text-gray-600">Phone</p>
+                                            <p class="font-medium text-gray-900"><%= buyer.phone || 'Not provided' %></p>
+                                        </div>
+                                        <% if (buyer.email) { %>
+                                        <div class="md:col-span-2">
+                                            <p class="text-sm text-gray-600">Email</p>
+                                            <p class="font-medium text-gray-900"><%= buyer.email %></p>
+                                        </div>
+                                        <% } %>
+                                    </div>
+                                </div>
+
+                                <!-- Visit Status -->
+                                <div class="mt-4 flex flex-wrap gap-2">
+                                    <span class="status-badge <%= statusColors[visit.visit_status || 'pending'] %>">
+                                        <i class="fas fa-circle mr-1 text-xs"></i>
+                                        <%= (visit.visit_status || 'pending').toUpperCase() %>
+                                    </span>
+                                    
+                                    <% if (visit.visit_status === 'scheduled' && visit.scheduled_date) { %>
+                                    <span class="status-badge bg-purple-100 text-purple-800">
+                                        <i class="fas fa-calendar-day mr-1"></i>
+                                        <%= new Date(visit.scheduled_date).toLocaleDateString('en-IN') %> at <%= visit.scheduled_time %>
+                                    </span>
+                                    <% } %>
+                                </div>
+
+                                <!-- Actions -->
+                                <div class="mt-4 flex flex-wrap gap-2">
+                                    <% if (!visit.visit_status || visit.visit_status === 'pending') { %>
+                                        <% if (daysLeft > 0) { %>
+                                        <a href="/broker/visits/schedule/<%= property._id %>?buyer=<%= buyer._id %>" 
+                                           class="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition">
+                                            <i class="fas fa-calendar-alt mr-2"></i>Schedule Visit
+                                        </a>
+                                        <% } else { %>
+                                        <button disabled
+                                                class="inline-flex items-center px-4 py-2 bg-gray-400 text-white font-medium rounded-lg cursor-not-allowed">
+                                            <i class="fas fa-calendar-times mr-2"></i>Window Expired
+                                        </button>
+                                        <% } %>
+                                    <% } %>
+                                    
+                                    <% if (visit.visit_status === 'scheduled') { %>
+                                    <button onclick="confirmVisit('<%= property._id %>', '<%= buyer._id %>')" 
+                                            class="inline-flex items-center px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition">
+                                        <i class="fas fa-check-circle mr-2"></i>Confirm Visit
+                                    </button>
+                                    
+                                    <button onclick="cancelVisit('<%= property._id %>', '<%= buyer._id %>')" 
+                                            class="inline-flex items-center px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition">
+                                        <i class="fas fa-times-circle mr-2"></i>Cancel
+                                    </button>
+                                    <% } %>
+                                    
+                                    <a href="/broker/properties/<%= property._id %>" 
+                                       class="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition">
+                                        <i class="fas fa-eye mr-2"></i>View Property
+                                    </a>
+                                    
+                                    <a href="tel:<%= buyer.phone %>" 
+                                       class="inline-flex items-center px-4 py-2 bg-green-100 text-green-700 font-medium rounded-lg hover:bg-green-200 transition">
+                                        <i class="fas fa-phone mr-2"></i>Call Buyer
+                                    </a>
+                                </div>
+
+                                <!-- Added Date Info -->
+                                <div class="mt-4 pt-4 border-t border-gray-200">
+                                    <p class="text-sm text-gray-500">
+                                        <i class="fas fa-calendar-plus mr-2"></i>
+                                        Added to cart on <%= new Date(visit.added_at).toLocaleDateString('en-IN', { 
+                                            day: 'numeric', 
+                                            month: 'long', 
+                                            year: 'numeric' 
+                                        }) %>
+                                        at <%= new Date(visit.added_at).toLocaleTimeString('en-IN', { 
+                                            hour: '2-digit', 
+                                            minute: '2-digit' 
+                                        }) %>
+                                    </p>
+                                    <p class="text-sm text-gray-500 mt-1">
+                                        <i class="fas fa-hourglass-half mr-2"></i>
+                                        Expires on <%= expiryDate.toLocaleDateString('en-IN', { 
+                                            day: 'numeric', 
+                                            month: 'long', 
+                                            year: 'numeric' 
+                                        }) %>
+                                    </p>
+                                    <% if (daysLeft <= 3 && daysLeft > 0 && !visit.visit_status) { %>
+                                    <p class="text-sm text-yellow-600 mt-2 font-semibold">
+                                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                                        Urgent! Only <%= daysLeft %> days left to schedule a visit!
+                                    </p>
+                                    <% } %>
+                                </div>
+
+                                <!-- Cart Info -->
+                                <div class="mt-2 flex items-center justify-between text-xs">
+                                    <span class="text-gray-400">
+                                        <i class="fas fa-shopping-cart mr-1"></i>
+                                        Cart ID: <%= visit.cartId.toString().slice(-8) %>
+                                    </span>
+                                    <span class="text-gray-400">
+                                        <i class="fas fa-hashtag mr-1"></i>
+                                        Item ID: <%= visit.cartItemId.toString().slice(-8) %>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <% }); %>
+                </div>
+                
+                <!-- Summary Footer -->
+                <div class="p-4 bg-gray-50 border-t border-gray-200">
+                    <div class="flex justify-between items-center text-sm text-gray-600">
+                        <span>
+                            <i class="fas fa-shopping-cart mr-2 text-blue-500"></i>
+                            Showing <%= visits.length %> propert<%= visits.length === 1 ? 'y' : 'ies' %> in buyers' carts
+                        </span>
+                        <span>
+                            <i class="fas fa-clock mr-2 text-gray-400"></i>
+                            Last updated: <%= new Date().toLocaleTimeString('en-IN') %>
+                        </span>
+                    </div>
+                </div>
+            <% } %>
+        </div>
+
+        <!-- Cart Tips -->
+        <div class="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-6">
+            <h3 class="text-lg font-bold text-blue-900 mb-3">
+                <i class="fas fa-lightbulb mr-2"></i>Cart & Visit Tips
+            </h3>
+            <ul class="space-y-2">
+                <li class="flex items-start">
+                    <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                    <span class="text-blue-800"><strong>Green badges:</strong> >3 days left to schedule</span>
+                </li>
+                <li class="flex items-start">
+                    <i class="fas fa-exclamation-triangle text-yellow-500 mt-1 mr-2"></i>
+                    <span class="text-blue-800"><strong>Yellow badges:</strong> ≤3 days left - urgent</span>
+                </li>
+                <li class="flex items-start">
+                    <i class="fas fa-times-circle text-red-500 mt-1 mr-2"></i>
+                    <span class="text-blue-800"><strong>Red badges:</strong> Expired - no visit can be scheduled</span>
+                </li>
+                <li class="flex items-start">
+                    <i class="fas fa-info-circle text-blue-500 mt-1 mr-2"></i>
+                    <span class="text-blue-800">Buyers have <strong>7 days</strong> from adding to cart to schedule a visit</span>
+                </li>
+                <li class="flex items-start">
+                    <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                    <span class="text-blue-800">Once confirmed, buyers get <strong>60 days</strong> to complete booking</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        async function confirmVisit(propertyId, buyerId) {
+            if (!confirm('Are you sure you want to confirm this visit? This will start the 60-day booking window.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/broker/api/visit/confirm', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        propertyId: propertyId,
+                        buyerId: buyerId
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Visit confirmed successfully! Booking window has started.');
+                    location.reload();
+                } else {
+                    alert('❌ Error: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error confirming visit:', error);
+                alert('Failed to confirm visit. Please try again.');
+            }
+        }
+        
+        async function cancelVisit(propertyId, buyerId) {
+            const reason = prompt('Please enter reason for cancellation:');
+            if (reason === null) return;
+            
+            if (!reason.trim()) {
+                alert('Please provide a reason for cancellation.');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/broker/api/visit/cancel', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        propertyId: propertyId,
+                        buyerId: buyerId,
+                        reason: reason.trim()
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Visit cancelled successfully!');
+                    location.reload();
+                } else {
+                    alert('❌ Error: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error cancelling visit:', error);
+                alert('Failed to cancel visit. Please try again.');
+            }
+        }
+
+        // Check for expiring items
+        function checkExpiringItems() {
+            const expiringItems = document.querySelectorAll('.days-badge span');
+            let needsRefresh = false;
+            
+            expiringItems.forEach(badge => {
+                const daysText = badge.textContent;
+                const daysMatch = daysText.match(/(\d+)\s*days/);
+                if (daysMatch) {
+                    const daysLeft = parseInt(daysMatch[1]);
+                    if (daysLeft <= 1) {
+                        needsRefresh = true;
+                    }
+                }
+            });
+            
+            if (needsRefresh) {
+                location.reload();
+            }
+        }
+
+        // Check for expiring items every minute
+        setInterval(checkExpiringItems, 60000);
+
+        // Auto-refresh stats every 30 seconds
+        setInterval(() => {
+            if (!document.hidden) {
+                fetch('/broker/api/visits/stats')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Update stats cards
+                            const statsElements = document.querySelectorAll('.text-2xl.font-bold');
+                            if (statsElements.length >= 4) {
+                                statsElements[0].textContent = data.stats.total;
+                                statsElements[1].textContent = data.stats.pending;
+                                statsElements[2].textContent = data.stats.scheduled;
+                                statsElements[3].textContent = data.stats.confirmed;
+                            }
+                        }
+                    })
+                    .catch(error => console.error('Error updating stats:', error));
+            }
+        }, 30000);
+    </script>
+</body>
+</html>

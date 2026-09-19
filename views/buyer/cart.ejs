@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> | Propbandhu</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <style>
+        .property-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .property-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        .days-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center">
+                        <span class="text-xl font-bold text-gray-900">Propbandhu</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-gray-700 font-medium">🏠 Buyer: <%= user.name %></span>
+                    <a href="/buyer/dashboard" class="text-gray-600 hover:text-blue-600 <%= activePage === 'dashboard' ? 'text-blue-600 font-semibold' : '' %>">
+                        <i class="fas fa-home mr-1"></i>Dashboard
+                    </a>
+                    <a href="/buyer/properties" class="text-gray-600 hover:text-blue-600 <%= activePage === 'properties' ? 'text-blue-600 font-semibold' : '' %>">
+                        <i class="fas fa-search mr-1"></i>Browse
+                    </a>
+                    <a href="/buyer/cart" class="text-gray-600 hover:text-blue-600 <%= activePage === 'cart' ? 'text-blue-600 font-semibold' : '' %>">
+                        <i class="fas fa-shopping-cart mr-1"></i>My Cart
+                        <% if (cartItems.length > 0) { %>
+                        <span class="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
+                            <%= cartItems.length %>
+                        </span>
+                        <% } %>
+                    </a>
+                    <a href="/buyer/visits" class="text-gray-600 hover:text-blue-600 <%= activePage === 'visits' ? 'text-blue-600 font-semibold' : '' %>">
+                        <i class="fas fa-calendar-day mr-1"></i>My Visits
+                    </a>
+                    <a href="/logout" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+                        <i class="fas fa-sign-out-alt mr-1"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Page Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">My Cart</h1>
+            <p class="text-gray-600 mt-2">Properties you've added for consideration</p>
+            
+            <!-- Cart Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+                <div class="bg-white rounded-xl shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-blue-100 rounded-lg">
+                            <i class="fas fa-shopping-cart text-blue-600 text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-500">Properties in Cart</p>
+                            <p class="text-2xl font-bold text-gray-900"><%= cartItems.length %> / <%= cartSettings.max_properties %></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-green-100 rounded-lg">
+                            <i class="fas fa-clock text-green-600 text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-500">Days to Schedule</p>
+                            <% 
+                                // Calculate the minimum days left among all cart items
+                                let minDaysLeft = 7;
+                                if (cartItems.length > 0) {
+                                    minDaysLeft = Math.min(...cartItems.map(item => item.property.days_left || 7));
+                                }
+                            %>
+                            <p class="text-2xl font-bold text-gray-900 <%= minDaysLeft <= 3 ? 'text-red-600' : '' %>">
+                                <%= minDaysLeft %> Days
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-purple-100 rounded-lg">
+                            <i class="fas fa-calendar-alt text-purple-600 text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-500">Visit Window</p>
+                            <p class="text-2xl font-bold text-gray-900"><%= cartSettings.booking_window_days || 60 %> Days</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-yellow-100 rounded-lg">
+                            <i class="fas fa-chart-line text-yellow-600 text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-500">Available Slots</p>
+                            <p class="text-2xl font-bold text-gray-900 <%= cartSettings.max_properties - cartItems.length <= 2 ? 'text-yellow-600' : 'text-green-600' %>">
+                                <%= cartSettings.max_properties - cartItems.length %>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cart Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Cart Items -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h2 class="text-xl font-bold text-gray-900">Properties in Cart (<%= cartItems.length %>)</h2>
+                        <% if (cartItems.length === 0) { %>
+                            <p class="text-gray-500 mt-1">You haven't added any properties to your cart yet.</p>
+                        <% } else { %>
+                            <p class="text-gray-500 mt-1">Schedule visits within <%= cartSettings.visit_window_days || 7 %> days of adding to cart</p>
+                        <% } %>
+                    </div>
+
+                    <!-- Empty Cart State -->
+                    <% if (cartItems.length === 0) { %>
+                    <div class="text-center py-12">
+                        <i class="fas fa-shopping-cart text-gray-300 text-6xl mb-4"></i>
+                        <h3 class="text-xl font-semibold text-gray-700 mb-2">Your cart is empty</h3>
+                        <p class="text-gray-500 mb-6">Browse properties and add them to your cart to get started.</p>
+                        <a href="/buyer/properties" class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
+                            <i class="fas fa-search mr-2"></i>Browse Properties
+                        </a>
+                    </div>
+                    <% } %>
+
+                    <!-- Cart Items List -->
+                    <div class="divide-y divide-gray-200">
+                        <% cartItems.forEach((item, index) => { 
+                            // Calculate days left dynamically
+                            const addedDate = new Date(item.added_at);
+                            const expiryDate = new Date(addedDate.getTime() + (cartSettings.visit_window_days || 7) * 24 * 60 * 60 * 1000);
+                            const now = new Date();
+                            const daysLeft = Math.max(0, Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24)));
+                        %>
+                        <div class="p-6 property-card">
+                            <div class="flex flex-col md:flex-row gap-4">
+                                <!-- Property Image -->
+                                <div class="md:w-1/3 relative">
+                                    <% if (item.property.primary_image) { %>
+                                        <img src="<%= item.property.primary_image %>" 
+                                             alt="<%= item.property.title || 'Property' %>" 
+                                             class="w-full h-48 object-cover rounded-lg">
+                                    <% } else { %>
+                                        <div class="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-home text-gray-400 text-4xl"></i>
+                                        </div>
+                                    <% } %>
+                                    
+                                    <!-- Days Left Badge -->
+                                    <div class="days-badge">
+                                        <% if (daysLeft > 3) { %>
+                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                                <i class="fas fa-clock mr-1"></i><%= daysLeft %> days left
+                                            </span>
+                                        <% } else if (daysLeft > 0) { %>
+                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                                                <i class="fas fa-exclamation-triangle mr-1"></i><%= daysLeft %> days left
+                                            </span>
+                                        <% } else { %>
+                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                                                <i class="fas fa-exclamation-circle mr-1"></i>Expired
+                                            </span>
+                                        <% } %>
+                                    </div>
+                                </div>
+
+                                <!-- Property Details -->
+                                <div class="md:w-2/3">
+                                    <div class="flex justify-between items-start">
+                                        <div>
+                                            <h3 class="text-lg font-bold text-gray-900">
+                                                <%= item.property.title || 'Untitled Property' %>
+                                            </h3>
+                                            <p class="text-gray-600 mt-1">
+                                                <i class="fas fa-map-marker-alt mr-2 text-blue-500"></i>
+                                                <%= item.property.full_address %>
+                                            </p>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-xl font-bold text-blue-600">
+                                                <%= item.property.formatted_price %>
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Seller Info -->
+                                    <% if (item.property.seller) { %>
+                                    <div class="mt-4 p-3 bg-gray-50 rounded-lg">
+                                        <p class="text-sm text-gray-600">
+                                            <span class="font-semibold">Seller:</span> 
+                                            <%= item.property.seller.name || 'Not specified' %>
+                                        </p>
+                                        <% if (item.property.seller.phone) { %>
+                                        <p class="text-sm text-gray-600 mt-1">
+                                            <span class="font-semibold">Contact:</span> 
+                                            <%= item.property.seller.phone %>
+                                        </p>
+                                        <% } %>
+                                    </div>
+                                    <% } %>
+
+                                    <!-- Actions -->
+                                    <div class="mt-4 flex flex-wrap gap-2">
+                                        <!-- Schedule Visit Button -->
+                                        <% if (daysLeft > 0) { %>
+                                        <a href="/buyer/schedule-visit/<%= item.property._id %>" 
+                                           class="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition">
+                                            <i class="fas fa-calendar-alt mr-2"></i>Schedule Visit
+                                        </a>
+                                        <% } else { %>
+                                        <button disabled
+                                                class="inline-flex items-center px-4 py-2 bg-gray-400 text-white font-medium rounded-lg cursor-not-allowed">
+                                            <i class="fas fa-calendar-times mr-2"></i>Visit Window Expired
+                                        </button>
+                                        <% } %>
+
+                                        <!-- View Details -->
+                                        <a href="/buyer/properties/<%= item.property._id %>" 
+                                           class="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition">
+                                            <i class="fas fa-eye mr-2"></i>View Details
+                                        </a>
+
+                                        <!-- Remove from Cart -->
+                                        <button onclick="removeFromCart('<%= item.property._id %>')" 
+                                                class="inline-flex items-center px-4 py-2 bg-red-100 text-red-700 font-medium rounded-lg hover:bg-red-200 transition">
+                                            <i class="fas fa-trash-alt mr-2"></i>Remove
+                                        </button>
+
+                                        <!-- Quick Actions -->
+                                        <div class="relative inline-block text-left">
+                                            <button type="button" 
+                                                    class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-800 font-medium rounded-lg hover:bg-gray-200 transition"
+                                                    onclick="toggleQuickActions(<%= index %>)">
+                                                <i class="fas fa-ellipsis-h mr-2"></i>More
+                                            </button>
+                                            <div id="quick-actions-<%= index %>" 
+                                                 class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-10 border border-gray-200">
+                                                <div class="py-1">
+                                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onclick="shareProperty('<%= item.property._id %>', '<%= item.property.title %>')">
+                                                        <i class="fas fa-share-alt mr-2"></i>Share
+                                                    </a>
+                                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onclick="downloadPropertyDetails('<%= item.property._id %>')">
+                                                        <i class="fas fa-download mr-2"></i>Download Details
+                                                    </a>
+                                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onclick="printProperty('<%= item.property._id %>')">
+                                                        <i class="fas fa-print mr-2"></i>Print
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Added Date and Time Info -->
+                                    <div class="mt-4 pt-4 border-t border-gray-200">
+                                        <p class="text-sm text-gray-500">
+                                            <i class="fas fa-calendar-plus mr-2"></i>
+                                            Added on <%= new Date(item.added_at).toLocaleDateString('en-IN', { 
+                                                day: 'numeric', 
+                                                month: 'long', 
+                                                year: 'numeric' 
+                                            }) %>
+                                            at <%= new Date(item.added_at).toLocaleTimeString('en-IN', { 
+                                                hour: '2-digit', 
+                                                minute: '2-digit' 
+                                            }) %>
+                                        </p>
+                                        <p class="text-sm text-gray-500 mt-1">
+                                            <i class="fas fa-hourglass-half mr-2"></i>
+                                            Expires on <%= expiryDate.toLocaleDateString('en-IN', { 
+                                                day: 'numeric', 
+                                                month: 'long', 
+                                                year: 'numeric' 
+                                            }) %>
+                                        </p>
+                                        <% if (daysLeft <= 3 && daysLeft > 0) { %>
+                                        <p class="text-sm text-yellow-600 mt-1 font-semibold">
+                                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                                            Hurry! Only <%= daysLeft %> days left to schedule a visit!
+                                        </p>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <% }); %>
+                    </div>
+                </div>
+
+                <!-- Cart Tips -->
+                <div class="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-6">
+                    <h3 class="text-lg font-bold text-blue-900 mb-3">
+                        <i class="fas fa-lightbulb mr-2"></i>Cart Tips
+                    </h3>
+                    <ul class="space-y-2">
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                            <span class="text-blue-800">You have <%= cartSettings.visit_window_days || 7 %> days from adding to cart to schedule a visit</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                            <span class="text-blue-800">Once you schedule a visit, you have <%= cartSettings.booking_window_days || 60 %> days to complete the process</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                            <span class="text-blue-800">You can add up to <%= cartSettings.max_properties %> properties in your cart</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                            <span class="text-blue-800">Properties in cart are reserved for you - others cannot see them</span>
+                        </li>
+                        <% if (cartItems.length > 0) { %>
+                        <li class="flex items-start">
+                            <i class="fas fa-info-circle text-blue-500 mt-1 mr-2"></i>
+                            <span class="text-blue-800">You have <%= cartSettings.max_properties - cartItems.length %> slot(s) remaining in your cart</span>
+                        </li>
+                        <% } %>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="lg:col-span-1">
+                <!-- Cart Summary -->
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4">Cart Summary</h3>
+                    
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Properties in cart:</span>
+                            <span class="font-semibold"><%= cartItems.length %></span>
+                        </div>
+                        
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Cart limit:</span>
+                            <span class="font-semibold"><%= cartSettings.max_properties %></span>
+                        </div>
+                        
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Remaining slots:</span>
+                            <span class="font-semibold <%= cartSettings.max_properties - cartItems.length <= 2 ? 'text-yellow-600' : 'text-green-600' %>">
+                                <%= cartSettings.max_properties - cartItems.length %>
+                            </span>
+                        </div>
+                        
+                        <div class="pt-3 border-t border-gray-200">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Visit window:</span>
+                                <span class="font-semibold"><%= cartSettings.visit_window_days || 7 %> days</span>
+                            </div>
+                            <div class="mt-2">
+                                <% 
+                                    // Calculate average time used percentage
+                                    let avgTimeUsed = 0;
+                                    if (cartItems.length > 0) {
+                                        const totalDaysUsed = cartItems.reduce((sum, item) => {
+                                            const addedDate = new Date(item.added_at);
+                                            const expiryDate = new Date(addedDate.getTime() + (cartSettings.visit_window_days || 7) * 24 * 60 * 60 * 1000);
+                                            const now = new Date();
+                                            const daysUsed = (cartSettings.visit_window_days || 7) - Math.max(0, Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24)));
+                                            return sum + daysUsed;
+                                        }, 0);
+                                        avgTimeUsed = (totalDaysUsed / cartItems.length) / (cartSettings.visit_window_days || 7) * 100;
+                                    }
+                                %>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-blue-600 h-2 rounded-full" style="width: <%= avgTimeUsed %>%"></div>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1 text-right">
+                                    Average time used: <%= Math.round(avgTimeUsed) %>%
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <% if (cartItems.length < cartSettings.max_properties) { %>
+                        <a href="/buyer/properties" 
+                           class="block w-full bg-green-600 text-white text-center py-3 rounded-lg font-semibold hover:bg-green-700 transition mb-3">
+                            <i class="fas fa-plus mr-2"></i>Add More Properties
+                        </a>
+                        <% } else { %>
+                        <button disabled class="block w-full bg-gray-400 text-white text-center py-3 rounded-lg font-semibold cursor-not-allowed mb-3">
+                            <i class="fas fa-ban mr-2"></i>Cart Limit Reached
+                        </button>
+                        <% } %>
+                        
+                        <% 
+                            // Check if there are any items with visits scheduled
+                            const hasScheduledVisits = cartItems.some(item => item.visit_scheduled || item.visit_date);
+                        %>
+                        <% if (hasScheduledVisits) { %>
+                        <a href="/buyer/visits" 
+                           class="block w-full bg-blue-600 text-white text-center py-3 rounded-lg font-semibold hover:bg-blue-700 transition">
+                            <i class="fas fa-calendar-check mr-2"></i>View Scheduled Visits
+                        </a>
+                        <% } %>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4">Quick Actions</h3>
+                    
+                    <div class="space-y-3">
+                        <% if (cartItems.length > 0) { %>
+                        <button onclick="clearCart()" 
+                                class="w-full flex items-center justify-center px-4 py-3 bg-red-50 text-red-700 font-medium rounded-lg hover:bg-red-100 transition">
+                            <i class="fas fa-trash-alt mr-2"></i>Clear Entire Cart
+                        </button>
+                        <% } %>
+                        
+                        <a href="/buyer/properties" 
+                           class="block w-full text-center px-4 py-3 bg-blue-50 text-blue-700 font-medium rounded-lg hover:bg-blue-100 transition">
+                            <i class="fas fa-search mr-2"></i>Browse Properties
+                        </a>
+                        
+                        <% if (cartItems.length > 0) { %>
+                        <button onclick="downloadCart()" 
+                                class="w-full flex items-center justify-center px-4 py-3 bg-green-50 text-green-700 font-medium rounded-lg hover:bg-green-100 transition">
+                            <i class="fas fa-download mr-2"></i>Download Cart Details
+                        </button>
+                        
+                        <button onclick="shareCart()" 
+                                class="w-full flex items-center justify-center px-4 py-3 bg-purple-50 text-purple-700 font-medium rounded-lg hover:bg-purple-100 transition">
+                            <i class="fas fa-share-alt mr-2"></i>Share Cart
+                        </button>
+                        <% } %>
+                    </div>
+                </div>
+
+                <!-- Need Help? -->
+                <div class="mt-6 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
+                    <h3 class="text-lg font-bold mb-3">Need Help?</h3>
+                    <p class="mb-4">Our support team is here to help you with your property search and visits.</p>
+                    <div class="space-y-2">
+                        <div class="flex items-center">
+                            <i class="fas fa-phone mr-3"></i>
+                            <span>Call: 1800-123-4567</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-envelope mr-3"></i>
+                            <span>Email: support@propbandhu.com</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-clock mr-3"></i>
+                            <span>Mon-Sun: 9 AM - 9 PM</span>
+                        </div>
+                    </div>
+                    <button class="mt-4 w-full bg-white text-blue-600 font-semibold py-2 rounded-lg hover:bg-gray-100 transition">
+                        <i class="fas fa-comments mr-2"></i>Chat with Support
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="text-center text-gray-500">
+                <p>© <%= new Date().getFullYear() %> Propbandhu. All rights reserved.</p>
+                <p class="mt-2 text-sm">Your trusted partner in property search and transactions</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // Toggle quick actions menu
+        function toggleQuickActions(index) {
+            const menu = document.getElementById(`quick-actions-${index}`);
+            menu.classList.toggle('hidden');
+            
+            // Close other open menus
+            document.querySelectorAll('[id^="quick-actions-"]').forEach(otherMenu => {
+                if (otherMenu.id !== `quick-actions-${index}` && !otherMenu.classList.contains('hidden')) {
+                    otherMenu.classList.add('hidden');
+                }
+            });
+        }
+
+        // Remove from cart
+        function removeFromCart(propertyId) {
+            if (confirm('Are you sure you want to remove this property from your cart?')) {
+                fetch('/buyer/api/cart/remove', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ propertyId: propertyId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Property removed from cart!');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to remove from cart. Please try again.');
+                });
+            }
+        }
+
+        // Clear entire cart
+        function clearCart() {
+            if (confirm('Are you sure you want to clear your entire cart? This will remove all properties from your cart.')) {
+                // This would need a backend endpoint to clear all cart items
+                fetch('/buyer/api/cart/clear', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Cart cleared successfully!');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to clear cart. Please try again.');
+                });
+            }
+        }
+
+        // Download cart details
+        function downloadCart() {
+            fetch('/buyer/api/cart/export')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Create and download file
+                        const blob = new Blob([JSON.stringify(data.cartData, null, 2)], { type: 'application/json' });
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `propbandhu-cart-${new Date().toISOString().split('T')[0]}.json`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(url);
+                    } else {
+                        alert('Failed to download cart details.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to download cart details. Please try again.');
+                });
+        }
+
+        // Share cart
+        function shareCart() {
+            const cartData = {
+                title: 'My Property Cart - Propbandhu',
+                text: `I have ${<%= cartItems.length %>} properties in my cart on Propbandhu!`,
+                url: window.location.href,
+            };
+
+            if (navigator.share) {
+                navigator.share(cartData)
+                    .then(() => console.log('Cart shared successfully'))
+                    .catch((error) => console.log('Error sharing cart:', error));
+            } else {
+                // Fallback for browsers that don't support Web Share API
+                navigator.clipboard.writeText(window.location.href)
+                    .then(() => alert('Cart URL copied to clipboard! You can share it manually.'))
+                    .catch(() => {
+                        const textArea = document.createElement('textarea');
+                        textArea.value = window.location.href;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        alert('Cart URL copied to clipboard! You can share it manually.');
+                    });
+            }
+        }
+
+        // Share individual property
+        function shareProperty(propertyId, propertyTitle) {
+            const propertyUrl = `${window.location.origin}/buyer/properties/${propertyId}`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: `Property: ${propertyTitle}`,
+                    text: `Check out this property on Propbandhu: ${propertyTitle}`,
+                    url: propertyUrl,
+                });
+            } else {
+                navigator.clipboard.writeText(propertyUrl)
+                    .then(() => alert('Property URL copied to clipboard!'))
+                    .catch(() => {
+                        const textArea = document.createElement('textarea');
+                        textArea.value = propertyUrl;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        alert('Property URL copied to clipboard!');
+                    });
+            }
+        }
+
+        // Download property details
+        function downloadPropertyDetails(propertyId) {
+            alert(`Downloading details for property ${propertyId}...`);
+            // Implement property details download
+        }
+
+        // Print property
+        function printProperty(propertyId) {
+            window.open(`/buyer/properties/${propertyId}/print`, '_blank');
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('[id^="quick-actions-"]') && !event.target.closest('button[onclick*="toggleQuickActions"]')) {
+                document.querySelectorAll('[id^="quick-actions-"]').forEach(menu => {
+                    menu.classList.add('hidden');
+                });
+            }
+        });
+
+        // Auto-refresh for expiring items
+        function checkExpiringItems() {
+            const expiringItems = document.querySelectorAll('.days-badge span');
+            let needsRefresh = false;
+            
+            expiringItems.forEach(badge => {
+                const daysText = badge.textContent;
+                const daysMatch = daysText.match(/(\d+)\s*days/);
+                if (daysMatch) {
+                    const daysLeft = parseInt(daysMatch[1]);
+                    if (daysLeft <= 1) {
+                        needsRefresh = true;
+                    }
+                }
+            });
+            
+            if (needsRefresh) {
+                location.reload();
+            }
+        }
+
+        // Check for expiring items every minute
+        setInterval(checkExpiringItems, 60000);
+    </script>
+</body>
+</html>

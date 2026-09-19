@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Propbandhu Broker</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        
+        .notification-item.unread {
+            border-left: 4px solid #f59e0b;
+            background-color: #fffbeb;
+        }
+        
+        .notification-item.read {
+            border-left: 4px solid #e5e7eb;
+        }
+        
+        .type-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        
+        /* Existing types */
+        .lead_assigned { background-color: #fef3c7; color: #92400e; }
+        .commission_earned { background-color: #d1fae5; color: #065f46; }
+        .adder_commission_earned { background-color: #bbf7d0; color: #065f46; }
+        .seller_commission_earned { background-color: #a7f3d0; color: #065f46; }
+        .property_added_approved { background-color: #dbeafe; color: #1e40af; }
+        .property_added_rejected { background-color: #fee2e2; color: #991b1b; }
+        .visit_scheduled { background-color: #e0e7ff; color: #3730a3; }
+        .visit_confirmed { background-color: #c7d2fe; color: #3730a3; }
+        .booking_completed { background-color: #ddd6fe; color: #5b21b6; }
+        .inquiry_received { background-color: #dbeafe; color: #1e40af; }
+        .edit_permission_granted { background-color: #f3e8ff; color: #7c3aed; }
+        .property_edit_requested { background-color: #fef3c7; color: #92400e; }
+        .extension_request_approved { background-color: #dcfce7; color: #166534; }
+        .extension_request_rejected { background-color: #fee2e2; color: #991b1b; }
+        .monthly_earnings_summary { background-color: #e0f2fe; color: #075985; }
+        
+        /* Cart Activity Types */
+        .property_added_to_cart { background-color: #ffedd5; color: #9a3412; }
+        .cart_item_removed { background-color: #fee2e2; color: #991b1b; }
+        
+        .notification-bell {
+            position: relative;
+        }
+        
+        .notification-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ef4444;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Toast notifications */
+        .toast-message {
+            animation: slideIn 0.3s ease-out, fadeOut 0.3s ease-in 4.7s;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        
+        /* Loading spinner */
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #f59e0b;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Action buttons */
+        .action-btn {
+            transition: all 0.2s ease;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Empty state */
+        .empty-state {
+            transition: all 0.3s ease;
+        }
+        
+        .empty-state:hover {
+            transform: translateY(-5px);
+        }
+        
+        /* Pagination active state */
+        .pagination-active {
+            background: linear-gradient(135deg, #f59e0b, #fbbf24);
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 6px rgba(245, 158, 11, 0.2);
+        }
+        
+        /* Status indicators */
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+        }
+        
+        .status-dot.unread { background-color: #f59e0b; }
+        .status-dot.read { background-color: #10b981; }
+        .status-dot.cart-add { background-color: #f97316; }
+        .status-dot.cart-remove { background-color: #ef4444; }
+        
+        /* Card hover effects */
+        .notification-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .notification-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        }
+        
+        /* Filter buttons */
+        .filter-btn.active {
+            background: linear-gradient(135deg, #f59e0b, #fbbf24);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Badge animations */
+        @keyframes badgePulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .notification-count.pulse {
+            animation: badgePulse 0.5s ease-in-out;
+        }
+        
+        /* Loading skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        /* Cart activity styles */
+        .cart-add-badge {
+            background: #ffedd5;
+            color: #9a3412;
+            border: 1px solid #fed7aa;
+        }
+        
+        .cart-remove-badge {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        
+        .buyer-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        /* Commission highlight */
+        .commission-highlight {
+            background: linear-gradient(135deg, #f59e0b, #fbbf24);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* Broker badge */
+        .broker-badge {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 5px;
+        }
+
+        /* Property owner indicator */
+        .owner-indicator {
+            background-color: #e0f2fe;
+            color: #0369a1;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* Property details styling (from admin) */
+        .property-details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 10px;
+        }
+        
+        .property-detail-item {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 12px;
+        }
+        
+        .detail-label {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        
+        .detail-value {
+            font-size: 14px;
+            color: #111827;
+            font-weight: 600;
+        }
+        
+        .property-image {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .property-section {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .section-title {
+            color: #374151;
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title i {
+            margin-right: 8px;
+            color: #f59e0b;
+        }
+        
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        
+        .collapsible-content.expanded {
+            max-height: 1000px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- DEBUG: Check what data we have -->
+    <% if (notifications && notifications.length > 0) { %>
+    <script>
+        console.log('DEBUG: First notification data:', <%- JSON.stringify(notifications[0]) %>);
+        console.log('DEBUG: Notification types:', <%- JSON.stringify(notifications.map(n => n.type)) %>);
+    </script>
+    <% } %>
+
+    <!-- Top Navigation -->
+    <nav class="bg-white shadow-md border-b border-gray-200 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="/broker/dashboard" class="flex items-center space-x-3 group">
+                        <div class="w-10 h-10 bg-gradient-to-r from-orange-600 to-amber-600 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
+                            <span class="text-white font-bold text-xl">P</span>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold text-gray-900 group-hover:text-orange-600 transition-colors">Propbandhu</h1>
+                            <p class="text-xs text-gray-500">Broker Panel</p>
+                        </div>
+                    </a>
+                </div>
+                
+                <!-- Right Section -->
+                <div class="flex items-center space-x-6">
+                    <!-- Notification Bell -->
+                    <div class="relative notification-bell">
+                        <a href="/broker/notifications" class="w-10 h-10 bg-orange-100 hover:bg-orange-200 rounded-full flex items-center justify-center transition-colors duration-200 relative group">
+                            <i class="fas fa-bell text-orange-600 group-hover:animate-bell"></i>
+                            <% if (unreadCount > 0) { %>
+                                <span class="notification-count pulse">
+                                    <%= unreadCount > 9 ? '9+' : unreadCount %>
+                                </span>
+                            <% } %>
+                            <style>
+                                @keyframes bell {
+                                    0%, 100% { transform: rotate(0); }
+                                    25% { transform: rotate(-15deg); }
+                                    75% { transform: rotate(15deg); }
+                                }
+                                .animate-bell {
+                                    animation: bell 0.5s ease-in-out;
+                                }
+                            </style>
+                        </a>
+                    </div>
+                    
+                    <!-- User Profile -->
+                    <div class="flex items-center space-x-3">
+                        <div class="text-right hidden md:block">
+                            <p class="font-medium text-gray-900"><%= user.name %></p>
+                            <p class="text-sm text-gray-500">Broker</p>
+                        </div>
+                        <div class="w-10 h-10 bg-gradient-to-r from-orange-500 to-amber-500 rounded-full flex items-center justify-center text-white font-bold shadow-md">
+                            <%= user.name.charAt(0).toUpperCase() %>
+                        </div>
+                        <a href="/logout" class="text-gray-400 hover:text-orange-600 transition-colors duration-200 p-2 hover:bg-orange-50 rounded-full">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-6xl mx-auto py-6 px-4 sm:px-6">
+        <!-- Page Header -->
+        <div class="mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                <div class="mb-4 md:mb-0">
+                    <h1 class="text-2xl md:text-3xl font-bold text-gray-900">Broker Notifications</h1>
+                    <p class="text-gray-600 mt-1">Track your leads, commissions, property activities & buyer cart activity</p>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                    <% if (unreadCount > 0) { %>
+                    <button onclick="markAllAsRead()" 
+                            class="action-btn bg-gradient-to-r from-orange-600 to-amber-500 text-white px-5 py-2.5 rounded-lg hover:from-orange-700 hover:to-amber-600 transition-all duration-200 flex items-center">
+                        <i class="fas fa-check-double mr-2"></i>Mark All as Read
+                    </button>
+                    <% } %>
+                    <button onclick="clearReadNotifications()" 
+                            class="action-btn bg-gradient-to-r from-gray-600 to-gray-500 text-white px-5 py-2.5 rounded-lg hover:from-gray-700 hover:to-gray-600 transition-all duration-200 flex items-center">
+                        <i class="fas fa-trash mr-2"></i>Clear Read
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+                <div class="bg-white rounded-xl shadow p-5 hover:shadow-lg transition-shadow duration-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Total Notifications</p>
+                            <p class="text-2xl md:text-3xl font-bold text-gray-900 mt-1"><%= stats.total || 0 %></p>
+                        </div>
+                        <div class="w-12 h-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center shadow-inner">
+                            <i class="fas fa-bell text-gray-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow p-5 hover:shadow-lg transition-shadow duration-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Unread</p>
+                            <p class="text-2xl md:text-3xl font-bold text-red-600 mt-1"><%= stats.unread || 0 %></p>
+                        </div>
+                        <div class="w-12 h-12 bg-gradient-to-br from-red-50 to-red-100 rounded-lg flex items-center justify-center shadow-inner">
+                            <i class="fas fa-envelope text-red-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow p-5 hover:shadow-lg transition-shadow duration-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Leads</p>
+                            <p class="text-2xl md:text-3xl font-bold text-orange-600 mt-1">
+                                <%= notifications ? notifications.filter(n => n.type === 'lead_assigned' || n.type === 'inquiry_received').length : 0 %>
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg flex items-center justify-center shadow-inner">
+                            <i class="fas fa-bullseye text-orange-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow p-5 hover:shadow-lg transition-shadow duration-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Commissions</p>
+                            <p class="text-2xl md:text-3xl font-bold text-green-600 mt-1">
+                                <%= notifications ? notifications.filter(n => n.type && n.type.includes('commission')).length : 0 %>
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 bg-gradient-to-br from-green-50 to-green-100 rounded-lg flex items-center justify-center shadow-inner">
+                            <i class="fas fa-money-bill-wave text-green-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow p-5 hover:shadow-lg transition-shadow duration-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Cart Activity</p>
+                            <p class="text-2xl md:text-3xl font-bold text-amber-600 mt-1">
+                                <%= notifications ? notifications.filter(n => n.type === 'property_added_to_cart' || n.type === 'cart_item_removed').length : 0 %>
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 bg-gradient-to-br from-amber-50 to-amber-100 rounded-lg flex items-center justify-center shadow-inner">
+                            <i class="fas fa-shopping-cart text-amber-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="bg-white rounded-xl shadow mb-8 p-4">
+            <div class="flex flex-wrap gap-2">
+                <button onclick="filterNotifications('all')" 
+                        class="filter-btn px-4 py-2.5 rounded-lg bg-gradient-to-r from-orange-100 to-amber-100 text-orange-700 font-medium transition-all duration-200 active">
+                    All (<%= stats.total || 0 %>)
+                </button>
+                <button onclick="filterNotifications('unread')" 
+                        class="filter-btn px-4 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium transition-all duration-200">
+                    <span class="status-dot unread"></span>Unread (<%= stats.unread || 0 %>)
+                </button>
+                <button onclick="filterNotifications('lead_assigned')" 
+                        class="filter-btn px-4 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium transition-all duration-200">
+                    <i class="fas fa-bullseye mr-1 text-orange-500"></i>Leads (<%= notifications ? notifications.filter(n => n.type === 'lead_assigned').length : 0 %>)
+                </button>
+                <button onclick="filterNotifications('commission')" 
+                        class="filter-btn px-4 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium transition-all duration-200">
+                    <i class="fas fa-money-bill-wave mr-1 text-green-500"></i>Commissions (<%= notifications ? notifications.filter(n => n.type && n.type.includes('commission')).length : 0 %>)
+                </button>
+                <!-- Cart Activity Tabs -->
+                <button onclick="filterNotifications('cart_activities')" 
+                        class="filter-btn px-4 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium transition-all duration-200">
+                    <i class="fas fa-shopping-cart mr-1 text-amber-500"></i>Cart Activity (<%= notifications ? notifications.filter(n => n.type === 'property_added_to_cart' || n.type === 'cart_item_removed').length : 0 %>)
+                </button>
+                <button onclick="filterNotifications('added_to_cart')" 
+                        class="filter-btn px-4 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium transition-all duration-200">
+                    <i class="fas fa-cart-plus mr-1 text-orange-500"></i>Added to Cart (<%= notifications ? notifications.filter(n => n.type === 'property_added_to_cart' && (!n.data || n.data.action !== 'removed_from_cart')).length : 0 %>)
+                </button>
+                <button onclick="filterNotifications('removed_from_cart')" 
+                        class="filter-btn px-4 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium transition-all duration-200">
+                    <i class="fas fa-cart-arrow-down mr-1 text-red-500"></i>Removed from Cart (<%= notifications ? notifications.filter(n => n.type === 'cart_item_removed' || (n.type === 'property_added_to_cart' && n.data?.action === 'removed_from_cart')).length : 0 %>)
+                </button>
+                <button onclick="filterNotifications('visit')" 
+                        class="filter-btn px-4 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium transition-all duration-200">
+                    <i class="fas fa-calendar-alt mr-1 text-indigo-500"></i>Visits (<%= notifications ? notifications.filter(n => n.type && n.type.includes('visit')).length : 0 %>)
+                </button>
+                <button onclick="filterNotifications('property_added')" 
+                        class="filter-btn px-4 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium transition-all duration-200">
+                    <i class="fas fa-home mr-1 text-blue-500"></i>Properties (<%= notifications ? notifications.filter(n => n.type && n.type.includes('property_added')).length : 0 %>)
+                </button>
+            </div>
+        </div>
+
+        <!-- Debug Info (Remove after fixing) -->
+        <% if (!notifications || notifications.length === 0) { %>
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-info-circle text-yellow-400"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-yellow-700">
+                        <strong>Debug:</strong> No notifications found. Check if:
+                    </p>
+                    <ul class="list-disc list-inside text-sm text-yellow-700 mt-2">
+                        <li>You have properties with broker = <%= user.id %></li>
+                        <li>Buyers are adding those properties to cart</li>
+                        <li>Notifications are being created in the database</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <% } %>
+
+        <!-- Notifications List -->
+        <% if (!notifications || notifications.length === 0) { %>
+        <div class="empty-state bg-white rounded-xl shadow p-12 text-center hover:shadow-xl transition-all duration-300">
+            <div class="w-24 h-24 bg-gradient-to-br from-orange-100 to-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="fas fa-bell-slash text-orange-300 text-4xl"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-700 mb-2">No Notifications Yet</h3>
+            <p class="text-gray-600 max-w-md mx-auto mb-6">When buyers add your properties to cart, you'll see notifications here.</p>
+            <a href="/broker/properties" class="action-btn bg-gradient-to-r from-orange-600 to-amber-500 text-white px-6 py-3 rounded-lg hover:from-orange-700 hover:to-amber-600 transition-all duration-200 inline-flex items-center">
+                <i class="fas fa-home mr-2"></i>View My Properties
+            </a>
+        </div>
+        <% } else { %>
+        
+        <!-- Loading Skeleton (Hidden by default) -->
+        <div id="loadingSkeleton" class="hidden space-y-4 mb-6">
+            <% for(let i = 0; i < 3; i++) { %>
+            <div class="bg-white rounded-xl shadow p-6 skeleton">
+                <div class="flex items-start space-x-4">
+                    <div class="w-12 h-12 rounded-full bg-gray-200"></div>
+                    <div class="flex-1 space-y-3">
+                        <div class="h-4 bg-gray-200 rounded w-1/3"></div>
+                        <div class="h-3 bg-gray-200 rounded w-full"></div>
+                        <div class="h-3 bg-gray-200 rounded w-2/3"></div>
+                    </div>
+                </div>
+            </div>
+            <% } %>
+        </div>
+        
+        <!-- Notifications Container -->
+        <div class="space-y-4 mb-8" id="notificationsList">
+            <% notifications.forEach(notification => { 
+                const data = notification.data || {};
+                const isCartActivity = notification.type === 'property_added_to_cart' || notification.type === 'cart_item_removed';
+                const isAddToCart = notification.type === 'property_added_to_cart' && (!data.action || data.action !== 'removed_from_cart');
+                const isRemoveFromCart = notification.type === 'cart_item_removed' || (notification.type === 'property_added_to_cart' && data.action === 'removed_from_cart');
+                const isCommission = notification.type && notification.type.includes('commission');
+                const potentialCommission = isAddToCart && data.property_price ? Math.round(data.property_price * 0.01) : null; // 1% adder commission
+            %>
+            <div class="notification-card notification-item <%= notification.is_read ? 'read' : 'unread' %> 
+                        bg-white rounded-xl shadow p-6 border border-gray-200" 
+                 data-notification="<%= notification._id %>"
+                 data-type="<%= notification.type %>"
+                 data-action="<%= data.action || '' %>"
+                 onclick="handleNotificationClick(this, '<%= notification._id %>', '<%= notification.is_read %>')">
+                <div class="flex items-start justify-between">
+                    <div class="flex items-start space-x-4">
+                        <!-- Icon with cart activity indicator -->
+                        <div class="relative">
+                            <div class="w-12 h-12 rounded-full <%= getNotificationIconClass(notification.type) %> flex items-center justify-center shadow-sm">
+                                <i class="<%= getNotificationIcon(notification.type) %> text-lg"></i>
+                            </div>
+                            <% if (isCartActivity) { %>
+                                <span class="absolute -bottom-1 -right-1 w-5 h-5 <%= isAddToCart ? 'bg-orange-600' : 'bg-red-600' %> text-white rounded-full flex items-center justify-center">
+                                    <i class="<%= isAddToCart ? 'fas fa-cart-plus' : 'fas fa-cart-arrow-down' %> text-xs"></i>
+                                </span>
+                            <% } %>
+                        </div>
+                        
+                        <!-- Content -->
+                        <div class="flex-1">
+                            <div class="flex flex-wrap items-center gap-3 mb-3">
+                                <h3 class="font-bold text-gray-900 text-lg"><%= notification.title %></h3>
+                                <span class="type-badge <%= notification.type %>">
+                                    <%= formatNotificationType(notification.type) %>
+                                </span>
+                                <% if (isCartActivity) { %>
+                                    <span class="type-badge <%= isAddToCart ? 'property_added_to_cart' : 'cart_item_removed' %>">
+                                        <i class="<%= isAddToCart ? 'fas fa-cart-plus' : 'fas fa-cart-arrow-down' %> mr-1"></i>
+                                        <%= isAddToCart ? 'Added to Cart' : 'Removed from Cart' %>
+                                    </span>
+                                <% } %>
+                                <% if (data.commission_type) { %>
+                                <span class="text-xs font-medium px-3 py-1.5 rounded-full bg-gradient-to-r from-blue-50 to-blue-100 text-blue-800 border border-blue-200">
+                                    <i class="fas fa-percentage mr-1"></i>
+                                    <%= data.commission_type === 'adder' ? 'ADDER (1%)' : 'SELLER (2.5%)' %>
+                                </span>
+                                <% } %>
+                                <% if (potentialCommission) { %>
+                                <span class="commission-highlight">
+                                    <i class="fas fa-coins mr-1"></i>
+                                    Potential: ₹<%= potentialCommission.toLocaleString() %>
+                                </span>
+                                <% } %>
+                            </div>
+                            
+                            <p class="text-gray-600 mb-4 leading-relaxed"><%= notification.message %></p>
+                            
+                            <!-- Enhanced Property Details Section (like admin) -->
+                            <% if (isCartActivity && data) { %>
+                            <div class="mt-4">
+                                <button onclick="togglePropertyDetails('<%= notification._id %>')" 
+                                        class="text-sm text-orange-600 hover:text-orange-800 font-medium mb-2 flex items-center">
+                                    <i class="fas fa-info-circle mr-2"></i>
+                                    Show Detailed Property Information
+                                    <i class="fas fa-chevron-down ml-1 text-xs"></i>
+                                    <i class="fas fa-chevron-up ml-1 text-xs hidden"></i>
+                                </button>
+                                
+                                <div id="propertyDetails-<%= notification._id %>" class="collapsible-content">
+                                    <div class="property-section">
+                                        <!-- Property Information Grid -->
+                                        <div class="property-details-grid">
+                                            <% if (data.property_title) { %>
+                                            <div class="property-detail-item">
+                                                <div class="detail-label">Property Title</div>
+                                                <div class="detail-value"><%= data.property_title %></div>
+                                            </div>
+                                            <% } %>
+                                            
+                                            <% if (data.property_id) { %>
+                                            <div class="property-detail-item">
+                                                <div class="detail-label">Property ID</div>
+                                                <div class="detail-value"><%= getShortId ? getShortId(data.property_id) : data.property_id.toString().substring(0,8)+'...' %></div>
+                                            </div>
+                                            <% } %>
+                                            
+                                            <% if (data.property_price) { %>
+                                            <div class="property-detail-item">
+                                                <div class="detail-label">Price</div>
+                                                <div class="detail-value">₹<%= data.property_price.toLocaleString() %></div>
+                                            </div>
+                                            <% } %>
+                                            
+                                            <% if (data.buyer_name) { %>
+                                            <div class="property-detail-item">
+                                                <div class="detail-label">Buyer</div>
+                                                <div class="detail-value"><%= data.buyer_name %></div>
+                                                <% if (data.buyer_id) { %>
+                                                <div class="text-xs text-gray-500 mt-1">ID: <%= getShortId ? getShortId(data.buyer_id) : data.buyer_id.toString().substring(0,8)+'...' %></div>
+                                                <% } %>
+                                            </div>
+                                            <% } %>
+                                            
+                                            <% if (data.seller_name) { %>
+                                            <div class="property-detail-item">
+                                                <div class="detail-label">Seller</div>
+                                                <div class="detail-value"><%= data.seller_name %></div>
+                                            </div>
+                                            <% } %>
+                                            
+                                            <% if (data.broker_name) { %>
+                                            <div class="property-detail-item">
+                                                <div class="detail-label">Broker</div>
+                                                <div class="detail-value"><%= data.broker_name %></div>
+                                            </div>
+                                            <% } %>
+                                            
+                                            <% if (data.added_at) { %>
+                                            <div class="property-detail-item">
+                                                <div class="detail-label"><%= isAddToCart ? 'Added to Cart' : 'Event Time' %></div>
+                                                <div class="detail-value"><%= formatDate ? formatDate(data.added_at) : new Date(data.added_at).toLocaleString() %></div>
+                                            </div>
+                                            <% } %>
+                                            
+                                            <% if (data.removed_at && isRemoveFromCart) { %>
+                                            <div class="property-detail-item">
+                                                <div class="detail-label">Removed from Cart</div>
+                                                <div class="detail-value"><%= formatDate ? formatDate(data.removed_at) : new Date(data.removed_at).toLocaleString() %></div>
+                                            </div>
+                                            <% } %>
+                                            
+                                            <% if (data.expires_at && isAddToCart) { %>
+                                            <div class="property-detail-item">
+                                                <div class="detail-label">Cart Expires</div>
+                                                <div class="detail-value <%= new Date(data.expires_at) < new Date() ? 'text-red-600' : '' %>">
+                                                    <%= formatDate ? formatDate(data.expires_at) : new Date(data.expires_at).toLocaleString() %>
+                                                </div>
+                                            </div>
+                                            <% } %>
+                                        </div>
+                                        
+                                        <!-- Commission Info for Adder Mode -->
+                                        <% if (potentialCommission) { %>
+                                        <div class="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                            <div class="flex items-center">
+                                                <i class="fas fa-coins text-green-600 mr-2"></i>
+                                                <div>
+                                                    <p class="text-sm font-medium text-green-800">Your Commission (Adder Mode - 1%)</p>
+                                                    <p class="text-lg font-bold text-green-600">₹<%= potentialCommission.toLocaleString() %></p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </div>
+                            <% } %>
+                            
+                            <!-- Quick Info for non-cart activities -->
+                            <% if (!isCartActivity && Object.keys(data).length > 0) { %>
+                            <div class="flex flex-wrap items-center gap-4 text-sm mt-3 p-3 bg-gray-50 rounded-lg">
+                                <% if (data.property_title) { %>
+                                <span class="flex items-center text-gray-700">
+                                    <i class="fas fa-home mr-2 text-blue-500"></i>
+                                    <span class="font-medium"><%= data.property_title %></span>
+                                </span>
+                                <% } %>
+                                
+                                <% if (data.amount) { %>
+                                <span class="flex items-center font-bold text-green-600">
+                                    <i class="fas fa-rupee-sign mr-2"></i>
+                                    ₹<%= data.amount.toLocaleString() %>
+                                </span>
+                                <% } %>
+                                
+                                <% if (data.buyer_name) { %>
+                                <span class="flex items-center text-gray-700">
+                                    <i class="fas fa-user mr-2 text-purple-500"></i>
+                                    <%= data.buyer_name %>
+                                </span>
+                                <% } %>
+                            </div>
+                            <% } %>
+                            
+                            <!-- Metadata -->
+                            <div class="flex flex-wrap items-center gap-4 text-sm text-gray-500 mt-4 pt-4 border-t border-gray-100">
+                                <span class="flex items-center">
+                                    <i class="far fa-clock mr-2"></i>
+                                    <%= timeAgo(new Date(notification.createdAt)) %>
+                                    <span class="status-dot <%= notification.is_read ? 'read' : 'unread' %> ml-2"></span>
+                                    <span class="text-xs ml-2"><%= notification.is_read ? 'Read' : 'Unread' %></span>
+                                </span>
+                                
+                                <% if (notification.sender && notification.sender.name) { %>
+                                <span class="flex items-center">
+                                    <i class="fas fa-user-tag mr-2"></i>
+                                    <%= notification.sender.name %>
+                                </span>
+                                <% } %>
+
+                                <% if (isCartActivity && data.buyer_name) { %>
+                                <span class="flex items-center <%= isAddToCart ? 'text-orange-600' : 'text-red-600' %>">
+                                    <i class="fas fa-user mr-2"></i>
+                                    Buyer: <%= data.buyer_name %>
+                                </span>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Actions -->
+                    <div class="flex flex-col items-end space-y-2 ml-4">
+                        <% if (!notification.is_read) { %>
+                        <button onclick="markAsRead('<%= notification._id %>', this, event)"
+                                class="action-btn bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 px-4 py-2 rounded-lg border border-blue-200 hover:from-blue-100 hover:to-blue-200 transition-all duration-200 text-sm font-medium flex items-center">
+                            <i class="fas fa-check-circle mr-2"></i>Mark as Read
+                        </button>
+                        <% } else { %>
+                        <span class="text-sm text-green-600 font-medium flex items-center px-3 py-2 bg-green-50 rounded-lg">
+                            <i class="fas fa-check-circle mr-2"></i>Read
+                        </span>
+                        <% } %>
+                        
+                        <button onclick="deleteNotification('<%= notification._id %>', this, event)"
+                                class="action-btn bg-gradient-to-r from-red-50 to-red-100 text-red-700 px-4 py-2 rounded-lg border border-red-200 hover:from-red-100 hover:to-red-200 transition-all duration-200 text-sm font-medium flex items-center">
+                            <i class="fas fa-trash-alt mr-2"></i>Delete
+                        </button>
+                        
+                        <% if (data.action_url) { %>
+                        <a href="<%= data.action_url %>" 
+                           onclick="event.stopPropagation()"
+                           class="action-btn bg-gradient-to-r from-orange-50 to-amber-100 text-orange-700 px-4 py-2 rounded-lg border border-orange-200 hover:from-orange-100 hover:to-amber-200 transition-all duration-200 text-sm font-medium flex items-center">
+                            <i class="fas fa-external-link-alt mr-2"></i>View Details
+                        </a>
+                        <% } %>
+
+                        <!-- Contact Buyer for Cart Activities -->
+                        <% if (isCartActivity && data.buyer_id) { %>
+                        <a href="/broker/messages?buyer=<%= data.buyer_id %>" 
+                           onclick="event.stopPropagation()"
+                           class="action-btn bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 px-4 py-2 rounded-lg border border-purple-200 hover:from-purple-100 hover:to-purple-200 transition-all duration-200 text-sm font-medium flex items-center">
+                            <i class="fas fa-comment mr-2"></i>Contact Buyer
+                        </a>
+                        <% } %>
+
+                        <!-- Follow Up for Added to Cart -->
+                        <% if (isAddToCart && data.buyer_id) { %>
+                        <a href="/broker/follow-up?buyer=<%= data.buyer_id %>&property=<%= data.property_id %>" 
+                           onclick="event.stopPropagation()"
+                           class="action-btn bg-gradient-to-r from-green-50 to-green-100 text-green-700 px-4 py-2 rounded-lg border border-green-200 hover:from-green-100 hover:to-green-200 transition-all duration-200 text-sm font-medium flex items-center">
+                            <i class="fas fa-phone-alt mr-2"></i>Follow Up
+                        </a>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+            <% }); %>
+        </div>
+        
+        <!-- Pagination -->
+        <% if (pagination && pagination.pages > 1) { %>
+        <div class="mt-8 flex justify-center">
+            <nav class="flex items-center space-x-2 bg-white rounded-xl shadow p-4">
+                <% if (pagination.current > 1) { %>
+                <a href="?page=<%= pagination.current - 1 %>" 
+                   class="px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors duration-200 flex items-center">
+                    <i class="fas fa-chevron-left mr-2"></i>Previous
+                </a>
+                <% } %>
+                
+                <% for (let i = 1; i <= pagination.pages; i++) { %>
+                    <% if (i === 1 || i === pagination.pages || (i >= pagination.current - 2 && i <= pagination.current + 2)) { %>
+                        <% if (i === pagination.current) { %>
+                        <span class="px-4 py-2.5 pagination-active rounded-lg font-medium">
+                            <%= i %>
+                        </span>
+                        <% } else { %>
+                        <a href="?page=<%= i %>" 
+                           class="px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors duration-200">
+                            <%= i %>
+                        </a>
+                        <% } %>
+                    <% } else if (i === pagination.current - 3 || i === pagination.current + 3) { %>
+                    <span class="px-2 text-gray-400">...</span>
+                    <% } %>
+                <% } %>
+                
+                <% if (pagination.current < pagination.pages) { %>
+                <a href="?page=<%= pagination.current + 1 %>" 
+                   class="px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors duration-200 flex items-center">
+                    Next<i class="fas fa-chevron-right ml-2"></i>
+                </a>
+                <% } %>
+            </nav>
+        </div>
+        <% } %>
+        <% } %>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-3"></div>
+
+    <script>
+        // ========== HELPER FUNCTIONS ==========
+        function getNotificationIcon(type) {
+            switch (type) {
+                case 'property_added_to_cart':
+                    return 'fas fa-cart-plus';
+                case 'cart_item_removed':
+                    return 'fas fa-cart-arrow-down';
+                case 'lead_assigned':
+                    return 'fas fa-bullseye';
+                case 'commission_earned':
+                    return 'fas fa-money-bill-wave';
+                case 'adder_commission_earned':
+                    return 'fas fa-money-check';
+                case 'seller_commission_earned':
+                    return 'fas fa-hand-holding-usd';
+                case 'property_added_approved':
+                    return 'fas fa-check-circle';
+                case 'property_added_rejected':
+                    return 'fas fa-times-circle';
+                case 'visit_scheduled':
+                    return 'fas fa-calendar-alt';
+                case 'visit_confirmed':
+                    return 'fas fa-calendar-check';
+                case 'booking_completed':
+                    return 'fas fa-trophy';
+                case 'inquiry_received':
+                    return 'fas fa-question-circle';
+                case 'edit_permission_granted':
+                    return 'fas fa-unlock-alt';
+                case 'property_edit_requested':
+                    return 'fas fa-edit';
+                case 'extension_request_approved':
+                    return 'fas fa-clock';
+                case 'extension_request_rejected':
+                    return 'fas fa-ban';
+                case 'monthly_earnings_summary':
+                    return 'fas fa-chart-bar';
+                default:
+                    return 'fas fa-bell';
+            }
+        }
+
+        function getNotificationIconClass(type) {
+            switch (type) {
+                case 'property_added_to_cart':
+                    return 'bg-orange-100 text-orange-600';
+                case 'cart_item_removed':
+                    return 'bg-red-100 text-red-600';
+                case 'lead_assigned':
+                    return 'bg-orange-100 text-orange-600';
+                case 'commission_earned':
+                    return 'bg-green-100 text-green-600';
+                case 'adder_commission_earned':
+                    return 'bg-emerald-100 text-emerald-600';
+                case 'seller_commission_earned':
+                    return 'bg-teal-100 text-teal-600';
+                case 'property_added_approved':
+                    return 'bg-blue-100 text-blue-600';
+                case 'property_added_rejected':
+                    return 'bg-red-100 text-red-600';
+                case 'visit_scheduled':
+                    return 'bg-indigo-100 text-indigo-600';
+                case 'visit_confirmed':
+                    return 'bg-violet-100 text-violet-600';
+                case 'booking_completed':
+                    return 'bg-purple-100 text-purple-600';
+                case 'inquiry_received':
+                    return 'bg-cyan-100 text-cyan-600';
+                case 'edit_permission_granted':
+                    return 'bg-purple-100 text-purple-600';
+                case 'property_edit_requested':
+                    return 'bg-yellow-100 text-yellow-600';
+                case 'extension_request_approved':
+                    return 'bg-lime-100 text-lime-600';
+                case 'extension_request_rejected':
+                    return 'bg-rose-100 text-rose-600';
+                case 'monthly_earnings_summary':
+                    return 'bg-sky-100 text-sky-600';
+                default:
+                    return 'bg-gray-100 text-gray-600';
+            }
+        }
+
+        function formatNotificationType(type) {
+            if (!type) return '';
+            return type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        }
+
+        function timeAgo(date) {
+            const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+            if (seconds < 60) return 'Just now';
+            if (seconds < 3600) return Math.floor(seconds / 60) + 'm ago';
+            if (seconds < 86400) return Math.floor(seconds / 3600) + 'h ago';
+            if (seconds < 2592000) return Math.floor(seconds / 86400) + 'd ago';
+            if (seconds < 31536000) return Math.floor(seconds / 2592000) + 'mo ago';
+            return Math.floor(seconds / 31536000) + 'y ago';
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('en-IN', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } catch (error) {
+                return 'Invalid Date';
+            }
+        }
+
+        function getShortId(id) {
+            if (!id) return 'N/A';
+            const idStr = id.toString();
+            return idStr.length > 8 ? idStr.substring(0, 8) + '...' : idStr;
+        }
+
+        // Toggle property details
+        function togglePropertyDetails(notificationId) {
+            const content = document.getElementById(`propertyDetails-${notificationId}`);
+            const button = event.currentTarget;
+            const chevronDown = button.querySelector('.fa-chevron-down');
+            const chevronUp = button.querySelector('.fa-chevron-up');
+            
+            if (content.classList.contains('expanded')) {
+                content.classList.remove('expanded');
+                chevronDown.classList.remove('hidden');
+                chevronUp.classList.add('hidden');
+            } else {
+                content.classList.add('expanded');
+                chevronDown.classList.add('hidden');
+                chevronUp.classList.remove('hidden');
+            }
+        }
+
+        // ========== CORE FUNCTIONS (keep your existing functions) ==========
+        // Show loading skeleton
+        function showLoading() {
+            const skeleton = document.getElementById('loadingSkeleton');
+            const list = document.getElementById('notificationsList');
+            if (skeleton) skeleton.classList.remove('hidden');
+            if (list) list.classList.add('opacity-50');
+        }
+
+        // Hide loading skeleton
+        function hideLoading() {
+            const skeleton = document.getElementById('loadingSkeleton');
+            const list = document.getElementById('notificationsList');
+            if (skeleton) skeleton.classList.add('hidden');
+            if (list) list.classList.remove('opacity-50');
+        }
+
+        // Show toast notification
+        function showToast(message, type = 'info', duration = 5000) {
+            const colors = {
+                'success': 'bg-gradient-to-r from-green-500 to-emerald-600',
+                'error': 'bg-gradient-to-r from-red-500 to-rose-600',
+                'warning': 'bg-gradient-to-r from-yellow-500 to-amber-600',
+                'info': 'bg-gradient-to-r from-blue-500 to-cyan-600'
+            };
+            
+            const icons = {
+                'success': 'fas fa-check-circle',
+                'error': 'fas fa-exclamation-circle',
+                'warning': 'fas fa-exclamation-triangle',
+                'info': 'fas fa-info-circle'
+            };
+            
+            const toast = document.createElement('div');
+            toast.className = `toast-message text-white px-5 py-4 rounded-lg shadow-xl flex items-center max-w-md ${colors[type]}`;
+            toast.innerHTML = `
+                <i class="${icons[type]} text-xl mr-3"></i>
+                <div class="flex-1">
+                    <p class="font-medium">${message}</p>
+                </div>
+                <button onclick="this.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            const container = document.getElementById('toastContainer');
+            if (container) {
+                container.appendChild(toast);
+                
+                setTimeout(() => {
+                    if (toast.parentElement) {
+                        toast.style.opacity = '0';
+                        toast.style.transform = 'translateX(100%)';
+                        setTimeout(() => toast.remove(), 300);
+                    }
+                }, duration);
+            }
+        }
+
+        // Filter notifications
+        function filterNotifications(filter) {
+            const allItems = document.querySelectorAll('.notification-item');
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            
+            // Update active filter button
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            let visibleCount = 0;
+            
+            allItems.forEach(item => {
+                const type = item.getAttribute('data-type');
+                const action = item.getAttribute('data-action');
+                const isUnread = item.classList.contains('unread');
+                const isCartActivity = type === 'property_added_to_cart' || type === 'cart_item_removed';
+                const isAddToCart = type === 'property_added_to_cart' && action !== 'removed_from_cart';
+                const isRemoveFromCart = type === 'cart_item_removed' || (type === 'property_added_to_cart' && action === 'removed_from_cart');
+                
+                let shouldShow = false;
+                
+                if (filter === 'all') shouldShow = true;
+                else if (filter === 'unread' && isUnread) shouldShow = true;
+                else if (filter === 'lead_assigned' && type === 'lead_assigned') shouldShow = true;
+                else if (filter === 'commission' && type && type.includes('commission')) shouldShow = true;
+                else if (filter === 'cart_activities' && isCartActivity) shouldShow = true;
+                else if (filter === 'added_to_cart' && isAddToCart) shouldShow = true;
+                else if (filter === 'removed_from_cart' && isRemoveFromCart) shouldShow = true;
+                else if (filter === 'visit' && type && type.includes('visit')) shouldShow = true;
+                else if (filter === 'property_added' && type && type.includes('property_added')) shouldShow = true;
+                
+                item.style.display = shouldShow ? 'block' : 'none';
+                if (shouldShow) visibleCount++;
+            });
+        }
+
+        // Mark as read
+        async function markAsRead(notificationId, button, event) {
+            if (event) event.stopPropagation();
+            
+            try {
+                showLoading();
+                const response = await fetch(`/broker/api/notifications/${notificationId}/read`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const notificationItem = button.closest('.notification-item');
+                    if (notificationItem) {
+                        notificationItem.classList.remove('unread');
+                        notificationItem.classList.add('read');
+                        
+                        const actionsDiv = button.closest('.flex.flex-col');
+                        if (actionsDiv && button) {
+                            button.outerHTML = `
+                                <span class="text-sm text-green-600 font-medium flex items-center px-3 py-2 bg-green-50 rounded-lg">
+                                    <i class="fas fa-check-circle mr-2"></i>Read
+                                </span>
+                            `;
+                        }
+                        
+                        const statusDot = notificationItem.querySelector('.status-dot');
+                        if (statusDot) {
+                            statusDot.classList.remove('unread');
+                            statusDot.classList.add('read');
+                            const textSpan = statusDot.nextElementSibling;
+                            if (textSpan) textSpan.textContent = 'Read';
+                        }
+                    }
+                    
+                    updateUnreadCount(-1);
+                    showToast('Notification marked as read', 'success');
+                }
+            } catch (error) {
+                console.error('Error marking as read:', error);
+                showToast('Failed to mark as read', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Mark all as read
+        async function markAllAsRead() {
+            if (!confirm('Are you sure you want to mark all notifications as read?')) return;
+            
+            try {
+                showLoading();
+                const response = await fetch('/broker/api/notifications/read-all', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.querySelectorAll('.notification-item.unread').forEach(item => {
+                        item.classList.remove('unread');
+                        item.classList.add('read');
+                        
+                        const statusDot = item.querySelector('.status-dot');
+                        if (statusDot) {
+                            statusDot.classList.remove('unread');
+                            statusDot.classList.add('read');
+                            const textSpan = statusDot.nextElementSibling;
+                            if (textSpan) textSpan.textContent = 'Read';
+                        }
+                        
+                        const markBtn = item.querySelector('button[onclick^="markAsRead"]');
+                        if (markBtn) {
+                            markBtn.outerHTML = `
+                                <span class="text-sm text-green-600 font-medium flex items-center px-3 py-2 bg-green-50 rounded-lg">
+                                    <i class="fas fa-check-circle mr-2"></i>Read
+                                </span>
+                            `;
+                        }
+                    });
+                    
+                    updateUnreadCount(0);
+                    showToast(`Marked ${data.modifiedCount || 0} notifications as read`, 'success');
+                }
+            } catch (error) {
+                console.error('Error marking all as read:', error);
+                showToast('Failed to mark all as read', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Delete notification
+        async function deleteNotification(notificationId, button, event) {
+            if (event) event.stopPropagation();
+            if (!confirm('Are you sure you want to delete this notification?')) return;
+            
+            try {
+                const response = await fetch(`/broker/api/notifications/${notificationId}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const notificationItem = button.closest('.notification-item');
+                    if (notificationItem) {
+                        notificationItem.style.transform = 'scale(0.95)';
+                        notificationItem.style.opacity = '0';
+                        notificationItem.style.transition = 'all 0.3s ease';
+                        
+                        setTimeout(() => {
+                            notificationItem.remove();
+                            
+                            if (document.querySelectorAll('.notification-item').length === 0) {
+                                window.location.reload();
+                            }
+                        }, 300);
+                    }
+                    
+                    showToast('Notification deleted successfully', 'success');
+                }
+            } catch (error) {
+                console.error('Error deleting notification:', error);
+                showToast('Failed to delete notification', 'error');
+            }
+        }
+
+        // Clear all read notifications
+        async function clearReadNotifications() {
+            if (!confirm('Are you sure you want to clear all read notifications?')) return;
+            
+            try {
+                showLoading();
+                const response = await fetch('/broker/api/notifications/clear-read', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.querySelectorAll('.notification-item.read').forEach(item => {
+                        item.style.transform = 'translateX(-100%)';
+                        item.style.opacity = '0';
+                        setTimeout(() => item.remove(), 300);
+                    });
+                    
+                    showToast(`Cleared ${data.deletedCount || 0} read notifications`, 'success');
+                }
+            } catch (error) {
+                console.error('Error clearing read notifications:', error);
+                showToast('Failed to clear read notifications', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Update unread count
+        function updateUnreadCount(change) {
+            const badges = document.querySelectorAll('.notification-count');
+            badges.forEach(badge => {
+                let currentCount = parseInt(badge.textContent) || 0;
+                currentCount = Math.max(0, currentCount + change);
+                
+                if (currentCount > 0) {
+                    badge.textContent = currentCount > 9 ? '9+' : currentCount;
+                    badge.style.display = 'flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+            });
+            
+            const unreadStat = document.querySelector('.text-2xl.font-bold.text-red-600, .text-3xl.font-bold.text-red-600');
+            if (unreadStat) {
+                let current = parseInt(unreadStat.textContent) || 0;
+                unreadStat.textContent = Math.max(0, current + change);
+            }
+        }
+
+        // Handle notification click
+        function handleNotificationClick(element, notificationId, isRead) {
+            if (event.target.tagName === 'BUTTON' || event.target.closest('button') || event.target.closest('a')) {
+                return;
+            }
+            
+            if (isRead === 'false') {
+                const markBtn = element.querySelector('button[onclick^="markAsRead"]');
+                if (markBtn) {
+                    markAsRead(notificationId, markBtn, event);
+                }
+            }
+            
+            const actionUrl = element.querySelector('a[href]');
+            if (actionUrl) {
+                window.location.href = actionUrl.href;
+            }
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            if (filterButtons.length > 0) {
+                filterButtons[0].classList.add('active');
+            }
+            
+            if (Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Admin Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .report-card {
+            @apply bg-white rounded-xl shadow border border-gray-200 p-6 hover:shadow-md transition-shadow;
+        }
+        .metric-value {
+            @apply text-3xl font-bold text-gray-900;
+        }
+        .metric-label {
+            @apply text-sm text-gray-500;
+        }
+        .metric-change-positive {
+            @apply text-green-600 text-sm font-medium;
+        }
+        .metric-change-negative {
+            @apply text-red-600 text-sm font-medium;
+        }
+        .date-picker {
+            @apply px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation (Same structure) -->
+    <nav class="bg-white shadow-md border-b border-gray-200">
+        <!-- Same navigation as properties page -->
+    </nav>
+
+    <!-- Main Layout -->
+    <div class="flex">
+        <!-- Sidebar -->
+        <div class="w-64 bg-white border-r border-gray-200 min-h-[calc(100vh-4rem)] sticky top-16">
+            <div class="p-4">
+                <!-- Report Summary -->
+                <div class="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl">
+                    <p class="text-sm text-gray-600 mb-1">Report Period</p>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-lg font-bold text-gray-900">This Month</p>
+                            <p class="text-xs text-gray-500">Performance</p>
+                        </div>
+                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                            <i class="fas fa-chart-line text-blue-600"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Navigation -->
+                <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Navigation</h3>
+                <ul class="space-y-1">
+                    <li>
+                        <a href="/admin/dashboard" class="sidebar-link block px-4 py-3 rounded-lg">
+                            <i class="fas fa-tachometer-alt mr-3 text-blue-600"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/approvals" class="sidebar-link block px-4 py-3 rounded-lg">
+                            <i class="fas fa-check-circle mr-3 text-yellow-600"></i>
+                            <span>Pending Approvals</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/users" class="sidebar-link block px-4 py-3 rounded-lg">
+                            <i class="fas fa-users mr-3 text-green-600"></i>
+                            <span>User Management</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/properties" class="sidebar-link block px-4 py-3 rounded-lg">
+                            <i class="fas fa-home mr-3 text-purple-600"></i>
+                            <span>Properties</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/commissions" class="sidebar-link block px-4 py-3 rounded-lg">
+                            <i class="fas fa-money-bill-wave mr-3 text-emerald-600"></i>
+                            <span>Commissions</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/reports" class="sidebar-link active block px-4 py-3 rounded-lg">
+                            <i class="fas fa-chart-bar mr-3 text-orange-600"></i>
+                            <span>Reports</span>
+                        </a>
+                    </li>
+                </ul>
+                
+                <!-- Report Types -->
+                <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 mt-6">Report Types</h3>
+                <div class="space-y-2">
+                    <a href="/admin/reports?type=overview" 
+                       class="block px-4 py-2 text-sm rounded-lg <%= reportType === 'overview' ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50' %>">
+                        <i class="fas fa-chart-pie mr-2"></i> Overview
+                    </a>
+                    <a href="/admin/reports?type=users" 
+                       class="block px-4 py-2 text-sm rounded-lg <%= reportType === 'users' ? 'bg-green-50 text-green-600' : 'text-gray-600 hover:bg-gray-50' %>">
+                        <i class="fas fa-users mr-2"></i> User Analytics
+                    </a>
+                    <a href="/admin/reports?type=properties" 
+                       class="block px-4 py-2 text-sm rounded-lg <%= reportType === 'properties' ? 'bg-purple-50 text-purple-600' : 'text-gray-600 hover:bg-gray-50' %>">
+                        <i class="fas fa-home mr-2"></i> Property Analytics
+                    </a>
+                    <a href="/admin/reports?type=financial" 
+                       class="block px-4 py-2 text-sm rounded-lg <%= reportType === 'financial' ? 'bg-emerald-50 text-emerald-600' : 'text-gray-600 hover:bg-gray-50' %>">
+                        <i class="fas fa-money-bill-wave mr-2"></i> Financial Reports
+                    </a>
+                    <a href="/admin/reports?type=performance" 
+                       class="block px-4 py-2 text-sm rounded-lg <%= reportType === 'performance' ? 'bg-orange-50 text-orange-600' : 'text-gray-600 hover:bg-gray-50' %>">
+                        <i class="fas fa-tachometer-alt mr-2"></i> Performance
+                    </a>
+                </div>
+                
+                <!-- Date Range -->
+                <div class="mt-8 p-4 bg-gray-50 rounded-xl">
+                    <h4 class="text-sm font-medium text-gray-700 mb-3">Date Range</h4>
+                    <div class="space-y-2">
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">From</label>
+                            <input type="date" id="dateFrom" class="date-picker w-full">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">To</label>
+                            <input type="date" id="dateTo" class="date-picker w-full">
+                        </div>
+                        <button onclick="applyDateRange()" class="w-full px-3 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">
+                            Apply Range
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 p-6">
+            <!-- Page Header -->
+            <div class="mb-6">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Analytics & Reports</h1>
+                        <p class="text-gray-600 mt-1">Comprehensive insights and analytics for your platform</p>
+                    </div>
+                    <div class="flex space-x-3">
+                        <!-- Export Button -->
+                        <button onclick="exportReport()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center">
+                            <i class="fas fa-file-export mr-2"></i> Export Report
+                        </button>
+                        <!-- Print Button -->
+                        <button onclick="window.print()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center">
+                            <i class="fas fa-print mr-2"></i> Print
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Date Range Selector -->
+                <div class="mt-6 bg-white rounded-xl p-4 shadow border border-gray-200">
+                    <div class="flex items-center space-x-4">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm text-gray-600">Period:</span>
+                            <select id="periodSelect" onchange="changePeriod(this.value)" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="today">Today</option>
+                                <option value="yesterday">Yesterday</option>
+                                <option value="week" selected>Last 7 Days</option>
+                                <option value="month">Last 30 Days</option>
+                                <option value="quarter">Last 90 Days</option>
+                                <option value="year">Last Year</option>
+                                <option value="custom">Custom Range</option>
+                            </select>
+                        </div>
+                        <div id="customRange" class="hidden flex items-center space-x-2">
+                            <input type="date" id="customFrom" class="date-picker">
+                            <span class="text-gray-400">to</span>
+                            <input type="date" id="customTo" class="date-picker">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Overview Metrics -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- New Users -->
+                <div class="report-card">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="metric-label">New Users</p>
+                            <p class="metric-value"><%= overview.newUsers || 0 %></p>
+                        </div>
+                        <div class="p-3 bg-blue-50 rounded-lg">
+                            <i class="fas fa-user-plus text-blue-600"></i>
+                        </div>
+                    </div>
+                    <div class="metric-change-positive">
+                        <i class="fas fa-arrow-up mr-1"></i> <%= overview.userGrowth || 0 %>%
+                    </div>
+                    <div class="text-xs text-gray-500 mt-1">vs previous period</div>
+                </div>
+                
+                <!-- New Properties -->
+                <div class="report-card">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="metric-label">New Properties</p>
+                            <p class="metric-value"><%= overview.newProperties || 0 %></p>
+                        </div>
+                        <div class="p-3 bg-green-50 rounded-lg">
+                            <i class="fas fa-home text-green-600"></i>
+                        </div>
+                    </div>
+                    <div class="<%= overview.propertyGrowth >= 0 ? 'metric-change-positive' : 'metric-change-negative' %>">
+                        <i class="fas fa-arrow-<%= overview.propertyGrowth >= 0 ? 'up' : 'down' %> mr-1"></i> 
+                        <%= Math.abs(overview.propertyGrowth) || 0 %>%
+                    </div>
+                    <div class="text-xs text-gray-500 mt-1">vs previous period</div>
+                </div>
+                
+                <!-- Total Revenue -->
+                <div class="report-card">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="metric-label">Commission Revenue</p>
+                            <p class="metric-value">₹<%= overview.revenue ? overview.revenue.toLocaleString('en-IN') : '0' %></p>
+                        </div>
+                        <div class="p-3 bg-purple-50 rounded-lg">
+                            <i class="fas fa-money-bill-wave text-purple-600"></i>
+                        </div>
+                    </div>
+                    <div class="metric-change-positive">
+                        <i class="fas fa-arrow-up mr-1"></i> <%= overview.revenueGrowth || 0 %>%
+                    </div>
+                    <div class="text-xs text-gray-500 mt-1">vs previous period</div>
+                </div>
+                
+                <!-- Approval Rate -->
+                <div class="report-card">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="metric-label">Approval Rate</p>
+                            <p class="metric-value"><%= overview.approvalRate || 0 %>%</p>
+                        </div>
+                        <div class="p-3 bg-orange-50 rounded-lg">
+                            <i class="fas fa-check-circle text-orange-600"></i>
+                        </div>
+                    </div>
+                    <div class="<%= overview.approvalChange >= 0 ? 'metric-change-positive' : 'metric-change-negative' %>">
+                        <i class="fas fa-arrow-<%= overview.approvalChange >= 0 ? 'up' : 'down' %> mr-1"></i> 
+                        <%= Math.abs(overview.approvalChange) || 0 %>% points
+                    </div>
+                    <div class="text-xs text-gray-500 mt-1">vs previous period</div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <!-- User Growth Chart -->
+                <div class="report-card">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">User Growth</h3>
+                    <div class="h-64">
+                        <canvas id="userGrowthChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Property Growth Chart -->
+                <div class="report-card">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Property Listings</h3>
+                    <div class="h-64">
+                        <canvas id="propertyGrowthChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Reports -->
+            <div class="report-card mb-8">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Detailed Statistics</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Metric</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Period</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Previous Period</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Change</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trend</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    Total Users
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <%= detailedStats.totalUsers || 0 %>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <%= detailedStats.previousTotalUsers || 0 %>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="<%= detailedStats.userChange >= 0 ? 'metric-change-positive' : 'metric-change-negative' %>">
+                                        <%= detailedStats.userChange >= 0 ? '+' : '' %><%= detailedStats.userChange || 0 %>
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <% if (detailedStats.userChange >= 0) { %>
+                                        <i class="fas fa-arrow-up text-green-500"></i>
+                                    <% } else { %>
+                                        <i class="fas fa-arrow-down text-red-500"></i>
+                                    <% } %>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    Total Properties
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <%= detailedStats.totalProperties || 0 %>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <%= detailedStats.previousTotalProperties || 0 %>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="<%= detailedStats.propertyChange >= 0 ? 'metric-change-positive' : 'metric-change-negative' %>">
+                                        <%= detailedStats.propertyChange >= 0 ? '+' : '' %><%= detailedStats.propertyChange || 0 %>
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <% if (detailedStats.propertyChange >= 0) { %>
+                                        <i class="fas fa-arrow-up text-green-500"></i>
+                                    <% } else { %>
+                                        <i class="fas fa-arrow-down text-red-500"></i>
+                                    <% } %>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    Active Listings
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <%= detailedStats.activeListings || 0 %>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <%= detailedStats.previousActiveListings || 0 %>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="<%= detailedStats.listingChange >= 0 ? 'metric-change-positive' : 'metric-change-negative' %>">
+                                        <%= detailedStats.listingChange >= 0 ? '+' : '' %><%= detailedStats.listingChange || 0 %>
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <% if (detailedStats.listingChange >= 0) { %>
+                                        <i class="fas fa-arrow-up text-green-500"></i>
+                                    <% } else { %>
+                                        <i class="fas fa-arrow-down text-red-500"></i>
+                                    <% } %>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    Total Commission
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    ₹<%= detailedStats.totalCommission ? detailedStats.totalCommission.toLocaleString('en-IN') : '0' %>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    ₹<%= detailedStats.previousTotalCommission ? detailedStats.previousTotalCommission.toLocaleString('en-IN') : '0' %>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="<%= detailedStats.commissionChange >= 0 ? 'metric-change-positive' : 'metric-change-negative' %>">
+                                        <%= detailedStats.commissionChange >= 0 ? '+' : '' %>₹<%= Math.abs(detailedStats.commissionChange || 0).toLocaleString('en-IN') %>
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <% if (detailedStats.commissionChange >= 0) { %>
+                                        <i class="fas fa-arrow-up text-green-500"></i>
+                                    <% } else { %>
+                                        <i class="fas fa-arrow-down text-red-500"></i>
+                                    <% } %>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    Approval Rate
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <%= detailedStats.approvalRate || 0 %>%
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <%= detailedStats.previousApprovalRate || 0 %>%
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="<%= detailedStats.approvalRateChange >= 0 ? 'metric-change-positive' : 'metric-change-negative' %>">
+                                        <%= detailedStats.approvalRateChange >= 0 ? '+' : '' %><%= detailedStats.approvalRateChange || 0 %>% points
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <% if (detailedStats.approvalRateChange >= 0) { %>
+                                        <i class="fas fa-arrow-up text-green-500"></i>
+                                    <% } else { %>
+                                        <i class="fas fa-arrow-down text-red-500"></i>
+                                    <% } %>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Top Performers -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Top Sellers -->
+                <div class="report-card">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Top Sellers</h3>
+                    <div class="space-y-4">
+                        <% if (topSellers && topSellers.length > 0) { %>
+                            <% topSellers.forEach((seller, index) => { %>
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 flex items-center justify-center text-white font-medium mr-3">
+                                        <%= seller.name ? seller.name.charAt(0).toUpperCase() : 'S' %>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium text-gray-900"><%= seller.name %></h4>
+                                        <p class="text-xs text-gray-500"><%= seller.properties %> properties</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="font-semibold text-gray-900"><%= seller.approvalRate || 0 %>%</div>
+                                    <div class="text-xs text-gray-500">Approval Rate</div>
+                                </div>
+                            </div>
+                            <% }) %>
+                        <% } else { %>
+                            <div class="text-center py-8 text-gray-500">
+                                <i class="fas fa-users text-3xl mb-3"></i>
+                                <p>No seller data available</p>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+                
+                <!-- Top Properties -->
+                <div class="report-card">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Most Viewed Properties</h3>
+                    <div class="space-y-4">
+                        <% if (topProperties && topProperties.length > 0) { %>
+                            <% topProperties.forEach((property, index) => { %>
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center mr-3">
+                                        <i class="fas fa-home text-gray-400"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium text-gray-900 truncate max-w-xs"><%= property.title %></h4>
+                                        <p class="text-xs text-gray-500"><%= property.location %></p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="font-semibold text-gray-900"><%= property.views %> views</div>
+                                    <div class="text-xs text-gray-500">₹<%= property.price ? property.price.toLocaleString('en-IN') : '0' %></div>
+                                </div>
+                            </div>
+                            <% }) %>
+                        <% } else { %>
+                            <div class="text-center py-8 text-gray-500">
+                                <i class="fas fa-home text-3xl mb-3"></i>
+                                <p>No property data available</p>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize charts
+        document.addEventListener('DOMContentLoaded', function() {
+            // User Growth Chart
+            const userCtx = document.getElementById('userGrowthChart').getContext('2d');
+            new Chart(userCtx, {
+                type: 'line',
+                data: {
+                    labels: <%= JSON.stringify(chartData.userLabels || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']) %>,
+                    datasets: [{
+                        label: 'New Users',
+                        data: <%= JSON.stringify(chartData.userData || [12, 19, 8, 15, 22, 18, 25]) %>,
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                display: true,
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+            
+            // Property Growth Chart
+            const propertyCtx = document.getElementById('propertyGrowthChart').getContext('2d');
+            new Chart(propertyCtx, {
+                type: 'bar',
+                data: {
+                    labels: <%= JSON.stringify(chartData.propertyLabels || ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']) %>,
+                    datasets: [{
+                        label: 'Properties',
+                        data: <%= JSON.stringify(chartData.propertyData || [45, 52, 48, 65, 58, 72]) %>,
+                        backgroundColor: 'rgba(139, 92, 246, 0.5)',
+                        borderColor: 'rgb(139, 92, 246)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                display: true,
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        });
+        
+        function toggleDropdown() {
+            const dropdown = document.getElementById('profileDropdown');
+            dropdown.classList.toggle('hidden');
+        }
+        
+        function changePeriod(period) {
+            if (period === 'custom') {
+                document.getElementById('customRange').classList.remove('hidden');
+            } else {
+                document.getElementById('customRange').classList.add('hidden');
+                // In a real app, this would trigger an API call
+                console.log('Period changed to:', period);
+                // location.href = `/admin/reports?period=${period}`;
+            }
+        }
+        
+        function applyDateRange() {
+            const from = document.getElementById('dateFrom').value;
+            const to = document.getElementById('dateTo').value;
+            
+            if (from && to) {
+                // In a real app, this would trigger an API call
+                console.log('Date range:', from, 'to', to);
+                // location.href = `/admin/reports?from=${from}&to=${to}`;
+            } else {
+                alert('Please select both dates.');
+            }
+        }
+        
+        function exportReport() {
+            alert('Report export feature would be implemented here.');
+            // In production: fetch('/admin/api/reports/export')
+        }
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('profileDropdown');
+            const profileBtn = event.target.closest('button[onclick="toggleDropdown()"]');
+            
+            if (!dropdown.classList.contains('hidden') && !dropdown.contains(event.target) && !profileBtn) {
+                dropdown.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

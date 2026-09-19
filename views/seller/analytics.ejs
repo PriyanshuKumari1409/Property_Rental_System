@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Propbandhu</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center">
+                        <span class="text-xl font-bold text-gray-900">Propbandhu</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/seller/dashboard" class="text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-home mr-1"></i>Dashboard
+                    </a>
+                    <a href="/seller/properties" class="text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-building mr-1"></i>Properties
+                    </a>
+                    <a href="/seller/analytics" class="text-blue-600 font-medium">
+                        <i class="fas fa-chart-line mr-1"></i>Analytics
+                    </a>
+                    <a href="/logout" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+                        <i class="fas fa-sign-out-alt mr-1"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- Page Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Analytics Dashboard</h1>
+            <p class="text-gray-600">Track your property performance and buyer engagement</p>
+        </div>
+
+        <!-- Summary Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-blue-100 rounded-lg mr-4">
+                        <i class="fas fa-home text-blue-600 text-2xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-700">Total Properties</h3>
+                        <p class="text-3xl font-bold text-blue-600"><%= stats.totalProperties %></p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-green-100 rounded-lg mr-4">
+                        <i class="fas fa-eye text-green-600 text-2xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-700">Total Views</h3>
+                        <p class="text-3xl font-bold text-green-600"><%= stats.totalViews %></p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-yellow-100 rounded-lg mr-4">
+                        <i class="fas fa-shopping-cart text-yellow-600 text-2xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-700">In Cart</h3>
+                        <p class="text-3xl font-bold text-yellow-600"><%= stats.lockedProperties %></p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-purple-100 rounded-lg mr-4">
+                        <i class="fas fa-money-bill-wave text-purple-600 text-2xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-700">Total Value</h3>
+                        <p class="text-3xl font-bold text-purple-600">₹<%= stats.totalValue.toLocaleString() %></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Metrics -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+            <!-- Property Status Distribution -->
+            <div class="lg:col-span-2 bg-white rounded-xl shadow p-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-6">Property Status Distribution</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="text-center p-4 border rounded-lg">
+                        <div class="text-2xl font-bold text-blue-600 mb-2"><%= stats.liveProperties %></div>
+                        <p class="text-gray-600">Live</p>
+                        <p class="text-sm text-gray-500">
+                            <%= stats.totalProperties > 0 ? Math.round((stats.liveProperties / stats.totalProperties) * 100) : 0 %>%
+                        </p>
+                    </div>
+                    <div class="text-center p-4 border rounded-lg">
+                        <div class="text-2xl font-bold text-yellow-600 mb-2"><%= stats.pendingProperties %></div>
+                        <p class="text-gray-600">Pending</p>
+                        <p class="text-sm text-gray-500">
+                            <%= stats.totalProperties > 0 ? Math.round((stats.pendingProperties / stats.totalProperties) * 100) : 0 %>%
+                        </p>
+                    </div>
+                    <div class="text-center p-4 border rounded-lg">
+                        <div class="text-2xl font-bold text-red-600 mb-2"><%= stats.lockedProperties %></div>
+                        <p class="text-gray-600">Locked</p>
+                        <p class="text-sm text-gray-500">
+                            <%= stats.totalProperties > 0 ? Math.round((stats.lockedProperties / stats.totalProperties) * 100) : 0 %>%
+                        </p>
+                    </div>
+                    <div class="text-center p-4 border rounded-lg">
+                        <div class="text-2xl font-bold text-green-600 mb-2"><%= stats.soldProperties %></div>
+                        <p class="text-gray-600">Sold</p>
+                        <p class="text-sm text-gray-500">
+                            <%= stats.totalProperties > 0 ? Math.round((stats.soldProperties / stats.totalProperties) * 100) : 0 %>%
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Metrics -->
+            <div class="bg-white rounded-xl shadow p-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-6">Performance Metrics</h2>
+                <div class="space-y-4">
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-gray-700">Views per Property</span>
+                            <span class="font-bold text-blue-600"><%= performanceMetrics.viewsPerProperty %></span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-blue-600 h-2 rounded-full" 
+                                 style="width: <%= Math.min(performanceMetrics.viewsPerProperty * 10, 100) %>%"></div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-gray-700">Inquiry Rate</span>
+                            <span class="font-bold text-green-600"><%= performanceMetrics.inquiryRate %>%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-green-600 h-2 rounded-full" 
+                                 style="width: <%= Math.min(performanceMetrics.inquiryRate, 100) %>%"></div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-gray-700">Conversion Rate</span>
+                            <span class="font-bold text-purple-600"><%= performanceMetrics.conversionRate %>%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-purple-600 h-2 rounded-full" 
+                                 style="width: <%= Math.min(performanceMetrics.conversionRate, 100) %>%"></div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-gray-700">Average Price</span>
+                            <span class="font-bold text-yellow-600">₹<%= performanceMetrics.avgPrice.toLocaleString() %></span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-yellow-600 h-2 rounded-full" style="width: 75%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="bg-white rounded-xl shadow p-6 mb-8">
+            <h2 class="text-xl font-bold text-gray-900 mb-6">Recent Activity</h2>
+            <% if (recentActivity && recentActivity.length > 0) { %>
+            <div class="space-y-4">
+                <% recentActivity.forEach(activity => { %>
+                <div class="flex items-start p-3 border rounded-lg hover:bg-gray-50">
+                    <div class="mr-4">
+                        <% if (activity.action && activity.action.includes('Added to buyer cart')) { %>
+                        <div class="w-10 h-10 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                        <% } else if (activity.action && activity.action.includes('live')) { %>
+                        <div class="w-10 h-10 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <% } else if (activity.action && activity.action.includes('approval')) { %>
+                        <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <% } else if (activity.action && activity.action.includes('Booking')) { %>
+                        <div class="w-10 h-10 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <% } else { %>
+                        <div class="w-10 h-10 bg-gray-100 text-gray-600 rounded-full flex items-center justify-center">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <% } %>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-medium text-gray-900"><%= activity.title || 'Property' %></p>
+                        <p class="text-sm text-gray-600"><%= activity.action || 'Activity' %></p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-500"><%= activity.date ? new Date(activity.date).toLocaleDateString() : 'N/A' %></p>
+                        <span class="text-xs font-medium <%= 
+                            activity.status === 'live' ? 'bg-green-100 text-green-800' : 
+                            activity.status === 'pending_approval' ? 'bg-yellow-100 text-yellow-800' : 
+                            activity.status === 'sold' ? 'bg-purple-100 text-purple-800' : 
+                            'bg-gray-100 text-gray-800' 
+                        %> px-2 py-1 rounded-full">
+                            <%= activity.status ? activity.status.replace('_', ' ') : 'unknown' %>
+                        </span>
+                    </div>
+                </div>
+                <% }); %>
+            </div>
+            <% } else { %>
+            <div class="text-center py-8">
+                <i class="fas fa-chart-line text-gray-300 text-6xl mb-4"></i>
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">No recent activity</h3>
+                <p class="text-gray-600">Your property activity will appear here</p>
+            </div>
+            <% } %>
+        </div>
+
+        <!-- Quick Insights -->
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-6">
+            <h3 class="font-bold text-blue-800 mb-3">
+                <i class="fas fa-lightbulb mr-2"></i>Quick Insights
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-white rounded-lg p-4">
+                    <h4 class="font-bold text-gray-900 mb-2">Engagement Rate</h4>
+                    <p class="text-gray-600 text-sm">
+                        Your properties are receiving 
+                        <span class="font-bold text-blue-600"><%= performanceMetrics.viewsPerProperty %></span> 
+                        views on average. Consider improving property descriptions and images to increase engagement.
+                    </p>
+                </div>
+                <div class="bg-white rounded-lg p-4">
+                    <h4 class="font-bold text-gray-900 mb-2">Cart Lock Rate</h4>
+                    <p class="text-gray-600 text-sm">
+                        <span class="font-bold text-yellow-600"><%= stats.lockedProperties %></span> 
+                        of your properties are currently in buyer carts. This shows good buyer interest.
+                    </p>
+                </div>
+                <div class="bg-white rounded-lg p-4">
+                    <h4 class="font-bold text-gray-900 mb-2">Conversion Opportunity</h4>
+                    <p class="text-gray-600 text-sm">
+                        With a 
+                        <span class="font-bold text-green-600"><%= performanceMetrics.inquiryRate %>%</span> 
+                        inquiry rate, focus on responding quickly to inquiries to improve conversions.
+                    </p>
+                </div>
+                <div class="bg-white rounded-lg p-4">
+                    <h4 class="font-bold text-gray-900 mb-2">Property Value</h4>
+                    <p class="text-gray-600 text-sm">
+                        Your average property price is 
+                        <span class="font-bold text-purple-600">₹<%= performanceMetrics.avgPrice.toLocaleString() %></span>. 
+                        Consider pricing strategies based on market trends.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Function to refresh analytics data
+        function refreshAnalytics() {
+            fetch('/seller/api/properties/status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update stats counters
+                        document.querySelectorAll('.text-blue-600')[0].textContent = data.totalProperties;
+                        document.querySelectorAll('.text-yellow-600')[0].textContent = data.statusCounts.locked;
+                        document.querySelectorAll('.text-green-600')[0].textContent = data.statusCounts.live;
+                    }
+                })
+                .catch(error => console.error('Error refreshing analytics:', error));
+        }
+        
+        // Refresh every 5 minutes
+        setInterval(refreshAnalytics, 300000);
+    </script>
+</body>
+</html>

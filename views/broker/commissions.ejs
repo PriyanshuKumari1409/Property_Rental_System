@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Propbandhu</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .commission-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .commission-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Broker Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/broker/dashboard" class="flex items-center">
+                        <span class="text-xl font-bold text-gray-900">Propbandhu Broker</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-gray-700 font-medium">🤝 Broker: <%= user.name %></span>
+                    <a href="/broker/dashboard" class="text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-tachometer-alt mr-1"></i>Dashboard
+                    </a>
+                    <a href="/broker/properties" class="text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-home mr-1"></i>Properties
+                    </a>
+                    <a href="/broker/commissions" class="text-gray-600 hover:text-blue-600 <%= activePage === 'commissions' ? 'text-blue-600 font-semibold' : '' %>">
+                        <i class="fas fa-money-bill-wave mr-1"></i>Commissions
+                    </a>
+                    <a href="/logout" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+                        <i class="fas fa-sign-out-alt mr-1"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- Page Header -->
+        <div class="mb-8">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">My Commissions</h1>
+                    <p class="text-gray-600 mt-2">Track your commission earnings</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-2xl font-bold text-green-600">₹<%= (totals?.totalAmount || 0).toLocaleString() %></p>
+                    <p class="text-gray-600">Total Commission</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-blue-100 rounded-lg mr-4">
+                        <i class="fas fa-money-bill-wave text-blue-600 text-2xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-700">Total</h3>
+                        <p class="text-2xl font-bold text-blue-600">₹<%= (totals?.totalAmount || 0).toLocaleString() %></p>
+                        <p class="text-sm text-gray-500"><%= totals?.totalCount || 0 %> commissions</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-yellow-100 rounded-lg mr-4">
+                        <i class="fas fa-clock text-yellow-600 text-2xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-700">Pending</h3>
+                        <p class="text-2xl font-bold text-yellow-600">₹<%= (totals?.pendingAmount || 0).toLocaleString() %></p>
+                        <p class="text-sm text-gray-500"><%= totals?.pendingCount || 0 %> pending</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-green-100 rounded-lg mr-4">
+                        <i class="fas fa-check-circle text-green-600 text-2xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-700">Approved</h3>
+                        <p class="text-2xl font-bold text-green-600">₹<%= (totals?.approvedAmount || 0).toLocaleString() %></p>
+                        <p class="text-sm text-gray-500"><%= totals?.approvedCount || 0 %> approved</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-purple-100 rounded-lg mr-4">
+                        <i class="fas fa-wallet text-purple-600 text-2xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-700">Paid</h3>
+                        <p class="text-2xl font-bold text-purple-600">₹<%= (totals?.paidAmount || 0).toLocaleString() %></p>
+                        <p class="text-sm text-gray-500"><%= totals?.paidCount || 0 %> paid</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Urgent Alerts -->
+        <% if (urgentCommissions && urgentCommissions.length > 0) { %>
+        <div class="mb-6">
+            <div class="bg-orange-50 border-l-4 border-orange-500 p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-triangle text-orange-400 text-xl"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-orange-800 font-semibold">
+                            <i class="fas fa-clock mr-1"></i>
+                            <%= urgentCommissions.length %> commission(s) need urgent attention!
+                        </p>
+                        <div class="mt-2 text-sm text-orange-700">
+                            <% urgentCommissions.slice(0, 3).forEach(commission => { %>
+                            <p class="mt-1">
+                                • <%= commission.property?.title %> - 
+                                <%= commission.days_left_in_booking || 0 %> days left for booking
+                            </p>
+                            <% }); %>
+                            <% if (urgentCommissions.length > 3) { %>
+                            <p class="mt-1">... and <%= urgentCommissions.length - 3 %> more</p>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <% } %>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Commissions List -->
+            <div class="lg:col-span-2">
+                <!-- Filters -->
+                <div class="bg-white rounded-xl shadow p-6 mb-6">
+                    <form method="GET" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                            <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                                <option value="all" <%= filters.status === 'all' ? 'selected' : '' %>>All Status</option>
+                                <option value="pending" <%= filters.status === 'pending' ? 'selected' : '' %>>Pending</option>
+                                <option value="active" <%= filters.status === 'active' ? 'selected' : '' %>>Active</option>
+                                <option value="approved" <%= filters.status === 'approved' ? 'selected' : '' %>>Approved</option>
+                                <option value="paid" <%= filters.status === 'paid' ? 'selected' : '' %>>Paid</option>
+                                <option value="expired" <%= filters.status === 'expired' ? 'selected' : '' %>>Expired</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                            <select name="type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                                <option value="all" <%= filters.type === 'all' ? 'selected' : '' %>>All Types</option>
+                                <option value="adder" <%= filters.type === 'adder' ? 'selected' : '' %>>Added Property</option>
+                                <option value="seller" <%= filters.type === 'seller' ? 'selected' : '' %>>Sold Property</option>
+                                <option value="dual_role" <%= filters.type === 'dual_role' ? 'selected' : '' %>>Dual Role</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Month</label>
+                            <select name="month" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">All Months</option>
+                                <% for(let i = 1; i <= 12; i++) { %>
+                                <option value="<%= i %>" <%= filters.month == i ? 'selected' : '' %>>
+                                    <%= new Date(2000, i-1).toLocaleString('default', { month: 'long' }) %>
+                                </option>
+                                <% } %>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Year</label>
+                            <select name="year" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">All Years</option>
+                                <% const currentYear = new Date().getFullYear(); %>
+                                <% for(let i = currentYear; i >= currentYear - 5; i--) { %>
+                                <option value="<%= i %>" <%= filters.year == i ? 'selected' : '' %>><%= i %></option>
+                                <% } %>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Sort</label>
+                            <select name="sort" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                                <option value="createdAt" <%= filters.sort === 'createdAt' ? 'selected' : '' %>>Date (Newest)</option>
+                                <option value="-createdAt" <%= filters.sort === '-createdAt' ? 'selected' : '' %>>Date (Oldest)</option>
+                                <option value="amount" <%= filters.sort === 'amount' ? 'selected' : '' %>>Amount (Lowest)</option>
+                                <option value="-amount" <%= filters.sort === '-amount' ? 'selected' : '' %>>Amount (Highest)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="md:col-span-5 flex justify-end space-x-3 mt-4">
+                            <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">
+                                <i class="fas fa-filter mr-2"></i>Apply Filters
+                            </button>
+                            <a href="/broker/commissions" class="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg font-semibold hover:bg-gray-300 transition">
+                                <i class="fas fa-times mr-2"></i>Clear Filters
+                            </a>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Commissions List -->
+                <div class="bg-white rounded-xl shadow">
+                    <% if (!commissions || commissions.length === 0) { %>
+                        <div class="text-center py-12">
+                            <i class="fas fa-money-bill-wave text-gray-300 text-6xl mb-4"></i>
+                            <h3 class="text-xl font-semibold text-gray-700 mb-2">No commissions found</h3>
+                            <p class="text-gray-600">Try changing your filters or check back later</p>
+                            <div class="mt-4">
+                                <a href="/broker/dashboard" class="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">
+                                    <i class="fas fa-tachometer-alt mr-2"></i>Go to Dashboard
+                                </a>
+                            </div>
+                        </div>
+                    <% } else { %>
+                        <div class="divide-y divide-gray-200">
+                            <% commissions.forEach(commission => { 
+                                const property = commission.property;
+                                const statusColors = {
+                                    'visit_scheduled': 'bg-blue-100 text-blue-800',
+                                    'visit_confirmed': 'bg-indigo-100 text-indigo-800',
+                                    'booking_initiated': 'bg-purple-100 text-purple-800',
+                                    'token_paid': 'bg-pink-100 text-pink-800',
+                                    'agreement_signed': 'bg-yellow-100 text-yellow-800',
+                                    'approved': 'bg-green-100 text-green-800',
+                                    'paid': 'bg-teal-100 text-teal-800',
+                                    'expired': 'bg-red-100 text-red-800',
+                                    'cancelled': 'bg-gray-100 text-gray-800'
+                                };
+                                const typeColors = {
+                                    'adder': 'bg-purple-100 text-purple-800',
+                                    'seller': 'bg-indigo-100 text-indigo-800',
+                                    'dual_role': 'bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-800'
+                                };
+                                
+                                // Calculate days left warning
+                                const daysLeft = commission.days_left_in_booking;
+                                const isUrgent = daysLeft !== null && daysLeft <= 3;
+                            %>
+                            <div class="p-6 commission-card hover:bg-gray-50 <%= isUrgent ? 'border-l-4 border-orange-500' : '' %>">
+                                <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                                    <!-- Left Section -->
+                                    <div class="flex-1">
+                                        <div class="flex items-start mb-3">
+                                            <div class="flex-1">
+                                                <h3 class="font-bold text-lg text-gray-900 mb-1">
+                                                    <%= property ? property.title : 'Property #' + commission.property %>
+                                                </h3>
+                                                <% if (property && property.price) { %>
+                                                <p class="text-gray-600">
+                                                    Property Value: <span class="font-semibold">₹<%= (property.price || 0).toLocaleString() %></span>
+                                                    <% if (property.address && property.address.city) { %>
+                                                    <span class="ml-2 text-gray-500">
+                                                        <i class="fas fa-map-marker-alt mr-1"></i>
+                                                        <%= property.address.city %><%= property.address.area ? ', ' + property.address.area : '' %>
+                                                    </span>
+                                                    <% } %>
+                                                </p>
+                                                <% } %>
+                                                
+                                                <!-- Commission Details -->
+                                                <div class="flex flex-wrap gap-3 mt-2">
+                                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium <%= statusColors[commission.status] || 'bg-gray-100 text-gray-800' %>">
+                                                        <i class="fas fa-circle mr-1 text-xs"></i>
+                                                        <%= commission.status ? commission.status.replace('_', ' ').toUpperCase() : 'UNKNOWN' %>
+                                                    </span>
+                                                    
+                                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium <%= typeColors[commission.commission_type] || 'bg-gray-100 text-gray-800' %>">
+                                                        <i class="fas <%= commission.commission_type === 'adder' ? 'fa-plus-circle' : commission.commission_type === 'seller' ? 'fa-handshake' : 'fa-user-tie' %> mr-1"></i>
+                                                        <%= commission.commission_type === 'adder' ? 'Added Property' : commission.commission_type === 'seller' ? 'Sold Property' : 'Dual Role' %>
+                                                    </span>
+                                                    
+                                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                                                        <i class="fas fa-percentage mr-1"></i>
+                                                        <%= commission.rate || 0 %>%
+                                                    </span>
+                                                    
+                                                    <% if (daysLeft !== null && daysLeft > 0) { %>
+                                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium <%= isUrgent ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800' %>">
+                                                        <i class="fas fa-clock mr-1"></i>
+                                                        <%= daysLeft %> day<%= daysLeft !== 1 ? 's' : '' %> left
+                                                    </span>
+                                                    <% } %>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Timeline -->
+                                        <div class="text-sm text-gray-600 space-y-1">
+                                            <div class="flex items-center">
+                                                <i class="fas fa-calendar-plus mr-2 text-blue-500"></i>
+                                                <span>Created: <%= commission.createdAt ? new Date(commission.createdAt).toLocaleDateString('en-IN') : 'N/A' %></span>
+                                            </div>
+                                            
+                                            <% if (commission.visit_confirmed_at) { %>
+                                            <div class="flex items-center">
+                                                <i class="fas fa-check-circle mr-2 text-green-500"></i>
+                                                <span>Visit confirmed: <%= new Date(commission.visit_confirmed_at).toLocaleDateString('en-IN') %></span>
+                                            </div>
+                                            <% } %>
+                                            
+                                            <% if (commission.approved_by) { %>
+                                            <div class="flex items-center">
+                                                <i class="fas fa-user-check mr-2 text-purple-500"></i>
+                                                <span>Approved: <%= new Date(commission.approved_at).toLocaleDateString('en-IN') %></span>
+                                            </div>
+                                            <% } %>
+                                            
+                                            <% if (commission.paid_by) { %>
+                                            <div class="flex items-center">
+                                                <i class="fas fa-wallet mr-2 text-teal-500"></i>
+                                                <span>Paid: <%= new Date(commission.paid_at).toLocaleDateString('en-IN') %></span>
+                                            </div>
+                                            <% } %>
+                                        </div>
+                                        
+                                        <!-- Progress Bar -->
+                                        <div class="mt-4">
+                                            <div class="flex justify-between text-sm text-gray-600 mb-1">
+                                                <span>Progress: <%= commission.progress_stage || 0 %>/7 stages</span>
+                                                <span><%= commission.next_action || 'Pending' %></span>
+                                            </div>
+                                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                                <div class="bg-blue-600 h-2 rounded-full" style="width: <%= Math.min(100, ((commission.progress_stage || 0) / 7) * 100) %>%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Right Section -->
+                                    <div class="md:text-right">
+                                        <div class="mb-3">
+                                            <p class="text-2xl font-bold text-green-600">₹<%= (commission.amount || 0).toLocaleString() %></p>
+                                            <p class="text-sm text-gray-500">Commission Amount</p>
+                                        </div>
+                                        
+                                        <div class="space-y-2">
+                                            <a href="/broker/commissions/<%= commission._id %>" 
+                                               class="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition text-sm">
+                                                <i class="fas fa-eye mr-1"></i>View Details
+                                            </a>
+                                            
+                                            <% if (commission.status === 'visit_confirmed' || commission.status === 'booking_initiated') { %>
+                                            <a href="/broker/visits/schedule/<%= commission.property?._id || '' %>" 
+                                               class="inline-block bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition text-sm">
+                                                <i class="fas fa-calendar-day mr-1"></i>Update Status
+                                            </a>
+                                            <% } %>
+                                        </div>
+                                        
+                                        <% if (commission.notes) { %>
+                                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3 max-w-xs md:max-w-sm">
+                                            <p class="text-sm text-blue-800 truncate">
+                                                <i class="fas fa-sticky-note mr-1"></i>
+                                                <%= commission.notes.length > 50 ? commission.notes.substring(0, 50) + '...' : commission.notes %>
+                                            </p>
+                                        </div>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </div>
+                            <% }); %>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        <% if (pagination.pages > 1) { %>
+                        <div class="border-t border-gray-200 px-6 py-4">
+                            <div class="flex items-center justify-between">
+                                <div class="text-sm text-gray-700">
+                                    Showing <span class="font-semibold"><%= Math.min((pagination.page - 1) * pagination.limit + 1, pagination.total) %></span> to 
+                                    <span class="font-semibold"><%= Math.min(pagination.page * pagination.limit, pagination.total) %></span> of 
+                                    <span class="font-semibold"><%= pagination.total %></span> commissions
+                                </div>
+                                <div class="flex space-x-2">
+                                    <% if (pagination.page > 1) { %>
+                                    <a href="/broker/commissions?page=<%= pagination.page - 1 %>" 
+                                       class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                        Previous
+                                    </a>
+                                    <% } %>
+                                    
+                                    <% for(let i = 1; i <= Math.min(5, pagination.pages); i++) { %>
+                                    <a href="/broker/commissions?page=<%= i %>" 
+                                       class="px-4 py-2 <%= i === pagination.page ? 'bg-blue-600 text-white' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50' %> rounded-lg text-sm font-medium">
+                                        <%= i %>
+                                    </a>
+                                    <% } %>
+                                    
+                                    <% if (pagination.pages > 5) { %>
+                                    <span class="px-4 py-2 text-gray-700">...</span>
+                                    <a href="/broker/commissions?page=<%= pagination.pages %>" 
+                                       class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                        <%= pagination.pages %>
+                                    </a>
+                                    <% } %>
+                                    
+                                    <% if (pagination.page < pagination.pages) { %>
+                                    <a href="/broker/commissions?page=<%= pagination.page + 1 %>" 
+                                       class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                        Next
+                                    </a>
+                                    <% } %>
+                                </div>
+                            </div>
+                        </div>
+                        <% } %>
+                    <% } %>
+                </div>
+            </div>
+            
+            <!-- Sidebar -->
+            <div>
+                <!-- Monthly Summary -->
+                <div class="bg-white rounded-xl shadow p-6 mb-6">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">Monthly Summary</h2>
+                    
+                    <% if (!monthlySummary || monthlySummary.length === 0) { %>
+                        <p class="text-gray-500 text-center py-4">No monthly data available</p>
+                    <% } else { %>
+                        <div class="space-y-4">
+                            <% monthlySummary.filter(m => m.total > 0).slice(0, 6).forEach(month => { %>
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <div class="flex justify-between items-center mb-2">
+                                    <h3 class="font-semibold text-gray-900">
+                                        <%= month.monthName %> <%= month.year %>
+                                    </h3>
+                                    <span class="font-bold text-blue-600">₹<%= (month.total || 0).toLocaleString() %></span>
+                                </div>
+                                <div class="space-y-1">
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-600">Pending:</span>
+                                        <span class="font-medium text-yellow-600">₹<%= (month.pending || 0).toLocaleString() %></span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-600">Approved:</span>
+                                        <span class="font-medium text-green-600">₹<%= (month.approved || 0).toLocaleString() %></span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-600">Paid:</span>
+                                        <span class="font-medium text-purple-600">₹<%= (month.paid || 0).toLocaleString() %></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <% }); %>
+                        </div>
+                        
+                        <% if (monthlySummary.filter(m => m.total > 0).length > 6) { %>
+                        <div class="mt-4 text-center">
+                            <a href="#" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                View all months <i class="fas fa-arrow-right ml-1"></i>
+                            </a>
+                        </div>
+                        <% } %>
+                    <% } %>
+                </div>
+
+                <!-- Recent Paid Commissions -->
+                <% if (recentPaid && recentPaid.length > 0) { %>
+                <div class="bg-white rounded-xl shadow p-6 mb-6">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">Recent Payments</h2>
+                    <div class="space-y-4">
+                        <% recentPaid.forEach(commission => { %>
+                        <div class="border-l-4 border-green-500 bg-green-50 p-3 rounded-r-lg">
+                            <p class="font-medium text-green-800">
+                                <%= commission.property?.title || 'Property' %>
+                            </p>
+                            <div class="flex justify-between items-center mt-1">
+                                <span class="text-sm text-green-600">
+                                    <%= commission.paid_at ? new Date(commission.paid_at).toLocaleDateString('en-IN') : 'Recently' %>
+                                </span>
+                                <span class="font-bold text-green-700">
+                                    ₹<%= (commission.amount || 0).toLocaleString() %>
+                                </span>
+                            </div>
+                        </div>
+                        <% }); %>
+                    </div>
+                </div>
+                <% } %>
+
+                <!-- Commission Info -->
+                <div class="bg-white rounded-xl shadow p-6 mb-6">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">Commission Rates</h2>
+                    <div class="space-y-4">
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <h3 class="font-semibold text-blue-900 mb-2">
+                                <i class="fas fa-plus-circle mr-2"></i>Added Property
+                            </h3>
+                            <p class="text-blue-800">
+                                <span class="font-bold text-lg">1%</span> of property price when you add a property
+                            </p>
+                        </div>
+                        
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                            <h3 class="font-semibold text-green-900 mb-2">
+                                <i class="fas fa-handshake mr-2"></i>Sold Property
+                            </h3>
+                            <p class="text-green-800">
+                                <span class="font-bold text-lg">2.5%</span> of property price when you sell a property
+                            </p>
+                        </div>
+                        
+                        <div class="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-4">
+                            <h3 class="font-semibold text-purple-900 mb-2">
+                                <i class="fas fa-user-tie mr-2"></i>Dual Role
+                            </h3>
+                            <p class="text-purple-800">
+                                <span class="font-bold text-lg">3.5%</span> when you both add and sell the property
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 pt-4 border-t border-gray-200">
+                        <p class="text-sm text-gray-600">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            Commissions are paid within 7-14 days after property sale completion.
+                        </p>
+                        <p class="text-sm text-gray-600 mt-2">
+                            <i class="fas fa-clock mr-2"></i>
+                            Booking window: 60 days from visit confirmation
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Quick Links -->
+                <div class="bg-white rounded-xl shadow p-6">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
+                    <div class="space-y-3">
+                        <a href="/broker/dashboard" 
+                           class="block w-full bg-blue-50 text-blue-700 text-center py-3 rounded-lg font-semibold hover:bg-blue-100 transition">
+                            <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                        </a>
+                        <a href="/broker/properties" 
+                           class="block w-full bg-green-50 text-green-700 text-center py-3 rounded-lg font-semibold hover:bg-green-100 transition">
+                            <i class="fas fa-home mr-2"></i>View Properties
+                        </a>
+                        <a href="/broker/visits/pending" 
+                           class="block w-full bg-purple-50 text-purple-700 text-center py-3 rounded-lg font-semibold hover:bg-purple-100 transition">
+                            <i class="fas fa-calendar-day mr-2"></i>Schedule Visits
+                        </a>
+                        <a href="/broker/api/commissions/report?format=csv" 
+                           class="block w-full bg-yellow-50 text-yellow-700 text-center py-3 rounded-lg font-semibold hover:bg-yellow-100 transition">
+                            <i class="fas fa-file-export mr-2"></i>Export Report
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 mt-12">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            <div class="text-center text-gray-600 text-sm">
+                <p>© <%= new Date().getFullYear() %> Propbandhu. All rights reserved.</p>
+                <p class="mt-1">Commissions are subject to terms and conditions.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

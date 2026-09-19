@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Propbandhu</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center">
+                        <span class="text-xl font-bold text-gray-900">Propbandhu</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/seller/dashboard" class="text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-home mr-1"></i>Dashboard
+                    </a>
+                    <a href="/seller/properties" class="text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-building mr-1"></i>Properties
+                    </a>
+                    <a href="/logout" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+                        <i class="fas fa-sign-out-alt mr-1"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- Breadcrumb -->
+        <div class="flex items-center text-sm text-gray-600 mb-6">
+            <a href="/seller/dashboard" class="hover:text-blue-600">Dashboard</a>
+            <i class="fas fa-chevron-right mx-2"></i>
+            <a href="/seller/properties/<%= property._id %>" class="hover:text-blue-600"><%= property.title %></a>
+            <i class="fas fa-chevron-right mx-2"></i>
+            <span class="font-medium">Cart Lock Details</span>
+        </div>
+
+        <!-- Property Info -->
+        <div class="bg-white rounded-xl shadow p-6 mb-6">
+            <div class="flex items-start">
+                <% if (property.images && property.images.length > 0) { %>
+                <img src="<%= property.images[0].url %>" alt="<%= property.title %>" 
+                     class="w-24 h-24 object-cover rounded-lg mr-4">
+                <% } else { %>
+                <div class="w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center mr-4">
+                    <i class="fas fa-home text-gray-400"></i>
+                </div>
+                <% } %>
+                
+                <div class="flex-1">
+                    <h2 class="text-xl font-bold text-gray-900"><%= property.title %></h2>
+                    <p class="text-gray-600 text-sm mb-2">
+                        <i class="fas fa-map-marker-alt mr-1"></i>
+                        <%= property.address.area %>, <%= property.address.city %>
+                    </p>
+                    <div class="flex items-center">
+                        <span class="text-blue-600 font-bold text-lg">₹<%= property.price.toLocaleString() %></span>
+                        <span class="mx-4">•</span>
+                        <span class="text-gray-600">
+                            <i class="fas fa-bed mr-1"></i><%= property.bedrooms || 'NA' %> Beds
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
+                    <i class="fas fa-lock mr-1"></i>Locked in Cart
+                </div>
+            </div>
+        </div>
+
+        <!-- Buyer Information -->
+        <div class="bg-white rounded-xl shadow p-6 mb-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">Buyer Information</h3>
+            <% if (buyer) { %>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <p class="text-sm text-gray-600 mb-1">Buyer Name</p>
+                    <p class="font-medium"><%= buyer.name %></p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-600 mb-1">Email</p>
+                    <p class="font-medium"><%= buyer.email %></p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-600 mb-1">Phone</p>
+                    <p class="font-medium"><%= buyer.phone %></p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-600 mb-1">Added to Cart</p>
+                    <p class="font-medium"><%= new Date(property.cart_status.added_at).toLocaleString() %></p>
+                </div>
+            </div>
+            <% } else { %>
+            <p class="text-gray-600">Buyer information not available</p>
+            <% } %>
+        </div>
+
+        <!-- Timeline Status -->
+        <div class="bg-white rounded-xl shadow p-6 mb-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-6">Purchase Timeline</h3>
+            
+            <div class="flex items-center justify-between mb-8">
+                <div class="text-center">
+                    <div class="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center mx-auto mb-2">
+                        <i class="fas fa-cart-plus"></i>
+                    </div>
+                    <p class="font-medium text-sm">Added to Cart</p>
+                    <p class="text-gray-500 text-xs"><%= new Date(property.cart_status.added_at).toLocaleDateString() %></p>
+                </div>
+                
+                <div class="flex-1 h-1 mx-4 <%= property.cart_status.visit_confirmed ? 'bg-green-500' : 'bg-gray-300' %>"></div>
+                
+                <div class="text-center">
+                    <div class="w-12 h-12 rounded-full <%= property.cart_status.visit_confirmed ? 'bg-green-100 text-green-600' : daysLeft > 0 ? 'bg-yellow-100 text-yellow-600' : 'bg-red-100 text-red-600' %> flex items-center justify-center mx-auto mb-2">
+                        <% if (property.cart_status.visit_confirmed) { %>
+                        <i class="fas fa-check"></i>
+                        <% } else if (daysLeft > 0) { %>
+                        <i class="fas fa-calendar-day"></i>
+                        <% } else { %>
+                        <i class="fas fa-times"></i>
+                        <% } %>
+                    </div>
+                    <p class="font-medium text-sm">
+                        <% if (property.cart_status.visit_confirmed) { %>
+                        Visit Confirmed
+                        <% } else if (daysLeft > 0) { %>
+                        Visit Window
+                        <% } else { %>
+                        Visit Expired
+                        <% } %>
+                    </p>
+                    <% if (!property.cart_status.visit_confirmed && daysLeft > 0) { %>
+                    <p class="text-yellow-600 text-xs font-medium"><%= daysLeft %> days left</p>
+                    <p class="text-gray-500 text-xs">Until <%= visitExpiry.toLocaleDateString() %></p>
+                    <% } %>
+                </div>
+                
+                <% if (property.cart_status.visit_confirmed) { %>
+                <div class="flex-1 h-1 mx-4 bg-green-500"></div>
+                
+                <div class="text-center">
+                    <div class="w-12 h-12 rounded-full <%= bookingDaysLeft > 0 ? 'bg-blue-100 text-blue-600' : 'bg-red-100 text-red-600' %> flex items-center justify-center mx-auto mb-2">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <p class="font-medium text-sm">Booking Window</p>
+                    <% if (bookingDaysLeft > 0) { %>
+                    <p class="text-blue-600 text-xs font-medium"><%= bookingDaysLeft %> days left</p>
+                    <p class="text-gray-500 text-xs">Until <%= new Date(property.cart_status.booking_window_end).toLocaleDateString() %></p>
+                    <% } else { %>
+                    <p class="text-red-600 text-xs font-medium">Expired</p>
+                    <% } %>
+                </div>
+                <% } %>
+            </div>
+
+            <!-- Status Details -->
+            <div class="border-t pt-6">
+                <% if (property.cart_status.visit_confirmed) { %>
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div class="flex items-center">
+                        <i class="fas fa-check-circle text-green-600 text-xl mr-3"></i>
+                        <div>
+                            <h4 class="font-bold text-green-800">Visit Confirmed</h4>
+                            <p class="text-green-700 text-sm">
+                                Visit was confirmed on <%= property.cart_status.visit_confirmed_at ? new Date(property.cart_status.visit_confirmed_at).toLocaleString() : 'N/A' %>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <h4 class="font-bold text-gray-900 mb-2">Booking Window Status</h4>
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <p class="text-blue-800">
+                            <i class="fas fa-calendar-alt mr-2"></i>
+                            <% if (bookingDaysLeft > 0) { %>
+                            Buyer has <span class="font-bold"><%= bookingDaysLeft %> days</span> to complete the booking
+                            <% } else { %>
+                            Booking window has expired. Property will be unlocked automatically.
+                            <% } %>
+                        </p>
+                        <p class="text-sm text-blue-700 mt-2">
+                            Window: <%= new Date(property.cart_status.booking_window_start).toLocaleDateString() %> 
+                            to <%= new Date(property.cart_status.booking_window_end).toLocaleDateString() %>
+                        </p>
+                    </div>
+                </div>
+                <% } else { %>
+                <div class="<%= daysLeft > 0 ? 'bg-yellow-50 border-yellow-200' : 'bg-red-50 border-red-200' %> border rounded-lg p-4">
+                    <div class="flex items-center">
+                        <i class="fas <%= daysLeft > 0 ? 'fa-clock text-yellow-600' : 'fa-times-circle text-red-600' %> text-xl mr-3"></i>
+                        <div>
+                            <h4 class="font-bold <%= daysLeft > 0 ? 'text-yellow-800' : 'text-red-800' %>">
+                                <%= daysLeft > 0 ? 'Visit Pending' : 'Visit Window Expired' %>
+                            </h4>
+                            <p class="<%= daysLeft > 0 ? 'text-yellow-700' : 'text-red-700' %> text-sm">
+                                <% if (daysLeft > 0) { %>
+                                Buyer must visit the property within <span class="font-bold"><%= daysLeft %> days</span>
+                                <% } else { %>
+                                The 7-day visit window has expired. Property should be unlocked.
+                                <% } %>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- Important Information -->
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6">
+            <h3 class="font-bold text-blue-800 mb-3">
+                <i class="fas fa-info-circle mr-2"></i>Important Information
+            </h3>
+            <ul class="space-y-2 text-blue-700">
+                <li class="flex items-start">
+                    <i class="fas fa-lock mr-2 mt-1"></i>
+                    <span>Property is locked and cannot be sold outside the platform while in buyer's cart</span>
+                </li>
+                <li class="flex items-start">
+                    <i class="fas fa-clock mr-2 mt-1"></i>
+                    <span>Buyer has 7 days to schedule and complete the property visit</span>
+                </li>
+                <li class="flex items-start">
+                    <i class="fas fa-calendar-alt mr-2 mt-1"></i>
+                    <span>After visit confirmation, buyer has 60 days to complete the booking</span>
+                </li>
+                <li class="flex items-start">
+                    <i class="fas fa-unlock mr-2 mt-1"></i>
+                    <span>Property will be automatically unlocked if visit window expires or booking window ends</span>
+                </li>
+                <li class="flex items-start">
+                    <i class="fas fa-bell mr-2 mt-1"></i>
+                    <span>You will receive notifications for any status changes</span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex space-x-4">
+            <a href="/seller/properties/<%= property._id %>" 
+               class="flex-1 bg-gray-100 text-gray-700 text-center py-3 rounded-lg hover:bg-gray-200">
+                <i class="fas fa-arrow-left mr-2"></i>Back to Property
+            </a>
+            
+            <% if (daysLeft <= 0 || (property.cart_status.visit_confirmed && bookingDaysLeft <= 0)) { %>
+            <button onclick="unlockProperty('<%= property._id %>')" 
+                    class="flex-1 bg-green-600 text-white text-center py-3 rounded-lg hover:bg-green-700">
+                <i class="fas fa-unlock mr-2"></i>Unlock Property
+            </button>
+            <% } %>
+        </div>
+    </div>
+
+    <script>
+        function unlockProperty(propertyId) {
+            if (confirm('Are you sure you want to unlock this property? This will remove it from the buyer\'s cart.')) {
+                fetch(`/seller/api/properties/${propertyId}/unlock`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Property unlocked successfully');
+                        window.location.href = `/seller/properties/${propertyId}`;
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to unlock property');
+                });
+            }
+        }
+        
+        // Update countdown timer
+        function updateCountdown() {
+            const countdownElement = document.querySelector('.text-yellow-600');
+            if (countdownElement) {
+                const text = countdownElement.textContent;
+                const match = text.match(/(\d+)\s*days/);
+                if (match) {
+                    const days = parseInt(match[1]);
+                    if (days > 0) {
+                        countdownElement.textContent = (days - 1) + ' days';
+                        if (days - 1 <= 2) {
+                            countdownElement.classList.add('text-red-600');
+                            countdownElement.classList.remove('text-yellow-600');
+                        }
+                    } else if (days === 0) {
+                        countdownElement.textContent = 'Last day';
+                        countdownElement.classList.add('text-red-600');
+                        countdownElement.classList.remove('text-yellow-600');
+                    }
+                }
+            }
+            
+            const bookingCountdown = document.querySelector('.text-blue-600');
+            if (bookingCountdown) {
+                const text = bookingCountdown.textContent;
+                const match = text.match(/(\d+)\s*days/);
+                if (match) {
+                    const days = parseInt(match[1]);
+                    if (days > 0) {
+                        bookingCountdown.textContent = (days - 1) + ' days';
+                        if (days - 1 <= 2) {
+                            bookingCountdown.classList.add('text-red-600');
+                            bookingCountdown.classList.remove('text-blue-600');
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Update every minute
+        setInterval(updateCountdown, 60000);
+    </script>
+</body>
+</html>

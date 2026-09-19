@@ -1,0 +1,1666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - <%= user.role === 'broker' ? 'Broker' : 'Seller' %> Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        .step-indicator {
+            @apply flex items-center space-x-2;
+        }
+        .step-circle {
+            @apply w-10 h-10 rounded-full flex items-center justify-center font-bold border-2;
+        }
+        .step-active .step-circle {
+            @apply bg-blue-600 text-white border-blue-600;
+        }
+        .step-completed .step-circle {
+            @apply bg-green-500 text-white border-green-500;
+        }
+        .step-pending .step-circle {
+            @apply bg-gray-100 text-gray-400 border-gray-300;
+        }
+        .commission-badge {
+            @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+        }
+        .commission-adder { @apply bg-blue-100 text-blue-800; }
+        .commission-seller { @apply bg-green-100 text-green-800; }
+        .image-preview-container {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+        .image-preview-container:hover {
+            border-color: #3b82f6;
+        }
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+        }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/<%= user.role === 'broker' ? 'broker' : 'seller' %>/dashboard" class="flex items-center">
+                        <span class="text-xl font-bold text-gray-900">
+                            Propbandhu <%= user.role === 'broker' ? 'Broker' : 'Seller' %>
+                        </span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-blue-700 font-medium">
+                        <i class="fas fa-<%= user.role === 'broker' ? 'user-tie' : 'user' %> mr-2"></i><%= user.name %>
+                    </span>
+                    <a href="/<%= user.role === 'broker' ? 'broker' : 'seller' %>/dashboard" class="text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-tachometer-alt mr-1"></i>Dashboard
+                    </a>
+                    <a href="/<%= user.role === 'broker' ? 'broker' : 'seller' %>/properties" class="text-blue-600 font-medium">
+                        <i class="fas fa-<%= user.role === 'broker' ? 'home' : 'building' %> mr-1"></i>Properties
+                    </a>
+                    <a href="/logout" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+                        <i class="fas fa-sign-out-alt mr-1"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- Page Header -->
+        <div class="mb-8">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900 mb-2">
+                        <%= user.role === 'broker' ? 'Add Property (Broker Mode)' : 'Add New Property' %>
+                    </h1>
+                    <p class="text-gray-600">
+                        <% if (user.role === 'broker') { %>
+                            Fill in property details on behalf of seller. You'll earn 1% commission when this property is sold.
+                        <% } else { %>
+                            Fill in the property details below. All properties require admin approval before going live.
+                        <% } %>
+                    </p>
+                </div>
+                
+                <% if (user.role === 'broker') { %>
+                <div class="text-right">
+                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <p class="text-sm text-blue-800 font-medium">Broker ID: <%= brokerId %></p>
+                        <p class="text-xs text-blue-600">Logged in as: Property Adder</p>
+                    </div>
+                </div>
+                <% } %>
+            </div>
+            
+            <% if (user.role === 'broker') { %>
+            <div class="mt-4">
+                <div class="flex items-center space-x-4">
+                    <span class="commission-badge commission-adder">
+                        <i class="fas fa-plus-circle mr-2"></i>
+                        Adder Commission: <%= commissionRate %>% of Sale Price
+                    </span>
+                    <span class="text-gray-600">
+                        Earn ₹<%= (1000000 * commissionRate / 100).toLocaleString() %> on ₹1 Cr property
+                    </span>
+                </div>
+            </div>
+            <% } %>
+        </div>
+
+        <!-- Progress Steps -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <% if (user.role === 'broker') { %>
+                <div class="step-indicator step-active" id="step1-indicator">
+                    <div class="step-circle">1</div>
+                    <div>
+                        <p class="font-medium text-sm">Seller Details</p>
+                        <p class="text-xs text-gray-500">Property owner info</p>
+                    </div>
+                </div>
+                <div class="flex-1 h-1 bg-gray-200 mx-4"></div>
+                <div class="step-indicator step-pending" id="step2-indicator">
+                    <div class="step-circle">2</div>
+                    <div>
+                        <p class="font-medium text-sm">Property Details</p>
+                        <p class="text-xs text-gray-500">Basic information</p>
+                    </div>
+                </div>
+                <div class="flex-1 h-1 bg-gray-200 mx-4"></div>
+                <div class="step-indicator step-pending" id="step3-indicator">
+                    <div class="step-circle">3</div>
+                    <div>
+                        <p class="font-medium text-sm">Commission & Agreement</p>
+                        <p class="text-xs text-gray-500">Broker terms</p>
+                    </div>
+                </div>
+                <% } else { %>
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">1</div>
+                    <span class="font-medium text-blue-600">Basic Details</span>
+                </div>
+                <div class="flex-1 h-1 bg-gray-200 mx-4"></div>
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-gray-200 text-gray-600 rounded-full flex items-center justify-center font-bold">2</div>
+                    <span class="font-medium text-gray-600">Property Details</span>
+                </div>
+                <div class="flex-1 h-1 bg-gray-200 mx-4"></div>
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-gray-200 text-gray-600 rounded-full flex items-center justify-center font-bold">3</div>
+                    <span class="font-medium text-gray-600">Location & Images</span>
+                </div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- Quick Stats (Broker Only) -->
+        <% if (user.role === 'broker' && previousProperties && previousProperties.length > 0) { %>
+        <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200 mb-6">
+            <h3 class="font-medium text-yellow-900 mb-2">
+                <i class="fas fa-history mr-2"></i>Your Recently Added Properties
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <% previousProperties.forEach(prop => { %>
+                <div class="bg-white p-3 rounded border">
+                    <p class="font-medium text-sm"><%= prop.title %></p>
+                    <p class="text-xs text-gray-600">
+                        ₹<%= prop.price?.toLocaleString() || '0' %> • <%= prop.property_type %>
+                    </p>
+                    <p class="text-xs text-gray-500"><%= prop.address?.area || 'N/A' %></p>
+                </div>
+                <% }); %>
+            </div>
+        </div>
+        <% } %>
+
+        <!-- Unified Property Form -->
+        <form id="propertyForm" class="bg-white rounded-xl shadow p-6" enctype="multipart/form-data">
+            <!-- STEP 1: Seller Details (Broker Only) OR Basic Info (Seller) -->
+            <% if (user.role === 'broker') { %>
+            <div id="step1" class="space-y-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-4 border-b pb-2">
+                    <i class="fas fa-user-tie mr-2"></i>Seller Information
+                </h2>
+                
+                <div class="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-6">
+                    <h3 class="font-medium text-blue-900 mb-2">
+                        <i class="fas fa-info-circle mr-2"></i>Important
+                    </h3>
+                    <p class="text-sm text-blue-700">
+                        As a broker, you're adding a property on behalf of a seller. 
+                        You'll earn 1% commission when this property is sold.
+                    </p>
+                </div>
+
+                <!-- Seller Selection -->
+                <div class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Option 1: Existing Seller -->
+                        <div class="border rounded-lg p-4">
+                            <h3 class="font-medium text-gray-900 mb-3">Existing Seller</h3>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    Select from Database *
+                                </label>
+                                <select name="seller_id" id="sellerSelect" 
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                                    <option value="">Choose existing seller</option>
+                                    <% sellers.forEach(seller => { %>
+                                    <option value="<%= seller._id %>">
+                                        <%= seller.name %> - <%= seller.phone %>
+                                    </option>
+                                    <% }); %>
+                                </select>
+                                <p class="text-xs text-gray-500 mt-1">Select seller you've worked with before</p>
+                            </div>
+                        </div>
+
+                        <!-- Option 2: New Seller -->
+                        <div class="border rounded-lg p-4">
+                            <h3 class="font-medium text-gray-900 mb-3">New Seller</h3>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                        Seller Name *
+                                    </label>
+                                    <input type="text" name="seller_name" id="sellerName"
+                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                        Seller Phone *
+                                    </label>
+                                    <input type="tel" name="seller_phone" id="sellerPhone"
+                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                        Seller Email
+                                    </label>
+                                    <input type="email" name="seller_email" id="sellerEmail"
+                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seller Info Display -->
+                    <div id="sellerInfoDisplay" class="hidden bg-gray-50 p-4 rounded-lg">
+                        <h4 class="font-medium text-gray-900 mb-2">Selected Seller:</h4>
+                        <div id="sellerDetails" class="text-sm text-gray-700"></div>
+                    </div>
+                </div>
+
+                <!-- Property Relationship (Broker Only) -->
+                <div class="border-t pt-4">
+                    <h3 class="font-medium text-gray-900 mb-3">Your Relationship with Seller</h3>
+                    <div class="space-y-3">
+                        <label class="flex items-start space-x-2 cursor-pointer">
+                            <input type="checkbox" name="exclusive_listing" value="true"
+                                   class="mt-1 rounded text-blue-600">
+                            <div>
+                                <span class="text-sm font-medium text-gray-700">Exclusive Listing Agreement</span>
+                                <p class="text-xs text-gray-500">You have exclusive rights to sell this property</p>
+                            </div>
+                        </label>
+                        
+                        <label class="flex items-start space-x-2 cursor-pointer">
+                            <input type="checkbox" name="commission_agreement_signed" value="true"
+                                   class="mt-1 rounded text-blue-600">
+                            <div>
+                                <span class="text-sm font-medium text-gray-700">Commission Agreement Signed</span>
+                                <p class="text-xs text-gray-500">Seller has signed commission agreement</p>
+                            </div>
+                        </label>
+                        
+                        <div id="agreementDetails" class="hidden space-y-3 ml-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    Agreement Duration (days)
+                                </label>
+                                <input type="number" name="agreement_duration" min="30" max="365"
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                                       placeholder="90">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    Agreement Reference Number
+                                </label>
+                                <input type="text" name="agreement_ref"
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Next Button -->
+                <div class="flex justify-end pt-4">
+                    <button type="button" id="step1NextBtn" 
+                            class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                        Next: Property Details <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </div>
+            <% } else { %>
+            <!-- Seller: Step 1 - Basic Information -->
+            <div id="step1" class="space-y-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-4 border-b pb-2">Basic Information</h2>
+                
+                <!-- Property Title -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Property Title *</label>
+                    <input type="text" name="title" required
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="e.g., Luxury 3BHK Apartment in Prime Location">
+                    <p class="text-xs text-gray-500 mt-1">Make it descriptive and attractive</p>
+                </div>
+
+                <!-- Property Type -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Property Type *</label>
+                        <select name="property_type" required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Select Type</option>
+                            <option value="Residential">Residential</option>
+                            <option value="Commercial">Commercial</option>
+                            <option value="Plot">Plot</option>
+                            <option value="Agricultural">Agricultural</option>
+                            <option value="Industrial">Industrial</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Sub Type *</label>
+                        <select name="sub_type" required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Select Sub Type</option>
+                            <!-- Options will be populated based on property_type -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+                    <textarea name="description" rows="4" required
+                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="Describe your property in detail (minimum 50 characters)"></textarea>
+                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>Include features, amenities, and unique selling points</span>
+                        <span id="descCount">0/5000</span>
+                    </div>
+                </div>
+
+                <!-- Short Description -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Short Description</label>
+                    <input type="text" name="short_description"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="Brief summary (max 200 characters)">
+                    <p class="text-xs text-gray-500 mt-1">Shown in property cards</p>
+                </div>
+
+                <!-- Next Button -->
+                <div class="flex justify-end">
+                    <button type="button" id="sellerStep1NextBtn" 
+                            class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                        Next: Property Details <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </div>
+            <% } %>
+
+            <!-- STEP 2: Property Details (Same for Both) -->
+            <div id="step2" class="space-y-6 hidden">
+                <h2 class="text-xl font-bold text-gray-900 mb-4 border-b pb-2">
+                    <i class="fas fa-home mr-2"></i>Property Details
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Price -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Price (₹) *</label>
+                        <input type="number" name="price" required min="1000"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                               placeholder="e.g., 5000000">
+                        <% if (user.role === 'broker') { %>
+                        <p class="text-xs text-gray-500 mt-1">
+                            Estimated Commission: <span id="commissionAmount" class="font-medium">₹0</span>
+                        </p>
+                        <% } %>
+                    </div>
+
+                    <!-- Price Type -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Price Type</label>
+                        <select name="price_type"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="fixed">Fixed Price</option>
+                            <option value="negotiable">Negotiable</option>
+                            <% if (user.role === 'seller') { %>
+                            <option value="auction">Auction</option>
+                            <% } %>
+                        </select>
+                    </div>
+
+                    <!-- Bedrooms, Bathrooms, Balconies -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Bedrooms</label>
+                        <input type="number" name="bedrooms" min="0" max="50"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Bathrooms</label>
+                        <input type="number" name="bathrooms" min="0" max="50"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Balconies</label>
+                        <input type="number" name="balconies" min="0" max="20"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <!-- Area Details -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Built-up Area *</label>
+                        <div class="flex">
+                            <input type="number" name="built_up_area" required min="1"
+                                   class="flex-1 px-4 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <select name="area_unit"
+                                    class="w-24 px-2 border border-l-0 border-gray-300 rounded-r-lg bg-gray-50">
+                                <option value="sqft">sq ft</option>
+                                <option value="sqm">sq m</option>
+                                <% if (user.role === 'seller') { %>
+                                <option value="acre">acre</option>
+                                <option value="hectare">hectare</option>
+                                <% } %>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Carpet Area</label>
+                        <input type="number" name="carpet_area" min="0"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <!-- Floor Details -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Floor Number</label>
+                        <input type="number" name="floor_number" min="0"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Total Floors</label>
+                        <input type="number" name="total_floors" min="0"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <!-- Age and Furnishing -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Age of Property (years)</label>
+                        <input type="number" name="age_of_property" min="0" max="100"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Furnishing</label>
+                        <select name="furnishing"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="unfurnished">Unfurnished</option>
+                            <option value="semi_furnished">Semi Furnished</option>
+                            <option value="fully_furnished">Fully Furnished</option>
+                        </select>
+                    </div>
+
+                    <!-- Facing -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Facing</label>
+                        <select name="facing"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Select Facing</option>
+                            <option value="North">North</option>
+                            <option value="South">South</option>
+                            <option value="East">East</option>
+                            <option value="West">West</option>
+                            <option value="North-East">North-East</option>
+                            <option value="North-West">North-West</option>
+                            <option value="South-East">South-East</option>
+                            <option value="South-West">South-West</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="flex justify-between pt-4">
+                    <button type="button" id="step2BackBtn" 
+                            class="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400">
+                        <i class="fas fa-arrow-left mr-2"></i> Back
+                    </button>
+                    <button type="button" id="step2NextBtn" 
+                            class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                        Next: <% if (user.role === 'broker') { %>Commission & Images<% } else { %>Location & Images<% } %> 
+                        <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 3: Location & Images (Seller) OR Commission & Images (Broker) -->
+            <div id="step3" class="space-y-6 hidden">
+                <% if (user.role === 'broker') { %>
+                <h2 class="text-xl font-bold text-gray-900 mb-4 border-b pb-2">
+                    <i class="fas fa-money-bill-wave mr-2"></i>Commission & Media
+                </h2>
+
+                <!-- Commission Summary (Broker Only) -->
+                <div class="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-6">
+                    <h3 class="font-medium text-blue-900 mb-3">Commission Summary</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="text-center p-3 bg-white rounded border">
+                            <p class="text-sm text-gray-600">Adder Commission</p>
+                            <p class="text-xl font-bold text-blue-600" id="finalCommission">₹0</p>
+                            <p class="text-xs text-gray-500">1% of sale price</p>
+                        </div>
+                        <div class="text-center p-3 bg-white rounded border">
+                            <p class="text-sm text-gray-600">Potential Seller Commission</p>
+                            <p class="text-xl font-bold text-green-600" id="sellerCommission">₹0</p>
+                            <p class="text-xs text-gray-500">If you also sell this property</p>
+                        </div>
+                        <div class="text-center p-3 bg-white rounded border">
+                            <p class="text-sm text-gray-600">Total Potential</p>
+                            <p class="text-xl font-bold text-purple-600" id="totalCommission">₹0</p>
+                            <p class="text-xs text-gray-500">3.5% if you handle both</p>
+                        </div>
+                    </div>
+                </div>
+                <% } else { %>
+                <h2 class="text-xl font-bold text-gray-900 mb-4 border-b pb-2">Location & Media</h2>
+                <% } %>
+
+                <!-- Address Section (Same for Both) -->
+                <div class="space-y-4">
+                    <h3 class="font-medium text-gray-900">Property Address</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Street</label>
+                            <input type="text" name="address[street]"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Landmark</label>
+                            <input type="text" name="address[landmark]"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        
+                        <!-- City Dropdown -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">City *</label>
+                            <select id="citySelect" name="address[city]" required
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Select City</option>
+                                <option value="Noida">Noida</option>
+                                <option value="Ghaziabad">Ghaziabad</option>
+                                <option value="Gorakhpur">Gorakhpur</option>
+                            </select>
+                        </div>
+
+                        <!-- Location Dropdown -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Locations *</label>
+                            <select id="locationSelect" name="address[areas][]" multiple required
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-32">
+                                <option value="">Please select a city first</option>
+                            </select>
+                            <p id="locationCount" class="text-xs text-gray-500 mt-1">
+                                Hold Ctrl (Windows) / Cmd (Mac) to select multiple locations
+                            </p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">State *</label>
+                            <input type="text" id="stateInput" name="address[state]" required
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Pincode</label>
+                            <input type="text" name="address[pincode]" pattern="[0-9]{6}"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Amenities (Seller Only) -->
+                <% if (user.role === 'seller') { %>
+                <div class="space-y-4">
+                    <h3 class="font-medium text-gray-900">Amenities</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <!-- Basic Amenities -->
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" name="amenities" value="Swimming Pool"
+                                   class="rounded text-blue-600 focus:ring-blue-500">
+                            <span class="text-sm text-gray-700">Swimming Pool</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" name="amenities" value="Gym"
+                                   class="rounded text-blue-600 focus:ring-blue-500">
+                            <span class="text-sm text-gray-700">Gym</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" name="amenities" value="Park"
+                                   class="rounded text-blue-600 focus:ring-blue-500">
+                            <span class="text-sm text-gray-700">Park</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" name="amenities" value="Power Backup"
+                                   class="rounded text-blue-600 focus:ring-blue-500">
+                            <span class="text-sm text-gray-700">Power Backup</span>
+                        </label>
+                        
+                        <!-- Security Amenities -->
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" name="amenities" value="24/7 Security"
+                                   class="rounded text-blue-600 focus:ring-blue-500">
+                            <span class="text-sm text-gray-700">24/7 Security</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" name="amenities" value="CCTV Surveillance"
+                                   class="rounded text-blue-600 focus:ring-blue-500">
+                            <span class="text-sm text-gray-700">CCTV Surveillance</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" name="amenities" value="Security Guard"
+                                   class="rounded text-blue-600 focus:ring-blue-500">
+                            <span class="text-sm text-gray-700">Security Guard</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" name="amenities" value="Intercom"
+                                   class="rounded text-blue-600 focus:ring-blue-500">
+                            <span class="text-sm text-gray-700">Intercom</span>
+                        </label>
+                    </div>
+                </div>
+                <% } %>
+
+                <!-- Single Image Upload (Same for Both) -->
+                <div class="space-y-4">
+                    <h3 class="font-medium text-gray-900">Property Image</h3>
+                    <p class="text-sm text-gray-600 mb-2">Upload one image of your property (Max 10MB)</p>
+                    
+                    <!-- Hidden file input -->
+                    <input type="file" id="imageInput" name="images" accept="image/*" class="hidden">
+                    
+                    <!-- Image preview container -->
+                    <div class="image-preview-container" id="imagePreviewContainer">
+                        <div id="imagePlaceholder" class="text-center">
+                            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
+                            <p class="text-gray-600">Click to upload image</p>
+                            <p class="text-sm text-gray-500 mt-1">Supports JPG, PNG, WebP</p>
+                        </div>
+                        <img id="imagePreview" class="image-preview hidden" alt="Property preview">
+                    </div>
+                    
+                    <!-- Remove image button -->
+                    <button type="button" id="removeImageBtn" class="hidden text-red-600 hover:text-red-800 text-sm">
+                        <i class="fas fa-times mr-1"></i> Remove Image
+                    </button>
+                </div>
+
+                <!-- Broker Notes (Broker Only) -->
+                <% if (user.role === 'broker') { %>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Broker Notes (Internal)
+                    </label>
+                    <textarea name="broker_notes" rows="3"
+                              class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                              placeholder="Any special instructions, seller preferences, or internal notes..."></textarea>
+                </div>
+                <% } %>
+
+                <!-- Terms -->
+                <div class="border-t pt-4">
+                    <div class="space-y-3">
+                        <% if (user.role === 'broker') { %>
+                        <label class="flex items-start space-x-2 cursor-pointer">
+                            <input type="checkbox" id="termsBroker" required
+                                   class="mt-1 rounded text-blue-600">
+                            <div>
+                                <span class="text-sm font-medium text-gray-700">
+                                    I confirm I have permission to list this property
+                                </span>
+                                <p class="text-xs text-gray-500">
+                                    I have the seller's consent to list this property on Propbandhu
+                                </p>
+                            </div>
+                        </label>
+                        
+                        <label class="flex items-start space-x-2 cursor-pointer">
+                            <input type="checkbox" id="termsCommission" required
+                                   class="mt-1 rounded text-blue-600">
+                            <div>
+                                <span class="text-sm font-medium text-gray-700">
+                                    I agree to broker commission terms
+                                </span>
+                                <p class="text-xs text-gray-500">
+                                    1% adder commission payable when property is sold through platform
+                                </p>
+                            </div>
+                        </label>
+                        <% } else { %>
+                        <div class="flex items-start space-x-2">
+                            <input type="checkbox" id="terms" required
+                                   class="mt-1 rounded text-blue-600 focus:ring-blue-500">
+                            <label for="terms" class="text-sm text-gray-700">
+                                I confirm that all information provided is accurate. This property will be submitted for admin approval and will go live only after approval.
+                            </label>
+                        </div>
+                        <% } %>
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <div class="flex justify-between pt-4">
+                    <button type="button" id="step3BackBtn" 
+                            class="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400">
+                        <i class="fas fa-arrow-left mr-2"></i> Back
+                    </button>
+                    <button type="submit" id="submitBtn"
+                            class="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 flex items-center">
+                        <i class="fas fa-paper-plane mr-2"></i> Submit for Approval
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <!-- Commission Notice (Broker Only) -->
+        <% if (user.role === 'broker') { %>
+        <div class="mt-6 bg-green-50 p-4 rounded-lg border border-green-200">
+            <div class="flex items-center">
+                <i class="fas fa-info-circle text-green-600 text-xl mr-3"></i>
+                <div>
+                    <h4 class="font-medium text-green-900">How Broker Commission Works</h4>
+                    <ul class="text-sm text-green-700 mt-1 space-y-1">
+                        <li>• <strong>Adder Commission (1%):</strong> Earned when property is sold through platform</li>
+                        <li>• <strong>Seller Commission (2.5%):</strong> Additional if you're also the selling broker</li>
+                        <li>• <strong>Dual Role (3.5%):</strong> If you add AND sell the property</li>
+                        <li>• Commission paid within 7 days of successful property sale</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <% } else { %>
+        <!-- Progress Indicator (Seller Only) -->
+        <div class="mt-6 text-center">
+            <div class="inline-block bg-blue-50 px-4 py-2 rounded-lg">
+                <span class="text-blue-600 font-medium">Important:</span>
+                <span class="text-gray-600 ml-2">Properties require admin approval before appearing on the platform</span>
+            </div>
+        </div>
+        <% } %>
+    </div>
+
+   <script>
+    // Global constants from EJS template
+    const USER_ROLE = "<%= user.role %>";
+    const COMMISSION_RATE = <%= user.role === 'broker' ? commissionRate : 0 %>;
+    const BROKER_ID = '<%= user.role === "broker" ? brokerId : "" %>';
+    const IS_BROKER = USER_ROLE === 'broker';
+    const IS_SELLER = USER_ROLE === 'seller';
+
+    // Global state management
+    const appState = {
+        currentStep: IS_BROKER ? 1 : 1,
+        selectedImage: null,
+        documentCount: 1,
+        sellerInfo: null,
+        commissionRate: COMMISSION_RATE,
+        brokerId: BROKER_ID,
+        
+        // Property type to sub-type mapping
+        propertyTypes: {
+            'Residential': ['Apartment', 'Independent House', 'Villa', 'Penthouse', 'Studio', 'Farmhouse'],
+            'Commercial': ['Office Space', 'Shop', 'Showroom', 'Warehouse', 'Industrial Building'],
+            'Plot': ['Residential Plot', 'Commercial Plot', 'Agricultural Land', 'Industrial Plot'],
+            'Agricultural': ['Farm Land', 'Orchard', 'Plantation'],
+            'Industrial': ['Factory', 'Manufacturing Unit', 'Storage Unit']
+        },
+        
+        // City to Locations mapping
+        cityLocationMap: {
+            Noida: [
+                "Sector 62", "Sector 18", "Sector 15", "Sector 50",
+                "Sector 76", "Sector 137", "Sector 128",
+                "Sector 44", "Greater Noida West", "Noida Extension"
+            ],
+            Ghaziabad: [
+                "Indirapuram", "Vaishali", "Raj Nagar",
+                "Raj Nagar Extension", "Crossings Republik",
+                "Kavi Nagar", "Sanjay Nagar", "Shastri Nagar",
+                "Mohan Nagar", "Vasundhara"
+            ],
+            Gorakhpur: [
+                "Golghar", "Medical Road", "Rustampur",
+                "Taramandal", "Chargawan", "Basharatpur",
+                "Betiahata", "Civil Lines", "Transport Nagar",
+                "Padri Bazar"
+            ]
+        },
+        
+        // City to State mapping
+        cityStateMap: {
+            'Noida': 'Uttar Pradesh',
+            'Ghaziabad': 'Uttar Pradesh',
+            'Gorakhpur': 'Uttar Pradesh'
+        }
+    };
+
+    // DOM Elements cache
+    const domElements = {
+        propertyForm: null,
+        submitBtn: null,
+        citySelect: null,
+        locationSelect: null,
+        stateInput: null,
+        priceInput: null
+    };
+
+    // Initialize application
+    function initializeApp() {
+        cacheDOMElements();
+        setupEventListeners();
+        initializeComponents();
+        
+        if (IS_BROKER) {
+            updateProgress();
+            calculateCommission();
+        } else {
+            updateSellerProgress();
+        }
+    }
+
+    // Cache DOM elements
+    function cacheDOMElements() {
+        domElements.propertyForm = document.getElementById('propertyForm');
+        domElements.submitBtn = document.getElementById('submitBtn');
+        domElements.citySelect = document.getElementById('citySelect');
+        domElements.locationSelect = document.getElementById('locationSelect');
+        domElements.stateInput = document.getElementById('stateInput');
+        domElements.priceInput = document.querySelector('input[name="price"]');
+    }
+
+    // Setup event listeners
+    function setupEventListeners() {
+        // Form submission
+        if (domElements.propertyForm) {
+            domElements.propertyForm.addEventListener('submit', handleFormSubmit);
+        }
+
+        // Step navigation buttons
+        setupNavigationButtons();
+
+        // Image upload handling
+        setupImageUpload();
+
+        // City and location handling
+        setupLocationHandlers();
+
+        // Property type and description handlers
+        setupPropertyHandlers();
+
+        // Broker-specific handlers
+        if (IS_BROKER) {
+            setupBrokerHandlers();
+        }
+    }
+
+    // Setup navigation buttons
+    function setupNavigationButtons() {
+        // Step 1 Next buttons
+        if (IS_BROKER) {
+            const step1NextBtn = document.getElementById('step1NextBtn');
+            if (step1NextBtn) {
+                step1NextBtn.addEventListener('click', () => nextStep(2));
+            }
+        } else {
+            const sellerStep1NextBtn = document.getElementById('sellerStep1NextBtn');
+            if (sellerStep1NextBtn) {
+                sellerStep1NextBtn.addEventListener('click', () => nextStep(2));
+            }
+        }
+
+        // Step 2 buttons
+        const step2BackBtn = document.getElementById('step2BackBtn');
+        const step2NextBtn = document.getElementById('step2NextBtn');
+        
+        if (step2BackBtn) {
+            step2BackBtn.addEventListener('click', () => prevStep(1));
+        }
+        if (step2NextBtn) {
+            step2NextBtn.addEventListener('click', () => nextStep(3));
+        }
+
+        // Step 3 Back button
+        const step3BackBtn = document.getElementById('step3BackBtn');
+        if (step3BackBtn) {
+            step3BackBtn.addEventListener('click', () => prevStep(2));
+        }
+    }
+
+    // Initialize components
+    function initializeComponents() {
+        updateLocations();
+        
+        // Initialize description counter
+        const descriptionTextarea = document.querySelector('textarea[name="description"]');
+        if (descriptionTextarea && IS_SELLER) {
+            updateDescriptionCount(descriptionTextarea.value.length);
+        }
+    }
+
+    // Setup image upload functionality
+    function setupImageUpload() {
+        const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+        const imageInput = document.getElementById('imageInput');
+        const removeImageBtn = document.getElementById('removeImageBtn');
+
+        if (imagePreviewContainer) {
+            imagePreviewContainer.addEventListener('click', () => {
+                if (imageInput) imageInput.click();
+            });
+        }
+
+        if (imageInput) {
+            imageInput.addEventListener('change', (e) => handleImageUpload(e.target));
+        }
+
+        if (removeImageBtn) {
+            removeImageBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                removeImage();
+            });
+        }
+    }
+
+    // Setup location handlers
+    function setupLocationHandlers() {
+        if (domElements.citySelect) {
+            domElements.citySelect.addEventListener('change', () => {
+                updateLocations();
+                autoFillState();
+            });
+        }
+
+        if (domElements.locationSelect) {
+            domElements.locationSelect.addEventListener('change', updateLocationCount);
+        }
+    }
+
+    // Setup property handlers
+    function setupPropertyHandlers() {
+        // Property type change
+        const propertyTypeSelect = document.querySelector('[name="property_type"]');
+        if (propertyTypeSelect) {
+            propertyTypeSelect.addEventListener('change', updateSubTypeOptions);
+        }
+
+        // Description character count
+        if (IS_SELLER) {
+            const descriptionTextarea = document.querySelector('textarea[name="description"]');
+            if (descriptionTextarea) {
+                descriptionTextarea.addEventListener('input', (e) => {
+                    updateDescriptionCount(e.target.value.length);
+                });
+            }
+        }
+
+        // Price change for commission calculation
+        if (domElements.priceInput) {
+            domElements.priceInput.addEventListener('input', () => {
+                if (IS_BROKER) {
+                    calculateCommission();
+                }
+            });
+        }
+    }
+
+    // Setup broker-specific handlers
+    function setupBrokerHandlers() {
+        const sellerSelect = document.getElementById('sellerSelect');
+        const exclusiveListing = document.querySelector('[name="exclusive_listing"]');
+
+        if (sellerSelect) {
+            sellerSelect.addEventListener('change', handleSellerSelect);
+        }
+
+        if (exclusiveListing) {
+            exclusiveListing.addEventListener('change', () => {
+                const agreementDetails = document.getElementById('agreementDetails');
+                if (agreementDetails) {
+                    agreementDetails.classList.toggle('hidden', !exclusiveListing.checked);
+                }
+            });
+        }
+    }
+
+    // Handle image upload
+    function handleImageUpload(input) {
+        if (!input.files || !input.files[0]) return;
+
+        const file = input.files[0];
+
+        // Validate file
+        if (!validateImageFile(file)) return;
+
+        appState.selectedImage = file;
+        showImagePreview(file);
+    }
+
+    // Validate image file
+    function validateImageFile(file) {
+        if (file.size > 10 * 1024 * 1024) {
+            alert('File is too large. Maximum size is 10MB.');
+            return false;
+        }
+
+        if (!file.type.match('image.*')) {
+            alert('Please select an image file.');
+            return false;
+        }
+
+        return true;
+    }
+
+    // Show image preview
+    function showImagePreview(file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const imagePlaceholder = document.getElementById('imagePlaceholder');
+            const imagePreview = document.getElementById('imagePreview');
+            const removeImageBtn = document.getElementById('removeImageBtn');
+
+            if (imagePlaceholder) imagePlaceholder.classList.add('hidden');
+            if (imagePreview) {
+                imagePreview.src = e.target.result;
+                imagePreview.classList.remove('hidden');
+            }
+            if (removeImageBtn) removeImageBtn.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // Remove image
+    function removeImage() {
+        const imageInput = document.getElementById('imageInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const imagePlaceholder = document.getElementById('imagePlaceholder');
+        const removeImageBtn = document.getElementById('removeImageBtn');
+
+        if (imageInput) imageInput.value = '';
+        if (imagePreview) {
+            imagePreview.src = '';
+            imagePreview.classList.add('hidden');
+        }
+        if (imagePlaceholder) imagePlaceholder.classList.remove('hidden');
+        if (removeImageBtn) removeImageBtn.classList.add('hidden');
+        
+        appState.selectedImage = null;
+    }
+
+    // Update locations based on selected city
+    function updateLocations() {
+        if (!domElements.citySelect || !domElements.locationSelect) return;
+
+        const city = domElements.citySelect.value;
+        const locationSelect = domElements.locationSelect;
+
+        // Clear existing options
+        locationSelect.innerHTML = '';
+
+        if (city && appState.cityLocationMap[city]) {
+            // Enable location dropdown
+            locationSelect.disabled = false;
+
+            // Add all locations for the selected city
+            appState.cityLocationMap[city].forEach(location => {
+                const option = document.createElement('option');
+                option.value = location;
+                option.textContent = location;
+                locationSelect.appendChild(option);
+            });
+
+            updateLocationCount();
+        } else {
+            // Disable location dropdown
+            locationSelect.disabled = true;
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'Please select a city first';
+            locationSelect.appendChild(option);
+            
+            const locationCount = document.getElementById('locationCount');
+            if (locationCount) {
+                locationCount.textContent = 'Hold Ctrl (Windows) / Cmd (Mac) to select multiple locations';
+            }
+        }
+    }
+
+    // Auto-fill state based on city
+    function autoFillState() {
+        if (!domElements.citySelect || !domElements.stateInput) return;
+
+        const city = domElements.citySelect.value;
+        if (appState.cityStateMap[city] && !domElements.stateInput.value) {
+            domElements.stateInput.value = appState.cityStateMap[city];
+        }
+    }
+
+    // Update location selection count
+    function updateLocationCount() {
+        if (!domElements.locationSelect) return;
+
+        const locationCount = document.getElementById('locationCount');
+        if (!locationCount) return;
+
+        const selectedCount = Array.from(domElements.locationSelect.selectedOptions)
+            .filter(opt => opt.value).length;
+
+        locationCount.textContent = selectedCount > 0 
+            ? `${selectedCount} location(s) selected. Hold Ctrl (Windows) / Cmd (Mac) to select multiple`
+            : 'Hold Ctrl (Windows) / Cmd (Mac) to select multiple locations';
+    }
+
+    // Update sub-type options based on property type
+    function updateSubTypeOptions() {
+        const propertyTypeSelect = document.querySelector('[name="property_type"]');
+        const subTypeSelect = document.querySelector('[name="sub_type"]');
+
+        if (!propertyTypeSelect || !subTypeSelect) return;
+
+        const type = propertyTypeSelect.value;
+        subTypeSelect.innerHTML = '<option value="">Select Sub Type</option>';
+
+        if (type && appState.propertyTypes[type]) {
+            appState.propertyTypes[type].forEach(subType => {
+                const option = document.createElement('option');
+                option.value = subType;
+                option.textContent = subType;
+                subTypeSelect.appendChild(option);
+            });
+        }
+    }
+
+    // Update description character count
+    function updateDescriptionCount(count) {
+        const descCount = document.getElementById('descCount');
+        if (descCount) {
+            descCount.textContent = `${count}/5000`;
+        }
+    }
+
+    if (IS_BROKER) {
+        // Handle seller selection
+        function handleSellerSelect() {
+            const sellerSelect = document.getElementById('sellerSelect');
+            const selectedOption = sellerSelect.options[sellerSelect.selectedIndex];
+            
+            if (!selectedOption || !selectedOption.value) {
+                const sellerInfoDisplay = document.getElementById('sellerInfoDisplay');
+                if (sellerInfoDisplay) sellerInfoDisplay.classList.add('hidden');
+                return;
+            }
+
+            const sellerInfo = selectedOption.text.split(' - ');
+            const sellerInfoDisplay = document.getElementById('sellerInfoDisplay');
+            const sellerDetails = document.getElementById('sellerDetails');
+
+            if (sellerInfoDisplay && sellerDetails) {
+                sellerInfoDisplay.classList.remove('hidden');
+                sellerDetails.innerHTML = `
+                    <p><strong>Name:</strong> ${sellerInfo[0] || ''}</p>
+                    <p><strong>Phone:</strong> ${sellerInfo[1] || ''}</p>
+                `;
+            }
+        }
+
+        // Calculate commission
+        function calculateCommission() {
+            if (!domElements.priceInput) return;
+
+            const price = parseFloat(domElements.priceInput.value) || 0;
+            const adderCommission = price * (appState.commissionRate / 100);
+            const sellerCommission = price * 0.025;
+            const totalCommission = adderCommission + sellerCommission;
+
+            updateCommissionUI(adderCommission, sellerCommission, totalCommission);
+        }
+
+        // Update commission UI
+        function updateCommissionUI(adderCommission, sellerCommission, totalCommission) {
+            const commissionElements = {
+                commissionAmount: document.getElementById('commissionAmount'),
+                finalCommission: document.getElementById('finalCommission'),
+                sellerCommissionElement: document.getElementById('sellerCommission'),
+                totalCommissionElement: document.getElementById('totalCommission')
+            };
+
+            for (const [key, element] of Object.entries(commissionElements)) {
+                if (element) {
+                    let value;
+                    switch (key) {
+                        case 'commissionAmount':
+                        case 'finalCommission':
+                            value = adderCommission;
+                            break;
+                        case 'sellerCommissionElement':
+                            value = sellerCommission;
+                            break;
+                        case 'totalCommissionElement':
+                            value = totalCommission;
+                            break;
+                    }
+                    element.textContent = '₹' + value.toLocaleString('en-IN');
+                }
+            }
+        }
+    }
+
+    // Step navigation
+    function nextStep(step) {
+        console.log('Moving to step:', step, 'from current step:', appState.currentStep);
+
+        if (!validateStep(appState.currentStep)) {
+            console.log('Validation failed for step:', appState.currentStep);
+            return;
+        }
+
+        navigateToStep(step);
+        appState.currentStep = step;
+        scrollToFormTop();
+    }
+
+    function prevStep(step) {
+        console.log('Moving back to step:', step, 'from current step:', appState.currentStep);
+        navigateToStep(step);
+        appState.currentStep = step;
+        scrollToFormTop();
+    }
+
+    // Navigate to specific step
+    function navigateToStep(step) {
+        // Hide current step
+        const currentStepEl = document.getElementById('step' + appState.currentStep);
+        if (currentStepEl) currentStepEl.classList.add('hidden');
+
+        // Show target step
+        const targetStepEl = document.getElementById('step' + step);
+        if (targetStepEl) {
+            targetStepEl.classList.remove('hidden');
+        } else {
+            console.error('Step element not found: step' + step);
+            alert('Error: Cannot find step ' + step);
+            return;
+        }
+
+        // Update progress indicators
+        if (IS_BROKER) {
+            updateProgress(step);
+        } else {
+            updateSellerProgress(step);
+        }
+    }
+
+    // Scroll to top of form
+    function scrollToFormTop() {
+        const propertyForm = document.querySelector('#propertyForm');
+        if (propertyForm) {
+            propertyForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
+    if (IS_BROKER) {
+        // Update progress indicators for broker
+        function updateProgress(step = appState.currentStep) {
+            // Reset all indicators
+            document.querySelectorAll('.step-indicator').forEach((el) => {
+                el.className = 'step-indicator step-pending';
+            });
+
+            // Mark completed and active steps
+            for (let i = 1; i <= step; i++) {
+                const indicator = document.getElementById('step' + i + '-indicator');
+                if (indicator) {
+                    indicator.className = i === step 
+                        ? 'step-indicator step-active' 
+                        : 'step-indicator step-completed';
+                }
+            }
+        }
+    } else {
+        // Update progress indicators for seller
+        function updateSellerProgress(step) {
+            document.querySelectorAll('.flex.items-center.space-x-2').forEach((el, index) => {
+                const circle = el.querySelector('div');
+                const text = el.querySelector('span');
+
+                if (circle && text) {
+                    if (index + 1 === step) {
+                        circle.className = 'w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold';
+                        text.className = 'font-medium text-blue-600';
+                    } else if (index + 1 < step) {
+                        circle.className = 'w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center font-bold';
+                        text.className = 'font-medium text-green-600';
+                    } else {
+                        circle.className = 'w-8 h-8 bg-gray-200 text-gray-600 rounded-full flex items-center justify-center font-bold';
+                        text.className = 'font-medium text-gray-600';
+                    }
+                }
+            });
+        }
+    }
+
+    // Step validation
+    function validateStep(step) {
+        console.log('Validating step:', step);
+
+        if (IS_BROKER) {
+            if (step === 1) {
+                return validateBrokerStep1();
+            }
+        } else {
+            if (step === 1) {
+                return validateSellerStep1();
+            }
+        }
+
+        if (step === 2) {
+            return validateStep2();
+        }
+
+        if (step === 3) {
+            return validateStep3();
+        }
+
+        return true;
+    }
+
+    if (IS_BROKER) {
+        function validateBrokerStep1() {
+            const sellerSelect = document.getElementById('sellerSelect');
+            const sellerName = document.getElementById('sellerName');
+            const sellerPhone = document.getElementById('sellerPhone');
+
+            const sellerId = sellerSelect ? sellerSelect.value : '';
+            const sellerNameValue = sellerName ? sellerName.value : '';
+            const sellerPhoneValue = sellerPhone ? sellerPhone.value : '';
+
+            if (!sellerId && (!sellerNameValue || !sellerPhoneValue)) {
+                alert('Please select an existing seller or enter new seller details.');
+                return false;
+            }
+
+            const exclusiveListing = document.querySelector('[name="exclusive_listing"]');
+            const commissionAgreement = document.querySelector('[name="commission_agreement_signed"]');
+
+            if (exclusiveListing && exclusiveListing.checked && 
+                commissionAgreement && !commissionAgreement.checked) {
+                alert('Exclusive listings require signed commission agreement.');
+                return false;
+            }
+
+            return true;
+        }
+    } else {
+        function validateSellerStep1() {
+            const titleInput = document.querySelector('input[name="title"]');
+            const propertyTypeSelect = document.querySelector('select[name="property_type"]');
+            const descriptionTextarea = document.querySelector('textarea[name="description"]');
+
+            const title = titleInput ? titleInput.value : '';
+            const propertyType = propertyTypeSelect ? propertyTypeSelect.value : '';
+            const description = descriptionTextarea ? descriptionTextarea.value : '';
+
+            if (!title || !propertyType || description.length < 50) {
+                alert('Please fill all required fields. Description must be at least 50 characters.');
+                return false;
+            }
+
+            return true;
+        }
+    }
+
+   function validateStep2() {
+    console.log('Validating Step 2 for role:', USER_ROLE);
+
+    const priceInput = document.querySelector('input[name="price"]');
+    const builtUpAreaInput = document.querySelector('input[name="built_up_area"]');
+    const propertyTypeSelect = document.querySelector('select[name="property_type"]');
+
+    const price = priceInput ? parseFloat(priceInput.value) : 0;
+    const builtUpArea = builtUpAreaInput ? parseFloat(builtUpAreaInput.value) : 0;
+    const propertyType = propertyTypeSelect ? propertyTypeSelect.value : '';
+
+    // Debug log
+    console.log({
+        price,
+        builtUpArea,
+        propertyType,
+        isBroker: IS_BROKER,
+        isSeller: IS_SELLER
+    });
+
+    // Common validations for both roles
+    if (!price || price < 1000) {
+        alert('Please enter a valid price (minimum ₹1000).');
+        return false;
+    }
+
+    if (!builtUpArea || builtUpArea < 1) {
+        alert('Please enter a valid built-up area (minimum 1).');
+        return false;
+    }
+
+    // Role-specific validations
+    if (IS_SELLER) {
+        // Seller must select property type
+        if (!propertyType) {
+            alert('Please select a property type.');
+            return false;
+        }
+
+        // Additional seller-only validations
+        const titleInput = document.querySelector('input[name="title"]');
+        const descriptionTextarea = document.querySelector('textarea[name="description"]');
+
+        const title = titleInput ? titleInput.value.trim() : '';
+        const description = descriptionTextarea ? descriptionTextarea.value.trim() : '';
+
+        if (!title) {
+            alert('Please enter property title.');
+            return false;
+        }
+
+        if (description.length < 50) {
+            alert('Please enter description with at least 50 characters.');
+            return false;
+        }
+    }
+
+    // Broker-specific validations (if any)
+    if (IS_BROKER) {
+        // Optional: Add any broker-specific validations here
+        // For example, check if seller details are carried over from Step 1
+        console.log('Broker validation passed');
+    }
+
+    return true;
+}
+
+  function validateStep3() {
+    console.log('Validating Step 3 for role:', USER_ROLE);
+
+    const citySelect = document.getElementById('citySelect');
+    const locationSelect = document.getElementById('locationSelect');
+
+    const city = citySelect ? citySelect.value : '';
+    const selectedLocations = locationSelect ? Array.from(locationSelect.selectedOptions) : [];
+
+    console.log('Step 3 Values:', { city, selectedLocations });
+
+    // 🟢 COMMON VALIDATIONS (Both Roles)
+    if (!city) {
+        alert('Please select a city.');
+        return false;
+    }
+
+    if (selectedLocations.length === 0 || 
+        (selectedLocations.length === 1 && selectedLocations[0].value === '')) {
+        alert('Please select at least one location.');
+        return false;
+    }
+
+    // 🟡 ROLE-SPECIFIC TERMS VALIDATION
+    if (IS_BROKER) {
+        const termsBroker = document.getElementById('termsBroker');
+        const termsCommission = document.getElementById('termsCommission');
+
+        console.log('Broker Terms:', {
+            termsBroker: termsBroker?.checked,
+            termsCommission: termsCommission?.checked
+        });
+
+        if (!termsBroker?.checked || !termsCommission?.checked) {
+            alert('Please accept all broker terms and conditions.');
+            return false;
+        }
+    } 
+    
+    if (IS_SELLER) {
+        const terms = document.getElementById('terms');
+
+        console.log('Seller Terms:', terms?.checked);
+
+        if (!terms?.checked) {
+            alert('Please accept the terms and conditions.');
+            return false;
+        }
+    }
+
+    return true;
+}
+
+    // Handle form submission
+    async function handleFormSubmit(e) {
+        e.preventDefault();
+        console.log('Form submission started');
+
+        if (!validateStep(3)) {
+            console.log('Final validation failed');
+            return;
+        }
+
+        if (!domElements.submitBtn) return;
+
+        const originalText = domElements.submitBtn.innerHTML;
+        domElements.submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Submitting...';
+        domElements.submitBtn.disabled = true;
+
+        try {
+            const formData = prepareFormData();
+            
+            const endpoint = IS_BROKER ? "/broker/api/properties/add" : "/seller/properties/add";
+            console.log('Submitting to:', endpoint);
+
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            console.log('Response:', data);
+
+            handleSubmissionResponse(data, originalText);
+        } catch (error) {
+            console.error('Submission error:', error);
+            alert('Failed to submit property. Please try again.');
+            resetSubmitButton(originalText);
+        }
+    }
+
+// Prepare form data for submission - FIXED CITY ISSUE
+function prepareFormData() {
+    const formData = new FormData();
+
+    // Add all form fields
+    const formElements = domElements.propertyForm.elements;
+    for (let element of formElements) {
+        if (element.name && element.type !== 'file') {
+            if (element.type === 'checkbox') {
+                formData.append(element.name, element.checked ? 'true' : 'false');
+            } else if (element.type === 'select-multiple') {
+                Array.from(element.selectedOptions).forEach(option => {
+                    formData.append(element.name, option.value);
+                });
+            } else {
+                // IMPORTANT: Check if this is the city select
+                if (element.id === 'citySelect') {
+                    console.log('City element found:', element.name, 'value:', element.value);
+                    // Add city as both nested and flat format for compatibility
+                    formData.append('address[city]', element.value);
+                    formData.append('city', element.value);
+                    formData.append('address_city', element.value);
+                }
+                // Check if this is the state input
+                else if (element.id === 'stateInput') {
+                    formData.append('address[state]', element.value);
+                    formData.append('state', element.value);
+                }
+                else {
+                    formData.append(element.name, element.value);
+                }
+            }
+        }
+    }
+
+    // Add broker ID
+    if (IS_BROKER) {
+        formData.append('broker_id', appState.brokerId);
+    }
+
+    // Add image
+    if (appState.selectedImage) {
+        formData.append('images', appState.selectedImage);
+    }
+
+    // Handle locations (areas) separately
+    if (domElements.locationSelect) {
+        const selectedLocations = Array.from(domElements.locationSelect.selectedOptions)
+            .map(option => option.value)
+            .filter(value => value !== '');
+
+        selectedLocations.forEach(location => {
+            formData.append('address[areas][]', location);
+        });
+    }
+
+    // Add amenities (seller only)
+    if (IS_SELLER) {
+        document.querySelectorAll('input[name="amenities"]:checked').forEach(checkbox => {
+            formData.append('amenities', checkbox.value);
+        });
+    }
+
+    // DEBUG: Log all form data
+    console.log('=== FORM DATA DEBUG ===');
+    for (let pair of formData.entries()) {
+        console.log(pair[0] + ':', pair[1]);
+    }
+    console.log('=== END FORM DATA ===');
+
+    return formData;
+}
+
+    // Handle submission response
+    function handleSubmissionResponse(data, originalText) {
+        if (data.success) {
+            alert('Property submitted successfully! Awaiting admin approval.');
+            const redirectUrl = data.redirect || (IS_BROKER ? "/broker/properties" : "/seller/properties");
+            window.location.href = redirectUrl;
+        } else {
+            alert('Error: ' + (data.message || 'Unknown error occurred'));
+            resetSubmitButton(originalText);
+        }
+    }
+
+    // Reset submit button state
+    function resetSubmitButton(originalText) {
+        if (domElements.submitBtn) {
+            domElements.submitBtn.innerHTML = originalText;
+            domElements.submitBtn.disabled = false;
+        }
+    }
+
+    // Initialize the application when DOM is loaded
+    document.addEventListener('DOMContentLoaded', initializeApp);
+</script>
+</body>
+</html>

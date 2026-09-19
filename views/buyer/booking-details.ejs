@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Propbandhu</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center">
+                        <span class="text-xl font-bold text-gray-900">Propbandhu</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/buyer/dashboard" class="text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-home mr-1"></i>Dashboard
+                    </a>
+                    <a href="/buyer/my-bookings" class="text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-receipt mr-1"></i>My Bookings
+                    </a>
+                    <a href="/logout" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+                        <i class="fas fa-sign-out-alt mr-1"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <!-- Progress Steps -->
+        <div class="mb-8">
+            <div class="flex items-center justify-center">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="ml-2 text-sm font-medium text-green-600">Booking Created</div>
+                </div>
+                
+                <div class="flex-1 h-1 mx-4 bg-gray-300"></div>
+                
+                <div class="flex items-center">
+                    <div class="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center">
+                        2
+                    </div>
+                    <div class="ml-2 text-sm font-medium text-blue-600">Details & KYC</div>
+                </div>
+                
+                <div class="flex-1 h-1 mx-4 bg-gray-300"></div>
+                
+                <div class="flex items-center">
+                    <div class="w-10 h-10 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center">
+                        3
+                    </div>
+                    <div class="ml-2 text-sm font-medium text-gray-500">Payment</div>
+                </div>
+                
+                <div class="flex-1 h-1 mx-4 bg-gray-300"></div>
+                
+                <div class="flex items-center">
+                    <div class="w-10 h-10 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="ml-2 text-sm font-medium text-gray-500">Confirmation</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success Alert -->
+        <div class="bg-green-50 border border-green-200 rounded-lg p-6 mb-8">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-check-circle text-green-400 text-2xl"></i>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-lg font-medium text-green-800">Booking Created Successfully!</h3>
+                    <div class="mt-2 text-green-700">
+                        <p>Booking ID: <strong class="font-mono"><%= booking.booking_id %></strong></p>
+                        <p class="mt-1">Your booking has been created. Please complete the next steps to secure the property.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Booking Summary -->
+        <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+            <h2 class="text-xl font-bold text-gray-900 mb-6">Booking Summary</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Property Details -->
+                <div>
+                    <h3 class="font-semibold text-gray-900 mb-4">Property Details</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <p class="text-sm text-gray-600">Property Title</p>
+                            <p class="font-medium"><%= booking.property.title %></p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Property ID</p>
+                            <p class="font-mono text-sm"><%= booking.property._id %></p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Property Type</p>
+                            <p class="font-medium"><%= booking.property.property_type %></p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Location</p>
+                            <p class="font-medium">
+                                <%= booking.property.address.area %>, <%= booking.property.address.city %>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Financial Details -->
+                <div>
+                    <h3 class="font-semibold text-gray-900 mb-4">Financial Details</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Property Price</span>
+                            <span class="font-medium"><%= booking.formatted_property_price %></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Booking Percentage</span>
+                            <span class="font-medium"><%= booking.booking_percentage %>%</span>
+                        </div>
+                        <div class="border-t border-gray-200 pt-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-lg font-semibold text-gray-900">Booking Amount</span>
+                                <span class="text-2xl font-bold text-green-600"><%= booking.formatted_amount %></span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">To be paid to reserve the property</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Next Steps -->
+        <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+            <h2 class="text-xl font-bold text-gray-900 mb-6">Next Steps</h2>
+            
+            <div class="space-y-6">
+                <!-- Step 1: Complete Buyer Details -->
+                <div class="border border-gray-200 rounded-lg p-6">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                                <i class="fas fa-user-edit"></i>
+                            </div>
+                        </div>
+                        <div class="ml-4 flex-1">
+                            <h3 class="font-semibold text-gray-900">Step 1: Complete Your Details</h3>
+                            <p class="text-gray-600 mt-1">Update your contact information and upload KYC documents.</p>
+                            
+                            <div class="mt-4">
+                                <h4 class="text-sm font-medium text-gray-900 mb-2">Current Information</h4>
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div>
+                                            <p class="text-xs text-gray-600">Name</p>
+                                            <p class="font-medium"><%= booking.buyer_details.name %></p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-600">Email</p>
+                                            <p class="font-medium"><%= booking.buyer_details.email %></p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-600">Phone</p>
+                                            <p class="font-medium"><%= booking.buyer_details.phone %></p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-600">Address</p>
+                                            <p class="font-medium">
+                                                <%= booking.buyer_details.address || 'Not provided' %>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button onclick="updateBuyerDetails('<%= booking._id %>')" 
+                                    class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center">
+                                <i class="fas fa-edit mr-2"></i>Update Details
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 2: Upload Documents -->
+                <div class="border border-gray-200 rounded-lg p-6">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <div class="w-10 h-10 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center">
+                                <i class="fas fa-file-upload"></i>
+                            </div>
+                        </div>
+                        <div class="ml-4 flex-1">
+                            <h3 class="font-semibold text-gray-900">Step 2: Upload KYC Documents</h3>
+                            <p class="text-gray-600 mt-1">Required documents for property booking.</p>
+                            
+                            <div class="mt-4">
+                                <h4 class="text-sm font-medium text-gray-900 mb-2">Required Documents</h4>
+                                <ul class="space-y-2">
+                                    <li class="flex items-center">
+                                        <i class="fas fa-id-card text-gray-400 mr-2"></i>
+                                        <span>Aadhaar Card (Front & Back)</span>
+                                    </li>
+                                    <li class="flex items-center">
+                                        <i class="fas fa-file-invoice text-gray-400 mr-2"></i>
+                                        <span>PAN Card</span>
+                                    </li>
+                                    <li class="flex items-center">
+                                        <i class="fas fa-home text-gray-400 mr-2"></i>
+                                        <span>Address Proof</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            
+                            <button onclick="uploadDocuments('<%= booking._id %>')" 
+                                    class="mt-4 bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 flex items-center">
+                                <i class="fas fa-upload mr-2"></i>Upload Documents
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 3: Make Payment -->
+                <div class="border border-gray-200 rounded-lg p-6">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center">
+                                <i class="fas fa-credit-card"></i>
+                            </div>
+                        </div>
+                        <div class="ml-4 flex-1">
+                            <h3 class="font-semibold text-gray-900">Step 3: Make Payment</h3>
+                            <p class="text-gray-600 mt-1">Pay the booking amount to reserve the property.</p>
+                            
+                            <div class="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <p class="text-sm text-gray-600">Amount to Pay</p>
+                                        <p class="text-2xl font-bold text-green-600"><%= booking.formatted_amount %></p>
+                                    </div>
+                                    <button onclick="initiatePayment('<%= booking._id %>')" 
+                                            class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-semibold">
+                                        <i class="fas fa-lock mr-2"></i>Proceed to Payment
+                                    </button>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-2">
+                                    <i class="fas fa-shield-alt mr-1"></i>
+                                    Secure payment powered by Razorpay
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Important Notes -->
+        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+            <h3 class="font-semibold text-yellow-800 mb-3 flex items-center">
+                <i class="fas fa-exclamation-triangle mr-2"></i>Important Notes
+            </h3>
+            <ul class="text-sm text-yellow-700 space-y-2">
+                <li>• This booking will expire in <strong>24 hours</strong> if payment is not completed</li>
+                <li>• Once payment is made, you'll receive a booking confirmation receipt</li>
+                <li>• The booking amount is refundable as per cancellation policy</li>
+                <li>• You have <strong>60 days</strong> from payment to complete the full transaction</li>
+                <li>• Contact seller/broker for property handover details</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Update buyer details
+        async function updateBuyerDetails(bookingId) {
+            const address = prompt('Enter your complete address:');
+            const aadhaar = prompt('Enter Aadhaar number (optional):');
+            const pan = prompt('Enter PAN number (optional):');
+            
+            if (!address) {
+                alert('Address is required');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/buyer/api/booking/${bookingId}/update-details`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        address: address,
+                        aadhaar: aadhaar,
+                        pan: pan
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Details updated successfully');
+                    location.reload();
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to update details');
+            }
+        }
+
+        // Upload documents
+        async function uploadDocuments(bookingId) {
+            alert('In a real implementation, this would open a file upload dialog.\nFor now, we\'ll simulate document upload.');
+            
+            // Simulate document upload
+            try {
+                const response = await fetch(`/buyer/api/booking/${bookingId}/upload-documents`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        aadhaar_front: '/documents/aadhaar_front.jpg',
+                        aadhaar_back: '/documents/aadhaar_back.jpg',
+                        pan_card: '/documents/pan.jpg'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Documents uploaded successfully!');
+                    location.reload();
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to upload documents');
+            }
+        }
+
+        // Initiate payment
+        async function initiatePayment(bookingId) {
+            try {
+                const response = await fetch(`/buyer/api/booking/${bookingId}/initiate-payment`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        payment_method: 'online'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // In real implementation, open Razorpay checkout
+                    // For now, simulate payment
+                    alert('Payment gateway would open here. For demo, simulating payment...');
+                    
+                    // Simulate payment verification
+                    const paymentResult = await fetch(`/buyer/api/booking/${bookingId}/verify-payment`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            payment_id: 'pay_' + Date.now(),
+                            order_id: result.payment?.order_id || 'order_' + Date.now(),
+                            signature: 'simulated_signature'
+                        })
+                    });
+                    
+                    const paymentData = await paymentResult.json();
+                    
+                    if (paymentData.success) {
+                        alert('Payment successful! Booking confirmed.');
+                        window.location.href = `/buyer/bookings/${bookingId}`;
+                    } else {
+                        alert('Payment verification failed: ' + paymentData.message);
+                    }
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to initiate payment');
+            }
+        }
+
+        // Auto-expiry warning
+        document.addEventListener('DOMContentLoaded', function() {
+            const expiresAt = '<%= booking.expires_at %>';
+            if (expiresAt) {
+                const expiryDate = new Date(expiresAt);
+                const now = new Date();
+                const hoursLeft = Math.ceil((expiryDate - now) / (1000 * 60 * 60));
+                
+                if (hoursLeft < 24 && hoursLeft > 0) {
+                    alert(`⚠️ Your booking will expire in ${hoursLeft} hours. Complete the payment to secure the property.`);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

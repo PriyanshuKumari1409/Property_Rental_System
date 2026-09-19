@@ -1,0 +1,65 @@
+<nav class="navbar">
+  <div class="logo">
+    <a href="/">
+      <img src="/assets/logo.png" alt="Propbandhu Logo" />
+    </a>
+  </div>
+  
+  <ul class="nav-links">
+    <li class="has-submenu">
+      <a href="/properties" class="<%= activePage === 'buy' ? 'active' : '' %>">Buy</a>
+      <ul class="submenu">
+        <li><a href="/properties?type=Apartment">Flats</a></li>
+        <li><a href="/properties?type=Villa">Villas</a></li>
+        <li><a href="/properties?type=Plot">Plots</a></li>
+        <li><a href="/properties?type=Commercial">Commercial</a></li>
+      </ul>
+    </li>
+    
+    <li class="has-submenu">
+      <a href="/properties?for=rent" class="<%= activePage === 'rent' ? 'active' : '' %>">Rent</a>
+      <ul class="submenu">
+        <li><a href="/properties?type=Apartment&for=rent">Apartments</a></li>
+        <li><a href="/properties?type=Villa&for=rent">Villas</a></li>
+        <li><a href="/properties?type=House&for=rent">Houses</a></li>
+        <li><a href="/properties?type=Commercial&for=rent">Commercial</a></li>
+      </ul>
+    </li>
+    
+    <li class="has-submenu">
+      <a href="#" class="<%= activePage === 'services' ? 'active' : '' %>">Services</a>
+      <ul class="submenu">
+        <li><a href="/homeloan">Home Loans</a></li>
+        <li><a href="/legal-support">Legal Support</a></li>
+        <li><a href="#">Property Management</a></li>
+        <li><a href="#">Vastu Consultation</a></li>
+        <li><a href="#">Home Inspection</a></li>
+      </ul>
+    </li>
+    
+    <li><a href="#" class="<%= activePage === 'careers' ? 'active' : '' %>">Careers</a></li>
+    
+    <li><a href="/blog" class="<%= activePage === 'blog' ? 'active' : '' %>">Blogs</a></li>
+    
+    <!-- Enhanced Auth Buttons -->
+    <li class="nav-auth-group">
+      <div class="auth-buttons">
+        <a href="/login" class="auth-btn login-btn">
+          <i class="fas fa-sign-in-alt"></i>
+          <span>Login</span>
+        </a>
+        <a href="/register" class="auth-btn signup-btn">
+          <i class="fas fa-user-plus"></i>
+          <span>Sign Up</span>
+        </a>
+      </div>
+    </li>
+  </ul>
+  
+  <!-- Mobile Menu Toggle -->
+  <button class="mobile-menu-toggle" aria-label="Toggle menu">
+    <span class="menu-icon"></span>
+    <span class="menu-icon"></span>
+    <span class="menu-icon"></span>
+  </button>
+</nav>

@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Propbandhu</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/sellerdashboard.css">
+    <style>
+        /* Custom styles for document viewer */
+        .document-viewer {
+            background: #f8fafc;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .pdf-viewer-container {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .image-viewer-container {
+            max-width: 100%;
+            max-height: 600px;
+            overflow: auto;
+            border-radius: 8px;
+        }
+        
+        .image-viewer-container img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+        
+        .document-meta {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .meta-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .meta-item:last-child {
+            border-bottom: none;
+        }
+        
+        .meta-label {
+            font-weight: 500;
+            color: #64748b;
+        }
+        
+        .meta-value {
+            color: #1e293b;
+            font-weight: 500;
+        }
+        
+        .document-icon-large {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        
+        .pdf-icon { color: #ef4444; }
+        .doc-icon { color: #2563eb; }
+        .image-icon { color: #10b981; }
+        .file-icon { color: #6b7280; }
+        
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+        }
+        
+        .btn-secondary:hover {
+            background: #e2e8f0;
+            transform: translateY(-1px);
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+        }
+        
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+        
+        .document-preview {
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            background: white;
+        }
+        
+        .unsupported-view {
+            padding: 60px 20px;
+            text-align: center;
+        }
+        
+        .file-size-badge {
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        .document-type-badge {
+            background: #f1f5f9;
+            color: #475569;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            padding: 16px 24px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            max-width: 400px;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.success {
+            background: #10b981;
+        }
+        
+        .notification.error {
+            background: #ef4444;
+        }
+        
+        .notification.info {
+            background: #3b82f6;
+        }
+        
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1001;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #64748b;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        
+        .modal-close:hover {
+            background: #f1f5f9;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- Top Navigation -->
+    <nav class="bg-white shadow-sm border-b border-gray-200">
+        <div class="px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center space-x-3 no-underline">
+                        <div class="w-10 h-10 bg-gradient-to-br from-purple-600 to-blue-500 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-home text-white text-xl"></i>
+                        </div>
+                        <span class="text-2xl font-bold text-gray-900">Propbandhu</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-6">
+                    <div class="flex items-center space-x-4 bg-gray-100 px-4 py-2 rounded-xl">
+                        <div class="w-8 h-8 bg-gradient-to-br from-green-500 to-teal-400 rounded-full flex items-center justify-center text-white font-bold">
+                            <%= user.name.charAt(0).toUpperCase() %>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-700">🏠 Seller</p>
+                            <p class="text-xs text-gray-600"><%= user.name %></p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <a href="/seller/dashboard" class="nav-link">
+                            <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                        </a>
+                        <a href="/seller/properties/<%= property._id %>" class="nav-link">
+                            <i class="fas fa-arrow-left mr-2"></i>Back to Property
+                        </a>
+                        <a href="/seller/documents" class="nav-link">
+                            <i class="fas fa-file-alt mr-2"></i>All Documents
+                        </a>
+                        <a href="/logout" class="logout-btn">
+                            <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <!-- Breadcrumb -->
+        <nav class="flex mb-6" aria-label="Breadcrumb">
+            <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                <li class="inline-flex items-center">
+                    <a href="/seller/dashboard" class="text-sm text-gray-700 hover:text-blue-600">
+                        <i class="fas fa-home mr-2"></i>Dashboard
+                    </a>
+                </li>
+                <li>
+                    <div class="flex items-center">
+                        <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                        <a href="/seller/documents" class="text-sm text-gray-700 hover:text-blue-600">
+                            Documents
+                        </a>
+                    </div>
+                </li>
+                <li>
+                    <div class="flex items-center">
+                        <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                        <span class="text-sm text-gray-500 font-medium truncate">
+                            <%= document.name %>
+                        </span>
+                    </div>
+                </li>
+            </ol>
+        </nav>
+
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 border-b border-gray-200">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900"><%= document.name %></h1>
+                        <div class="flex items-center gap-3 mt-2">
+                            <span class="document-type-badge">
+                                <i class="fas fa-tag mr-1"></i>
+                                <%= document.type || 'Document' %>
+                            </span>
+                            <span class="file-size-badge">
+                                <i class="fas fa-weight-hanging mr-1"></i>
+                                <%= formatFileSize(document.size) %>
+                            </span>
+                            <span class="text-sm text-gray-600">
+                                <i class="far fa-clock mr-1"></i>
+                                <%= formatDate(document.uploaded_at) %>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="action-buttons">
+                        <a href="<%= document.url %>" 
+                           target="_blank" 
+                           download="<%= document.original_name || document.name %>"
+                           class="btn btn-success">
+                            <i class="fas fa-download mr-2"></i>Download
+                        </a>
+                        <a href="/seller/properties/<%= property._id %>" 
+                           class="btn btn-secondary">
+                            <i class="fas fa-arrow-left mr-2"></i>Back to Property
+                        </a>
+                        <button onclick="showDeleteModal()" class="btn btn-danger">
+                            <i class="fas fa-trash mr-2"></i>Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Document Content -->
+            <div class="p-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Document Preview -->
+                    <div class="lg:col-span-2">
+                        <div class="document-preview">
+                            <% if (document.type && document.type.includes('pdf')) { %>
+                                <!-- PDF Viewer -->
+                                <div class="pdf-viewer-container">
+                                    <iframe 
+                                        src="<%= document.url %>" 
+                                        style="width: 100%; height: 100%; border: none;"
+                                        title="PDF Document Viewer"
+                                        allow="fullscreen"
+                                    >
+                                        Your browser does not support PDFs. 
+                                        <a href="<%= document.url %>" target="_blank">Download the PDF</a> instead.
+                                    </iframe>
+                                </div>
+                                <p class="text-sm text-gray-600 mt-4">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    PDF document. Click and drag to navigate, or use the download button above.
+                                </p>
+                            <% } else if (document.type && document.type.includes('image')) { %>
+                                <!-- Image Viewer -->
+                                <div class="image-viewer-container">
+                                    <img src="<%= document.url %>" 
+                                         alt="<%= document.name %>"
+                                         class="shadow-lg"
+                                         onerror="this.src='https://via.placeholder.com/800x600?text=Image+Not+Available'">
+                                </div>
+                                <p class="text-sm text-gray-600 mt-4">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Image document. Click to zoom, right-click to save.
+                                </p>
+                            <% } else if (document.type && (document.type.includes('word') || document.type.includes('doc'))) { %>
+                                <!-- Word Document Viewer -->
+                                <div class="unsupported-view">
+                                    <i class="fas fa-file-word doc-icon document-icon-large"></i>
+                                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Word Document</h3>
+                                    <p class="text-gray-600 mb-6">
+                                        Word documents can be viewed by downloading and opening in Microsoft Word or compatible software.
+                                    </p>
+                                    <a href="<%= document.url %>" 
+                                       target="_blank" 
+                                       class="btn btn-primary">
+                                        <i class="fas fa-external-link-alt mr-2"></i>
+                                        Open in New Tab
+                                    </a>
+                                </div>
+                            <% } else { %>
+                                <!-- Generic Document Viewer -->
+                                <div class="unsupported-view">
+                                    <% 
+                                        let iconClass = 'fas fa-file file-icon';
+                                        if (document.original_name && document.original_name.endsWith('.pdf')) {
+                                            iconClass = 'fas fa-file-pdf pdf-icon';
+                                        } else if (document.original_name && 
+                                                  (document.original_name.endsWith('.doc') || 
+                                                   document.original_name.endsWith('.docx'))) {
+                                            iconClass = 'fas fa-file-word doc-icon';
+                                        } else if (document.original_name && 
+                                                  (document.original_name.endsWith('.jpg') || 
+                                                   document.original_name.endsWith('.jpeg') || 
+                                                   document.original_name.endsWith('.png'))) {
+                                            iconClass = 'fas fa-file-image image-icon';
+                                        }
+                                    %>
+                                    <i class="<%= iconClass %> document-icon-large"></i>
+                                    <h3 class="text-xl font-semibold text-gray-800 mb-2"><%= document.name %></h3>
+                                    <p class="text-gray-600 mb-6">
+                                        This document can be viewed by downloading it to your device.
+                                    </p>
+                                    <a href="<%= document.url %>" 
+                                       target="_blank" 
+                                       class="btn btn-primary">
+                                        <i class="fas fa-external-link-alt mr-2"></i>
+                                        Open Document
+                                    </a>
+                                </div>
+                            <% } %>
+                        </div>
+                    </div>
+
+                    <!-- Document Metadata -->
+                    <div class="lg:col-span-1">
+                        <div class="document-meta">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                                <i class="fas fa-info-circle mr-2"></i>Document Information
+                            </h3>
+                            
+                            <div class="space-y-2">
+                                <div class="meta-item">
+                                    <span class="meta-label">Document Name:</span>
+                                    <span class="meta-value font-semibold"><%= document.name %></span>
+                                </div>
+                                
+                                <div class="meta-item">
+                                    <span class="meta-label">Original Filename:</span>
+                                    <span class="meta-value truncate" title="<%= document.original_name %>">
+                                        <%= document.original_name || 'N/A' %>
+                                    </span>
+                                </div>
+                                
+                                <div class="meta-item">
+                                    <span class="meta-label">Document Type:</span>
+                                    <span class="meta-value capitalize"><%= document.type || 'Other' %></span>
+                                </div>
+                                
+                                <div class="meta-item">
+                                    <span class="meta-label">File Size:</span>
+                                    <span class="meta-value"><%= formatFileSize(document.size) %></span>
+                                </div>
+                                
+                                <div class="meta-item">
+                                    <span class="meta-label">Uploaded Date:</span>
+                                    <span class="meta-value"><%= formatDate(document.uploaded_at) %></span>
+                                </div>
+                                
+                                <div class="meta-item">
+                                    <span class="meta-label">Uploaded Time:</span>
+                                    <span class="meta-value"><%= formatTime(document.uploaded_at) %></span>
+                                </div>
+                                
+                                <div class="meta-item">
+                                    <span class="meta-label">Property:</span>
+                                    <span class="meta-value">
+                                        <a href="/seller/properties/<%= property._id %>" 
+                                           class="text-blue-600 hover:text-blue-800 hover:underline">
+                                            <%= property.title %>
+                                        </a>
+                                    </span>
+                                </div>
+                                
+                                <div class="meta-item">
+                                    <span class="meta-label">Property Status:</span>
+                                    <span class="meta-value capitalize"><%= property.status || 'Unknown' %></span>
+                                </div>
+                                
+                                <div class="meta-item">
+                                    <span class="meta-label">Cloud Storage:</span>
+                                    <span class="meta-value">
+                                        <i class="fas fa-cloud text-blue-500 mr-1"></i>Cloudinary
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <!-- Quick Actions -->
+                            <div class="mt-8 pt-6 border-t border-gray-200">
+                                <h4 class="text-md font-semibold text-gray-900 mb-3">
+                                    <i class="fas fa-bolt mr-2"></i>Quick Actions
+                                </h4>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <a href="<%= document.url %>" 
+                                       target="_blank"
+                                       class="btn btn-primary text-center">
+                                        <i class="fas fa-external-link-alt mr-2"></i>Open
+                                    </a>
+                                    <a href="<%= document.url %>" 
+                                       download="<%= document.original_name || document.name %>"
+                                       class="btn btn-success text-center">
+                                        <i class="fas fa-download mr-2"></i>Download
+                                    </a>
+                                    <a href="mailto:?subject=Document: <%= document.name %>&body=Check out this document: <%= document.url %>"
+                                       class="btn btn-secondary text-center">
+                                        <i class="fas fa-share mr-2"></i>Share
+                                    </a>
+                                    <button onclick="showRenameModal()" 
+                                            class="btn btn-secondary text-center">
+                                        <i class="fas fa-edit mr-2"></i>Rename
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Related Documents -->
+        <% if (property.documents && property.documents.length > 1) { %>
+        <div class="mt-8">
+            <div class="bg-white rounded-2xl shadow-xl p-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-folder-open mr-2"></i>Other Documents in This Property
+                </h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead>
+                            <tr>
+                                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Document
+                                </th>
+                                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Type
+                                </th>
+                                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Size
+                                </th>
+                                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Uploaded
+                                </th>
+                                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actions
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <% property.documents.forEach((otherDoc, index) => { 
+                                if (otherDoc._id.toString() !== document._id.toString()) { 
+                            %>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <% 
+                                            let otherIconClass = 'fas fa-file text-gray-400';
+                                            if (otherDoc.type && otherDoc.type.includes('pdf')) {
+                                                otherIconClass = 'fas fa-file-pdf text-red-500';
+                                            } else if (otherDoc.type && otherDoc.type.includes('image')) {
+                                                otherIconClass = 'fas fa-file-image text-green-500';
+                                            } else if (otherDoc.type && otherDoc.type.includes('word')) {
+                                                otherIconClass = 'fas fa-file-word text-blue-500';
+                                            }
+                                        %>
+                                        <i class="<%= otherIconClass %> mr-3"></i>
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900">
+                                                <a href="/seller/documents/view/<%= property._id %>/<%= index %>" 
+                                                   class="hover:text-blue-600 hover:underline">
+                                                    <%= otherDoc.name %>
+                                                </a>
+                                            </div>
+                                            <div class="text-sm text-gray-500 truncate max-w-xs">
+                                                <%= otherDoc.original_name || 'Document' %>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                        <%= otherDoc.type || 'Other' %>
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <%= formatFileSize(otherDoc.size) %>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <%= formatDate(otherDoc.uploaded_at) %>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <a href="/seller/documents/view/<%= property._id %>/<%= index %>" 
+                                       class="text-blue-600 hover:text-blue-900 mr-3">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                    <a href="<%= otherDoc.url %>" 
+                                       target="_blank"
+                                       class="text-green-600 hover:text-green-900">
+                                        <i class="fas fa-download"></i> Download
+                                    </a>
+                                </td>
+                            </tr>
+                            <% } }); %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <% } %>
+    </div>
+
+    <!-- Delete Modal -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>
+                    Delete Document
+                </h3>
+                <button onclick="hideDeleteModal()" class="modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="mb-6">
+                <p class="text-gray-700 mb-4">
+                    Are you sure you want to delete <strong>"<%= document.name %>"</strong>?
+                </p>
+                <p class="text-sm text-gray-600 mb-4">
+                    This action cannot be undone. The document will be permanently deleted from Cloudinary storage and your property records.
+                </p>
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                    <div class="flex">
+                        <i class="fas fa-exclamation-circle text-red-400 mt-0.5 mr-3"></i>
+                        <div>
+                            <h4 class="text-sm font-semibold text-red-800">Warning</h4>
+                            <p class="text-sm text-red-700">
+                                This document will be permanently deleted. Make sure you have a backup if needed.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button onclick="hideDeleteModal()" class="btn btn-secondary">
+                    Cancel
+                </button>
+                <button onclick="deleteDocument()" class="btn btn-danger">
+                    <i class="fas fa-trash mr-2"></i>Delete Document
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rename Modal -->
+    <div id="renameModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-edit text-blue-500 mr-2"></i>
+                    Rename Document
+                </h3>
+                <button onclick="hideRenameModal()" class="modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    New Document Name
+                </label>
+                <input type="text" 
+                       id="newDocumentName" 
+                       value="<%= document.name %>"
+                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                       placeholder="Enter new document name">
+                <p class="text-sm text-gray-500 mt-2">
+                    This will only change the display name, not the original filename.
+                </p>
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button onclick="hideRenameModal()" class="btn btn-secondary">
+                    Cancel
+                </button>
+                <button onclick="renameDocument()" class="btn btn-primary">
+                    <i class="fas fa-save mr-2"></i>Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notificationContainer"></div>
+
+    <script>
+        // Helper functions (should be passed from server)
+        function formatFileSize(bytes) {
+            if (!bytes) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+        
+        function formatTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        // Modal functions
+        function showDeleteModal() {
+            document.getElementById('deleteModal').classList.add('show');
+        }
+        
+        function hideDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('show');
+        }
+        
+        function showRenameModal() {
+            document.getElementById('renameModal').classList.add('show');
+        }
+        
+        function hideRenameModal() {
+            document.getElementById('renameModal').classList.remove('show');
+        }
+        
+        // Close modals when clicking outside
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('show');
+                }
+            });
+        });
+        
+        // Notification function
+        function showNotification(message, type = 'info', duration = 5000) {
+            const container = document.getElementById('notificationContainer');
+            const notification = document.createElement('div');
+            
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'} mr-3"></i>
+                        <span>${message}</span>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            
+            container.appendChild(notification);
+            
+            // Show notification
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 10);
+            
+            // Auto-remove after duration
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.classList.remove('show');
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.parentNode.removeChild(notification);
+                        }
+                    }, 300);
+                }
+            }, duration);
+        }
+        
+        // Delete document function
+        async function deleteDocument() {
+            try {
+                const response = await fetch(`/seller/api/properties/<%= property._id %>/documents/<%= docIndex %>`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showNotification('Document deleted successfully!', 'success');
+                    hideDeleteModal();
+                    // Redirect to documents list after a delay
+                    setTimeout(() => {
+                        window.location.href = '/seller/documents';
+                    }, 1500);
+                } else {
+                    showNotification('Error: ' + data.message, 'error');
+                }
+            } catch (error) {
+                console.error('Delete error:', error);
+                showNotification('Failed to delete document. Please try again.', 'error');
+            }
+        }
+        
+        // Rename document function
+        async function renameDocument() {
+            const newName = document.getElementById('newDocumentName').value.trim();
+            
+            if (!newName) {
+                showNotification('Please enter a document name', 'error');
+                return;
+            }
+            
+            if (newName === '<%= document.name %>') {
+                showNotification('Document name is unchanged', 'info');
+                hideRenameModal();
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/seller/api/properties/<%= property._id %>/documents/<%= docIndex %>/rename`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: newName
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showNotification('Document renamed successfully!', 'success');
+                    hideRenameModal();
+                    // Update the page title and header
+                    document.querySelector('h1.text-2xl').textContent = newName;
+                    document.title = `${newName} - Document View - Propbandhu`;
+                } else {
+                    showNotification('Error: ' + data.message, 'error');
+                }
+            } catch (error) {
+                console.error('Rename error:', error);
+                showNotification('Failed to rename document. Please try again.', 'error');
+            }
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Escape key closes modals
+            if (e.key === 'Escape') {
+                hideDeleteModal();
+                hideRenameModal();
+            }
+            
+            // Ctrl/Cmd + S to save rename
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                if (document.getElementById('renameModal').classList.contains('show')) {
+                    renameDocument();
+                }
+            }
+            
+            // Ctrl/Cmd + D to delete
+            if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+                e.preventDefault();
+                if (!document.getElementById('deleteModal').classList.contains('show')) {
+                    showDeleteModal();
+                }
+            }
+        });
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add keyboard shortcut hints
+            console.log('Document Viewer Keyboard Shortcuts:');
+            console.log('- Esc: Close modals');
+            console.log('- Ctrl/Cmd + D: Delete document');
+            console.log('- Ctrl/Cmd + S: Save rename (when renaming)');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Propbandhu Buyer</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        
+        .notification-item.unread {
+            border-left: 4px solid #8b5cf6;
+            background-color: #f5f3ff;
+        }
+        
+        .notification-item.read {
+            border-left: 4px solid #e5e7eb;
+        }
+        
+        .type-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        
+        .property_added_to_cart { background-color: #fce7f3; color: #be185d; }
+        .cart_item_expiring { background-color: #fef3c7; color: #92400e; }
+        .cart_item_expired { background-color: #fee2e2; color: #991b1b; }
+        .property_price_drop { background-color: #d1fae5; color: #065f46; }
+        .property_back_in_stock { background-color: #dbeafe; color: #1e40af; }
+        .similar_property_found { background-color: #e0e7ff; color: #3730a3; }
+        .search_alert_match { background-color: #f3e8ff; color: #7c3aed; }
+        .visit_scheduled { background-color: #f0f9ff; color: #0c4a6e; }
+        .visit_confirmed { background-color: #ecfdf5; color: #064e3b; }
+        .booking_confirmed { background-color: #f0fdfa; color: #134e4a; }
+        .payment_successful { background-color: #f0fdf4; color: #166534; }
+        .property_saved { background-color: #f8fafc; color: #475569; }
+        
+        .notification-bell {
+            position: relative;
+        }
+        
+        .notification-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ef4444;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .cart-indicator {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Top Navigation -->
+    <nav class="bg-white shadow-md border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="/buyer/dashboard" class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl flex items-center justify-center">
+                            <span class="text-white font-bold text-xl">P</span>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold text-gray-900">Propbandhu</h1>
+                            <p class="text-xs text-gray-500">Buyer Panel</p>
+                        </div>
+                    </a>
+                </div>
+                
+                <!-- Right Section -->
+                <div class="flex items-center space-x-6">
+                    <!-- Cart Icon -->
+                    <a href="/buyer/cart" class="relative">
+                        <div class="w-10 h-10 bg-purple-100 hover:bg-purple-200 rounded-full flex items-center justify-center transition-colors">
+                            <i class="fas fa-shopping-cart text-purple-600"></i>
+                            <% if (cartCount > 0) { %>
+                                <span class="absolute -top-1 -right-1 w-5 h-5 bg-purple-500 rounded-full text-xs text-white flex items-center justify-center cart-indicator">
+                                    <%= cartCount %>
+                                </span>
+                            <% } %>
+                        </div>
+                    </a>
+                    
+                    <!-- Notification Bell -->
+                    <div class="relative notification-bell">
+                        <a href="/buyer/notifications" class="w-10 h-10 bg-purple-100 hover:bg-purple-200 rounded-full flex items-center justify-center transition-colors relative">
+                            <i class="fas fa-bell text-purple-600"></i>
+                            <% if (unreadCount > 0) { %>
+                                <span class="notification-count">
+                                    <%= unreadCount > 9 ? '9+' : unreadCount %>
+                                </span>
+                            <% } %>
+                        </a>
+                    </div>
+                    
+                    <!-- User Profile -->
+                    <div class="flex items-center space-x-3">
+                        <div class="text-right hidden md:block">
+                            <p class="font-medium text-gray-900"><%= user.name %></p>
+                            <p class="text-sm text-gray-500">Buyer</p>
+                        </div>
+                        <div class="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold">
+                            <%= user.name.charAt(0).toUpperCase() %>
+                        </div>
+                        <a href="/logout" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-4xl mx-auto py-6 px-4">
+        <!-- Page Header -->
+        <div class="mb-8">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Buyer Notifications</h1>
+                    <p class="text-gray-600 mt-1">Stay updated with your property searches, cart items, and bookings</p>
+                </div>
+                <div class="flex space-x-3">
+                    <% if (unreadCount > 0) { %>
+                    <button onclick="markAllAsRead()" 
+                            class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
+                        <i class="fas fa-check-double mr-2"></i>Mark All as Read
+                    </button>
+                    <% } %>
+                </div>
+            </div>
+            
+            <!-- Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+                <div class="bg-white rounded-xl shadow p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Total</p>
+                            <p class="text-2xl font-bold text-gray-900"><%= stats.total || 0 %></p>
+                        </div>
+                        <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-bell text-gray-600"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Unread</p>
+                            <p class="text-2xl font-bold text-red-600"><%= stats.unread || 0 %></p>
+                        </div>
+                        <div class="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-envelope text-red-600"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Cart Items</p>
+                            <p class="text-2xl font-bold text-purple-600">
+                                <%= notifications.filter(n => n.type && n.type.includes('cart')).length %>
+                            </p>
+                        </div>
+                        <div class="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-shopping-cart text-purple-600"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Price Drops</p>
+                            <p class="text-2xl font-bold text-green-600">
+                                <%= notifications.filter(n => n.type && n.type === 'property_price_drop').length %>
+                            </p>
+                        </div>
+                        <div class="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-tag text-green-600"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="bg-white rounded-xl shadow mb-6 p-4">
+            <div class="flex space-x-4 overflow-x-auto">
+                <button onclick="filterNotifications('all')" 
+                        class="px-4 py-2 rounded-lg bg-purple-100 text-purple-700 font-medium whitespace-nowrap">
+                    All (<%= stats.total || 0 %>)
+                </button>
+                <button onclick="filterNotifications('unread')" 
+                        class="px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-50 whitespace-nowrap">
+                    Unread (<%= stats.unread || 0 %>)
+                </button>
+                <button onclick="filterNotifications('cart')" 
+                        class="px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-50 whitespace-nowrap">
+                    Cart (<%= notifications.filter(n => n.type && n.type.includes('cart')).length %>)
+                </button>
+                <button onclick="filterNotifications('property_price_drop')" 
+                        class="px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-50 whitespace-nowrap">
+                    Price Drops (<%= notifications.filter(n => n.type && n.type === 'property_price_drop').length %>)
+                </button>
+                <button onclick="filterNotifications('visit')" 
+                        class="px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-50 whitespace-nowrap">
+                    Visits (<%= notifications.filter(n => n.type && n.type.includes('visit')).length %>)
+                </button>
+                <button onclick="filterNotifications('booking')" 
+                        class="px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-50 whitespace-nowrap">
+                    Bookings (<%= notifications.filter(n => n.type && n.type.includes('booking')).length %>)
+                </button>
+            </div>
+        </div>
+
+        <!-- Notifications List -->
+        <% if (notifications.length === 0) { %>
+        <div class="text-center py-16 bg-white rounded-xl shadow">
+            <i class="fas fa-bell-slash text-gray-300 text-6xl mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-700 mb-2">No Notifications</h3>
+            <p class="text-gray-600">You don't have any notifications yet.</p>
+            <p class="text-sm text-gray-400 mt-1">Notifications will appear here for cart updates, price drops, visit confirmations, and more.</p>
+        </div>
+        <% } else { %>
+        <div class="space-y-4" id="notificationsList">
+            <% notifications.forEach(notification => { 
+                const data = notification.data || {};
+                const isCartExpiring = notification.type === 'cart_item_expiring';
+                const isPriceDrop = notification.type === 'property_price_drop';
+            %>
+            <div class="notification-item <%= notification.is_read ? 'read' : 'unread' %> 
+                        bg-white rounded-xl shadow p-6 border border-gray-200 <%= isCartExpiring ? 'cart-expiring' : '' %>" 
+                 data-notification="<%= notification._id %>">
+                <div class="flex items-start justify-between">
+                    <div class="flex items-start space-x-4">
+                        <!-- Icon -->
+                        <div class="w-10 h-10 rounded-full <%= notification.bg_class || 'bg-gray-100' %> flex items-center justify-center">
+                            <i class="<%= notification.icon || 'fas fa-bell' %> <%= notification.color_class || 'text-gray-600' %>"></i>
+                        </div>
+                        
+                        <!-- Content -->
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-3 mb-2">
+                                <h3 class="font-bold text-gray-900"><%= notification.title %></h3>
+                                <span class="type-badge <%= notification.type || '' %>">
+                              <%= notification.type ? notification.type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Notification' %>                                </span>
+                                <% if (isCartExpiring) { %>
+                                <span class="text-xs font-medium px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 animate-pulse">
+                                    <i class="fas fa-clock mr-1"></i>Expiring Soon
+                                </span>
+                                <% } %>
+                                <% if (isPriceDrop) { %>
+                                <span class="text-xs font-medium px-2 py-1 rounded-full bg-green-100 text-green-800">
+                                    <i class="fas fa-arrow-down mr-1"></i>Price Drop
+                                </span>
+                                <% } %>
+                            </div>
+                            
+                            <p class="text-gray-600 mb-3"><%= notification.message %></p>
+                            
+                            <!-- Property Details -->
+                            <% if (data && Object.keys(data).length > 0) { %>
+                            <div class="flex items-center space-x-4 text-sm text-gray-600 mt-2">
+                                <% if (data.property_title) { %>
+                                <span class="flex items-center font-medium">
+                                    <i class="fas fa-home mr-1"></i>
+                                    <%= data.property_title %>
+                                </span>
+                                <% } %>
+                                
+                                <% if (data.price || data.amount) { %>
+                                <span class="flex items-center <%= isPriceDrop ? 'text-green-600 font-bold' : 'text-gray-800' %>">
+                                    <i class="fas fa-rupee-sign mr-1"></i>
+                                    ₹<%= (data.price || data.amount).toLocaleString() %>
+                                    <% if (data.old_price) { %>
+                                    <span class="text-xs text-gray-500 line-through ml-2">₹<%= data.old_price.toLocaleString() %></span>
+                                    <span class="text-xs text-green-600 font-medium ml-2">
+                                        (<%= Math.round((1 - (data.price || data.amount)/data.old_price) * 100) %>% off)
+                                    </span>
+                                    <% } %>
+                                </span>
+                                <% } %>
+                                
+                                <% if (data.expires_in) { %>
+                                <span class="flex items-center text-yellow-600 font-medium">
+                                    <i class="fas fa-hourglass-half mr-1"></i>
+                                    Expires in: <%= data.expires_in %>
+                                </span>
+                                <% } %>
+                            </div>
+                            <% } %>
+                            
+                            <!-- Metadata -->
+                            <div class="flex items-center space-x-4 text-sm text-gray-500 mt-3">
+                                <span>
+                                    <i class="far fa-clock mr-1"></i>
+                                    <%= notification.time_ago || timeAgo(new Date(notification.createdAt)) %>
+                                </span>
+                                <% if (notification.sender && notification.sender.name) { %>
+                                <span>
+                                    <i class="fas fa-user mr-1"></i>
+                                    <%= notification.sender.name %>
+                                </span>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Actions -->
+                    <div class="flex flex-col items-end space-y-2">
+                        <% if (!notification.is_read) { %>
+                        <button onclick="markAsRead('<%= notification._id %>', this)"
+                                class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                            <i class="fas fa-check mr-1"></i>Mark as Read
+                        </button>
+                        <% } %>
+                        
+                        <% if (data && data.action_url) { %>
+                        <a href="<%= data.action_url %>" 
+                           class="text-sm text-purple-600 hover:text-purple-800 font-medium">
+                            <i class="fas fa-eye mr-1"></i>View Details
+                        </a>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+            <% }); %>
+        </div>
+        
+        <!-- Pagination -->
+        <% if (pagination && pagination.pages > 1) { %>
+        <div class="mt-8 flex justify-center">
+            <nav class="flex items-center space-x-2">
+                <% if (pagination.current > 1) { %>
+                <a href="?page=<%= pagination.current - 1 %>" 
+                   class="px-3 py-2 border rounded-lg text-gray-700 hover:bg-gray-50">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                <% } %>
+                
+                <% for (let i = 1; i <= pagination.pages; i++) { %>
+                    <% if (i === pagination.current) { %>
+                    <span class="px-3 py-2 bg-purple-600 text-white rounded-lg font-medium">
+                        <%= i %>
+                    </span>
+                    <% } else if (i === 1 || i === pagination.pages || (i >= pagination.current - 2 && i <= pagination.current + 2)) { %>
+                    <a href="?page=<%= i %>" 
+                       class="px-3 py-2 border rounded-lg text-gray-700 hover:bg-gray-50">
+                        <%= i %>
+                    </a>
+                    <% } %>
+                <% } %>
+                
+                <% if (pagination.current < pagination.pages) { %>
+                <a href="?page=<%= pagination.current + 1 %>" 
+                   class="px-3 py-2 border rounded-lg text-gray-700 hover:bg-gray-50">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+                <% } %>
+            </nav>
+        </div>
+        <% } %>
+        <% } %>
+    </div>
+
+    <script>
+        // Helper Functions
+        function getNotificationIcon(type) {
+            const icons = {
+                'property_added_to_cart': 'fas fa-shopping-cart',
+                'cart_item_expiring': 'fas fa-clock',
+                'cart_item_expired': 'fas fa-exclamation-triangle',
+                'property_price_drop': 'fas fa-tag',
+                'property_back_in_stock': 'fas fa-box-open',
+                'similar_property_found': 'fas fa-search',
+                'search_alert_match': 'fas fa-bell',
+                'visit_scheduled': 'fas fa-calendar-alt',
+                'visit_confirmed': 'fas fa-calendar-check',
+                'booking_confirmed': 'fas fa-check-circle',
+                'payment_successful': 'fas fa-credit-card',
+                'property_saved': 'fas fa-bookmark',
+                'default': 'fas fa-bell'
+            };
+            return icons[type] || icons['default'];
+        }
+
+        function getNotificationIconClass(type) {
+            const classes = {
+                'property_added_to_cart': 'bg-pink-100 text-pink-600',
+                'cart_item_expiring': 'bg-yellow-100 text-yellow-600',
+                'cart_item_expired': 'bg-red-100 text-red-600',
+                'property_price_drop': 'bg-green-100 text-green-600',
+                'property_back_in_stock': 'bg-blue-100 text-blue-600',
+                'similar_property_found': 'bg-indigo-100 text-indigo-600',
+                'search_alert_match': 'bg-purple-100 text-purple-600',
+                'visit_scheduled': 'bg-cyan-100 text-cyan-600',
+                'visit_confirmed': 'bg-teal-100 text-teal-600',
+                'booking_confirmed': 'bg-emerald-100 text-emerald-600',
+                'payment_successful': 'bg-lime-100 text-lime-600',
+                'property_saved': 'bg-gray-100 text-gray-600'
+            };
+            return classes[type] || 'bg-gray-100 text-gray-600';
+        }
+
+        function formatNotificationType(type) {
+            if (!type) return 'Notification';
+            return type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        }
+
+        function timeAgo(date) {
+            const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+            
+            if (seconds < 60) return 'Just now';
+            if (seconds < 3600) return Math.floor(seconds / 60) + 'm ago';
+            if (seconds < 86400) return Math.floor(seconds / 3600) + 'h ago';
+            if (seconds < 2592000) return Math.floor(seconds / 86400) + 'd ago';
+            return Math.floor(seconds / 2592000) + 'mo ago';
+        }
+
+        // Filter Notifications
+        function filterNotifications(filter) {
+            const allItems = document.querySelectorAll('.notification-item');
+            
+            allItems.forEach(item => {
+                const typeBadge = item.querySelector('.type-badge');
+                const itemType = typeBadge ? typeBadge.className.split(' ')[1] : '';
+                const isUnread = item.classList.contains('unread');
+                
+                let shouldShow = false;
+                
+                if (filter === 'all') shouldShow = true;
+                else if (filter === 'unread' && isUnread) shouldShow = true;
+                else if (filter === 'cart' && itemType.includes('cart')) shouldShow = true;
+                else if (filter === 'property_price_drop' && itemType === 'property_price_drop') shouldShow = true;
+                else if (filter === 'visit' && itemType.includes('visit')) shouldShow = true;
+                else if (filter === 'booking' && itemType.includes('booking')) shouldShow = true;
+                else if (filter && itemType === filter) shouldShow = true;
+                
+                item.style.display = shouldShow ? 'block' : 'none';
+            });
+        }
+
+        async function markAsRead(notificationId, button) {
+            try {
+                // ✅ FIXED: Changed from '/notifications/${notificationId}/read' to '/buyer/api/notifications/${notificationId}/read'
+                const response = await fetch(`/buyer/api/notifications/${notificationId}/read`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        const notificationItem = button.closest('.notification-item');
+                        notificationItem.classList.remove('unread');
+                        notificationItem.classList.add('read');
+                        
+                        button.outerHTML = '<span class="text-sm text-green-600"><i class="fas fa-check-circle mr-1"></i>Read</span>';
+                        
+                        // Update unread count in header badge
+                        const badge = document.querySelector('.notification-count');
+                        if (badge) {
+                            let count = parseInt(badge.textContent);
+                            if (count > 1) {
+                                badge.textContent = count - 1;
+                            } else {
+                                badge.style.display = 'none';
+                            }
+                        }
+                        
+                        // Update unread stat
+                        const unreadStat = document.querySelector('.text-2xl.font-bold.text-red-600');
+                        if (unreadStat) {
+                            let count = parseInt(unreadStat.textContent);
+                            if (count > 1) {
+                                unreadStat.textContent = count - 1;
+                            } else {
+                                unreadStat.textContent = '0';
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error marking as read:', error);
+                alert('Failed to mark notification as read. Please try again.');
+            }
+        }
+
+        async function markAllAsRead() {
+            try {
+                // ✅ FIXED: Changed from '/notifications/read-all' to '/buyer/api/notifications/read-all'
+                const response = await fetch('/buyer/api/notifications/read-all', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        // Update all notifications in UI
+                        document.querySelectorAll('.notification-item.unread').forEach(item => {
+                            item.classList.remove('unread');
+                            item.classList.add('read');
+                            
+                            const markBtn = item.querySelector('button[onclick^="markAsRead"]');
+                            if (markBtn) {
+                                markBtn.outerHTML = '<span class="text-sm text-green-600"><i class="fas fa-check-circle mr-1"></i>Read</span>';
+                            }
+                        });
+                        
+                        // Update unread count in header badge
+                        const badge = document.querySelector('.notification-count');
+                        if (badge) {
+                            badge.style.display = 'none';
+                        }
+                        
+                        // Update unread stat
+                        const unreadStat = document.querySelector('.text-2xl.font-bold.text-red-600');
+                        if (unreadStat) {
+                            unreadStat.textContent = '0';
+                        }
+                        
+                        // Update "Mark All as Read" button
+                        const markAllBtn = document.querySelector('button[onclick="markAllAsRead()"]');
+                        if (markAllBtn) {
+                            markAllBtn.style.display = 'none';
+                        }
+                        
+                        alert('All notifications marked as read!');
+                    }
+                }
+            } catch (error) {
+                console.error('Error marking all as read:', error);
+                alert('Failed to mark all notifications as read. Please try again.');
+            }
+        }
+
+        // Auto-refresh notification count every 30 seconds
+        setInterval(async () => {
+            try {
+                // ✅ FIXED: Changed from '/notifications/api/unread-count' to '/buyer/api/notifications/unread-count'
+                const response = await fetch('/buyer/api/notifications/unread-count');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const badges = document.querySelectorAll('.notification-count');
+                    const unreadStat = document.querySelector('.text-2xl.font-bold.text-red-600');
+                    
+                    if (data.count > 0) {
+                        // Update badges
+                        badges.forEach(badge => {
+                            badge.textContent = data.count > 9 ? '9+' : data.count;
+                            badge.style.display = 'flex';
+                        });
+                        
+                        // Update unread stat
+                        if (unreadStat) {
+                            unreadStat.textContent = data.count;
+                        }
+                    } else {
+                        // Hide badges
+                        badges.forEach(badge => {
+                            badge.style.display = 'none';
+                        });
+                        
+                        // Update unread stat
+                        if (unreadStat) {
+                            unreadStat.textContent = '0';
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating notification count:', error);
+            }
+        }, 30000);
+
+        // Load notification count on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initial update
+            fetch('/buyer/api/notifications/unread-count')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const badges = document.querySelectorAll('.notification-count');
+                        const unreadStat = document.querySelector('.text-2xl.font-bold.text-red-600');
+                        
+                        if (data.count > 0) {
+                            badges.forEach(badge => {
+                                badge.textContent = data.count > 9 ? '9+' : data.count;
+                                badge.style.display = 'flex';
+                            });
+                            if (unreadStat) {
+                                unreadStat.textContent = data.count;
+                            }
+                        }
+                    }
+                })
+                .catch(error => console.error('Error loading notification count:', error));
+        });
+    </script>
+</body>
+</html>

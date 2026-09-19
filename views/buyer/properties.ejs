@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Propbandhu</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center">
+                        <span class="text-xl font-bold text-gray-900">Propbandhu</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/buyer/dashboard" class="text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-home mr-1"></i>Dashboard
+                    </a>
+                    <a href="/buyer/properties" class="text-blue-600 font-medium">
+                        <i class="fas fa-search mr-1"></i>Browse
+                    </a>
+                    <a href="/buyer/cart" class="text-gray-600 hover:text-blue-600 relative">
+                        <i class="fas fa-shopping-cart mr-1"></i>My Cart
+                        <% if (cartCount > 0) { %>
+                        <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                            <%= cartCount %>
+                        </span>
+                        <% } %>
+                    </a>
+                    <a href="/logout" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+                        <i class="fas fa-sign-out-alt mr-1"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- Search and Filters -->
+        <div class="bg-white rounded-xl shadow p-6 mb-8">
+            <h1 class="text-2xl font-bold text-gray-900 mb-4">Find Your Dream Property</h1>
+            
+            <form id="searchForm" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- City Dropdown -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">City</label>
+                    <select id="citySelect" name="city" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            onchange="updateLocations()">
+                        <option value="">All Cities</option>
+                        <option value="Noida" <%= searchParams && searchParams.city === 'Noida' ? 'selected' : '' %>>Noida</option>
+                        <option value="Ghaziabad" <%= searchParams && searchParams.city === 'Ghaziabad' ? 'selected' : '' %>>Ghaziabad</option>
+                        <option value="Gorakhpur" <%= searchParams && searchParams.city === 'Gorakhpur' ? 'selected' : '' %>>Gorakhpur</option>
+                    </select>
+                </div>
+                
+                <!-- Location/Area Dropdown -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                    <select id="locationSelect" name="area" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">All Locations</option>
+                        <!-- Locations will be populated by JavaScript -->
+                    </select>
+                </div>
+                
+                <!-- Price Range -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Price Range</label>
+                    <select name="price_range" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Any Price</option>
+                        <option value="0-5000000" <%= searchParams && searchParams.price_range === '0-5000000' ? 'selected' : '' %>>Under 50 Lakhs</option>
+                        <option value="5000000-10000000" <%= searchParams && searchParams.price_range === '5000000-10000000' ? 'selected' : '' %>>50 Lakhs - 1 Crore</option>
+                        <option value="10000000-20000000" <%= searchParams && searchParams.price_range === '10000000-20000000' ? 'selected' : '' %>>1 - 2 Crores</option>
+                        <option value="20000000-50000000" <%= searchParams && searchParams.price_range === '20000000-50000000' ? 'selected' : '' %>>2 - 5 Crores</option>
+                        <option value="50000000-100000000" <%= searchParams && searchParams.price_range === '50000000-100000000' ? 'selected' : '' %>>5+ Crores</option>
+                    </select>
+                </div>
+                
+                <!-- Search Button -->
+                <div class="md:col-span-3 flex space-x-2">
+                    <button type="submit" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                        <i class="fas fa-search mr-2"></i>Search Properties
+                    </button>
+                    <a href="/buyer/properties" 
+                       class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 text-center">
+                        <i class="fas fa-times mr-2"></i>Clear Filters
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Properties Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <% properties.forEach(property => { 
+                const isInCart = property.isInCart || false;
+            %>
+            <div class="bg-white rounded-xl shadow hover:shadow-lg transition-shadow">
+                <!-- Property Image -->
+                <% if (property.images && property.images.length > 0) { %>
+                <img src="<%= property.images[0].url %>" alt="<%= property.title %>" 
+                     class="w-full h-48 object-cover rounded-t-xl">
+                <% } else { %>
+                <div class="w-full h-48 bg-gray-200 rounded-t-xl flex items-center justify-center">
+                    <i class="fas fa-home text-gray-400 text-4xl"></i>
+                </div>
+                <% } %>
+                
+                <!-- Property Details -->
+                <div class="p-4">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-bold text-lg text-gray-900 truncate"><%= property.title %></h3>
+                        <% if (isInCart) { %>
+                        <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
+                            In Cart
+                        </span>
+                        <% } %>
+                    </div>
+                    
+                    <p class="text-gray-600 text-sm mb-3 flex items-center">
+                        <i class="fas fa-map-marker-alt mr-2 text-gray-400"></i>
+                        <% if (property.address && property.address.areas && property.address.areas.length > 0) { %>
+                            <%= property.address.areas[0] %>, <%= property.address.city %>
+                        <% } else if (property.address && property.address.area) { %>
+                            <%= property.address.area %>, <%= property.address.city %>
+                        <% } else { %>
+                            Location not specified
+                        <% } %>
+                    </p>
+                    
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-blue-600 font-bold text-xl">
+                            ₹<%= property.price ? property.price.toLocaleString() : 'Price on request' %>
+                        </span>
+                        <div class="text-sm text-gray-600">
+                            <span class="mr-3"><i class="fas fa-bed mr-1"></i><%= property.bedrooms || 'NA' %> Beds</span>
+                            <span><i class="fas fa-bath mr-1"></i><%= property.bathrooms || 'NA' %> Baths</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex space-x-2">
+                        <a href="/buyer/properties/<%= property._id %>" 
+                           class="flex-1 bg-blue-100 text-blue-700 px-4 py-2 rounded-lg text-center hover:bg-blue-200">
+                            <i class="fas fa-eye mr-2"></i>View Details
+                        </a>
+                        
+                        <% if (isInCart) { %>
+                        <button onclick="removeFromCart('<%= property._id %>')" 
+                                class="flex-1 bg-red-100 text-red-700 px-4 py-2 rounded-lg hover:bg-red-200">
+                            <i class="fas fa-trash mr-2"></i>Remove
+                        </button>
+                        <% } else { %>
+                        <button onclick="addToCart('<%= property._id %>')" 
+                                class="flex-1 bg-green-100 text-green-700 px-4 py-2 rounded-lg hover:bg-green-200">
+                            <i class="fas fa-cart-plus mr-2"></i>Add to Cart
+                        </button>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+            <% }); %>
+        </div>
+
+        <% if (properties.length === 0) { %>
+        <div class="text-center py-12">
+            <i class="fas fa-home text-gray-300 text-6xl mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-700 mb-2">No properties found</h3>
+            <p class="text-gray-600">Try adjusting your search filters</p>
+        </div>
+        <% } %>
+    </div>
+
+    <script>
+        // ===== CITY → LOCATION MAPPING (SAME AS SELLER) =====
+        const cityLocationMap = {
+            Noida: [
+                "Sector 62", "Sector 18", "Sector 15", "Sector 50",
+                "Sector 76", "Sector 137", "Sector 128",
+                "Sector 44", "Greater Noida West", "Noida Extension"
+            ],
+            Ghaziabad: [
+                "Indirapuram", "Vaishali", "Raj Nagar",
+                "Raj Nagar Extension", "Crossings Republik",
+                "Kavi Nagar", "Sanjay Nagar", "Shastri Nagar",
+                "Mohan Nagar", "Vasundhara"
+            ],
+            Gorakhpur: [
+                "Golghar", "Medical Road", "Rustampur",
+                "Taramandal", "Chargawan", "Basharatpur",
+                "Betiahata", "Civil Lines", "Transport Nagar",
+                "Padri Bazar"
+            ]
+        };
+        
+        // Update locations based on selected city
+        function updateLocations() {
+            const city = document.getElementById('citySelect').value;
+            const locationSelect = document.getElementById('locationSelect');
+            
+            locationSelect.innerHTML = '<option value="">All Locations</option>';
+            
+            if (city && cityLocationMap[city]) {
+                cityLocationMap[city].forEach(location => {
+                    const option = document.createElement('option');
+                    option.value = location;
+                    option.textContent = location;
+                    // Check if this was previously selected
+                    <% if (searchParams && searchParams.area) { %>
+                    const currentArea = '<%= searchParams.area %>';
+                    if (location === currentArea) {
+                        option.selected = true;
+                    }
+                    <% } %>
+                    locationSelect.appendChild(option);
+                });
+            }
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set initial values from searchParams
+            <% if (searchParams && searchParams.city) { %>
+            const currentCity = '<%= searchParams.city %>';
+            if (currentCity && cityLocationMap[currentCity]) {
+                updateLocations();
+            }
+            <% } %>
+        });
+
+        // Add to cart function
+        async function addToCart(propertyId) {
+            try {
+                const response = await fetch('/buyer/api/cart/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ propertyId })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Property added to cart!');
+                    location.reload();
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to add to cart');
+            }
+        }
+
+        // Remove from cart function
+        async function removeFromCart(propertyId) {
+            if (!confirm('Remove this property from cart?')) return;
+            
+            try {
+                const response = await fetch('/buyer/api/cart/remove', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ propertyId })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Property removed from cart');
+                    location.reload();
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to remove from cart');
+            }
+        }
+
+        // Search form submission
+        document.getElementById('searchForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const params = new URLSearchParams(formData).toString();
+            window.location.href = `/buyer/properties?${params}`;
+        });
+    </script>
+</body>
+</html>

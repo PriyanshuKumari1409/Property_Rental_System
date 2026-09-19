@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Propbandhu</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Custom styles for countdown and status indicators */
+        .status-badge {
+            @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+        }
+        .status-pending { @apply bg-yellow-100 text-yellow-800; }
+        .status-scheduled { @apply bg-blue-100 text-blue-800; }
+        .status-confirmed { @apply bg-green-100 text-green-800; }
+        .status-expired { @apply bg-red-100 text-red-800; }
+        .status-paid { @apply bg-indigo-100 text-indigo-800; }
+        .countdown-critical { color: #dc2626; font-weight: 900; animation: pulse 2s infinite; }
+        .commission-adder { @apply bg-blue-50 border-blue-200 text-blue-800; }
+        .commission-seller { @apply bg-green-50 border-green-200 text-green-800; }
+        
+        /* Notification Styles */
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ef4444;
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .notification-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            width: 350px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            z-index: 1000;
+            margin-top: 10px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .notification-dropdown.show {
+            display: block;
+        }
+        
+        .notification-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f3f4f6;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .notification-item:hover {
+            background-color: #f9fafb;
+        }
+        
+        .notification-item.unread {
+            background-color: #f0f9ff;
+            border-left: 3px solid #3b82f6;
+        }
+        
+        .notification-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        /* Loading spinner */
+        .loading-spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3498db;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Broker Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/broker/dashboard" class="flex items-center">
+                        <span class="text-xl font-bold text-gray-900">Propbandhu Broker</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center bg-purple-50 px-3 py-1 rounded-lg">
+                        <span class="text-purple-700 font-medium">🤝 <%= user.name %></span>
+                        <span class="ml-2 px-2 py-1 bg-purple-600 text-white text-xs rounded">
+                            <%= brokerRoleLabel || (brokerMode === 'both' ? 'Adder + Seller' : brokerMode === 'adder' ? 'Adder' : 'Seller') %>
+                        </span>
+                    </div>
+                    <a href="/broker/dashboard" class="text-gray-600 hover:text-blue-600 <%= activePage === 'dashboard' ? 'text-blue-600 font-semibold' : '' %>">
+                        <i class="fas fa-tachometer-alt mr-1"></i>Dashboard
+                    </a>
+                    <a href="/broker/properties" class="text-gray-600 hover:text-blue-600 <%= activePage === 'properties' ? 'text-blue-600 font-semibold' : '' %>">
+                        <i class="fas fa-home mr-1"></i>Properties
+                    </a>
+                    <a href="/broker/visits" class="text-gray-600 hover:text-blue-600 <%= activePage === 'visits' ? 'text-blue-600 font-semibold' : '' %>">
+                        <i class="fas fa-calendar-day mr-1"></i>Visits
+                    </a>
+                    <a href="/broker/commissions" class="text-gray-600 hover:text-blue-600 <%= activePage === 'commissions' ? 'text-blue-600 font-semibold' : '' %>">
+                        <i class="fas fa-money-bill-wave mr-1"></i>Commissions
+                    </a>
+                    
+                    <!-- NOTIFICATION BELL -->
+                    <div class="relative">
+                        <button onclick="toggleNotifications()" 
+                                class="relative text-gray-600 hover:text-blue-600 p-2 rounded-full hover:bg-gray-100">
+                            <i class="fas fa-bell text-lg"></i>
+                            <% if (unreadCount > 0) { %>
+                                <span class="notification-badge">
+                                    <%= unreadCount > 9 ? '9+' : unreadCount %>
+                                </span>
+                            <% } %>
+                        </button>
+                        
+                        <!-- Notifications Dropdown -->
+                        <div id="notificationsDropdown" class="notification-dropdown">
+                            <div class="p-4 border-b border-gray-200">
+                                <div class="flex justify-between items-center">
+                                    <h3 class="font-bold text-gray-900">Notifications</h3>
+                                    <% if (unreadCount > 0) { %>
+                                        <button onclick="markAllAsRead()" 
+                                                class="text-sm text-blue-600 hover:text-blue-800">
+                                            Mark all as read
+                                        </button>
+                                    <% } %>
+                                </div>
+                            </div>
+                            
+                            <div id="notificationsList" class="max-h-80 overflow-y-auto">
+                                <!-- Notifications will be loaded here -->
+                                <div class="p-8 text-center text-gray-500">
+                                    <i class="fas fa-bell-slash text-3xl mb-3 text-gray-300"></i>
+                                    <p>No notifications yet</p>
+                                    <p class="text-sm mt-1">Notifications will appear here</p>
+                                </div>
+                            </div>
+                            
+                            <div class="p-4 border-t border-gray-200 text-center">
+                                <a href="/broker/notifications" 
+                                   class="text-blue-600 hover:text-blue-800 font-medium text-sm">
+                                    <i class="fas fa-list mr-1"></i>View all notifications
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <a href="/logout" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+                        <i class="fas fa-sign-out-alt mr-1"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- Welcome Banner with Mode Toggle -->
+        <div class="bg-gradient-to-r from-purple-500 to-indigo-600 rounded-2xl p-6 text-white mb-8">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold mb-2">Welcome, <%= user.name %>!</h1>
+                    <div class="flex items-center mt-2">
+                        <span class="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm mr-3">
+                            <%= brokerRoleLabel || (brokerMode === 'both' ? 'Dual Role Broker' : brokerMode === 'adder' ? 'Property Adder' : 'Sales Broker') %>
+                        </span>
+                        <p class="text-purple-100">
+                            <%= brokerMode === 'adder' ? 'Listing Commission: 1%' : 
+                               brokerMode === 'seller' ? 'Sales Commission: 2.5%' : 
+                               'Commission: 1% (Adder) + 2.5% (Seller)' %>
+                        </p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="mb-3">
+                        <span class="text-purple-100">Active Mode:</span>
+                        <div class="inline-flex bg-white bg-opacity-20 rounded-lg ml-2">
+                            <a href="/broker/dashboard?mode=adder" class="px-4 py-1 rounded-l <%= brokerMode === 'adder' ? 'bg-white bg-opacity-30 font-bold' : 'hover:bg-white hover:bg-opacity-10' %>">Adder</a>
+                            <a href="/broker/dashboard?mode=seller" class="px-4 py-1 <%= brokerMode === 'seller' ? 'bg-white bg-opacity-30 font-bold' : 'hover:bg-white hover:bg-opacity-10' %>">Seller</a>
+                            <a href="/broker/dashboard?mode=both" class="px-4 py-1 rounded-r <%= brokerMode === 'both' ? 'bg-white bg-opacity-30 font-bold' : 'hover:bg-white hover:bg-opacity-10' %>">Both</a>
+                        </div>
+                    </div>
+                    <p class="text-2xl font-bold" id="total-commission">₹<%= stats.totalCommission.toLocaleString() %></p>
+                    <p class="text-purple-100">Total Commission Earned</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Commission Breakdown -->
+        <div class="bg-white rounded-xl shadow p-6 mb-6">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Commission Breakdown</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="text-center p-4 border border-blue-200 rounded-lg bg-blue-50">
+                    <div class="text-2xl font-bold text-blue-600 mb-1" id="commission-adder">₹<%= commissionBreakdown.adder.toLocaleString() %></div>
+                    <div class="text-sm text-blue-800 font-medium">Adder Commission</div>
+                    <div class="text-xs text-gray-600 mt-1">1% per property added</div>
+                </div>
+                
+                <div class="text-center p-4 border border-green-200 rounded-lg bg-green-50">
+                    <div class="text-2xl font-bold text-green-600 mb-1" id="commission-seller">₹<%= commissionBreakdown.seller.toLocaleString() %></div>
+                    <div class="text-sm text-green-800 font-medium">Seller Commission</div>
+                    <div class="text-xs text-gray-600 mt-1">2.5% per sale</div>
+                </div>
+                
+                <div class="text-center p-4 border border-purple-200 rounded-lg bg-purple-50">
+                    <div class="text-2xl font-bold text-purple-600 mb-1" id="commission-monthly">₹<%= commissionBreakdown.monthly.toLocaleString() %></div>
+                    <div class="text-sm text-purple-800 font-medium">This Month</div>
+                    <div class="text-xs text-gray-600 mt-1">Total earnings</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SALES PIPELINE STATS -->
+        <div class="mb-8">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">📊 Sales Pipeline</h2>
+            <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
+                <!-- Lead Stage -->
+                <div class="bg-white rounded-xl shadow p-4">
+                    <div class="text-center">
+                        <div class="inline-flex items-center justify-center w-12 h-12 bg-gray-100 rounded-full mb-2">
+                            <i class="fas fa-user text-gray-600 text-xl"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-700">Leads</h3>
+                        <p class="text-2xl font-bold text-gray-900" id="counter-leads"><%= pipelineStats.leads %></p>
+                        <p class="text-xs text-gray-500">In Cart</p>
+                    </div>
+                </div>
+                
+                <!-- Visit Pending -->
+                <div class="bg-white rounded-xl shadow p-4">
+                    <div class="text-center">
+                        <div class="inline-flex items-center justify-center w-12 h-12 bg-yellow-100 rounded-full mb-2">
+                            <i class="fas fa-clock text-yellow-600 text-xl"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-700">Visit Pending</h3>
+                        <p class="text-2xl font-bold text-yellow-600" id="counter-visitPending"><%= pipelineStats.visitPending %></p>
+                        <p class="text-xs text-gray-500">Schedule needed</p>
+                    </div>
+                </div>
+                
+                <!-- Visit Scheduled -->
+                <div class="bg-white rounded-xl shadow p-4">
+                    <div class="text-center">
+                        <div class="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-2">
+                            <i class="fas fa-calendar-day text-blue-600 text-xl"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-700">Visit Scheduled</h3>
+                        <p class="text-2xl font-bold text-blue-600" id="counter-visitScheduled"><%= pipelineStats.visitScheduled %></p>
+                        <p class="text-xs text-gray-500">Upcoming visits</p>
+                    </div>
+                </div>
+                
+                <!-- Visit Confirmed -->
+                <div class="bg-white rounded-xl shadow p-4">
+                    <div class="text-center">
+                        <div class="inline-flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mb-2">
+                            <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-700">Visit Confirmed</h3>
+                        <p class="text-2xl font-bold text-green-600" id="counter-visitConfirmed"><%= pipelineStats.visitConfirmed %></p>
+                        <p class="text-xs text-gray-500">Ready to book</p>
+                    </div>
+                </div>
+                
+                <!-- Booking Pending -->
+                <div class="bg-white rounded-xl shadow p-4">
+                    <div class="text-center">
+                        <div class="inline-flex items-center justify-center w-12 h-12 bg-purple-100 rounded-full mb-2">
+                            <i class="fas fa-hourglass-half text-purple-600 text-xl"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-700">Booking Pending</h3>
+                        <p class="text-2xl font-bold text-purple-600" id="counter-bookingPending"><%= pipelineStats.bookingPending %></p>
+                        <p class="text-xs text-gray-500" id="critical-bookings"><%= pipelineStats.criticalBookings %> critical</p>
+                    </div>
+                </div>
+                
+                <!-- Completed -->
+                <div class="bg-white rounded-xl shadow p-4">
+                    <div class="text-center">
+                        <div class="inline-flex items-center justify-center w-12 h-12 bg-indigo-100 rounded-full mb-2">
+                            <i class="fas fa-trophy text-indigo-600 text-xl"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-700">Completed</h3>
+                        <p class="text-2xl font-bold text-indigo-600" id="counter-completed"><%= pipelineStats.completed %></p>
+                        <p class="text-xs text-gray-500">Sales done</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column: Properties & Commissions -->
+            <div class="lg:col-span-2">
+                <!-- PROPERTIES BY MODE -->
+                <div class="bg-white rounded-xl shadow p-6 mb-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-bold text-gray-900">My Properties by Mode</h2>
+                        <div class="flex space-x-2">
+                            <a href="/broker/properties?type=added" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                                <i class="fas fa-plus mr-2"></i>Added
+                            </a>
+                            <a href="/broker/properties?type=selling" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                                <i class="fas fa-handshake mr-2"></i>Selling
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Adder Mode Properties -->
+                        <div class="border border-blue-200 rounded-xl p-4 bg-blue-50">
+                            <div class="flex items-center mb-3">
+                                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                                    <i class="fas fa-plus text-blue-600"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-blue-800">Adder Mode (1%)</h3>
+                                    <p class="text-sm text-blue-600">Properties you added</p>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-700">Total Added</span>
+                                    <span class="font-bold"><%= propertyStats.added.total %></span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-700">Live</span>
+                                    <span class="font-bold text-green-600"><%= propertyStats.added.live %></span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-700">In Cart</span>
+                                    <span class="font-bold text-yellow-600"><%= propertyStats.added.inCart %></span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-700">Commission</span>
+                                    <span class="font-bold text-blue-600" id="adder-commission">₹<%= commissionBreakdown.adder.toLocaleString() %></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Seller Mode Properties -->
+                        <div class="border border-green-200 rounded-xl p-4 bg-green-50">
+                            <div class="flex items-center mb-3">
+                                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                                    <i class="fas fa-handshake text-green-600"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-green-800">Seller Mode (2.5%)</h3>
+                                    <p class="text-sm text-green-600">Properties you're selling</p>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-700">Total Selling</span>
+                                    <span class="font-bold"><%= propertyStats.selling.total %></span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-700">Visit Pending</span>
+                                    <span class="font-bold text-yellow-600"><%= propertyStats.selling.visitPending %></span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-700">Booking Active</span>
+                                    <span class="font-bold text-purple-600"><%= propertyStats.selling.bookingActive %></span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-700">Commission</span>
+                                    <span class="font-bold text-green-600" id="seller-commission">₹<%= commissionBreakdown.seller.toLocaleString() %></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- URGENT ACTIONS -->
+                <div class="bg-white rounded-xl shadow p-6 mb-6">
+                    <h2 class="text-xl font-bold text-gray-900 mb-6">
+                        <i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>
+                        Urgent Actions Required
+                    </h2>
+                    
+                    <% if (urgentActions.length === 0) { %>
+                        <div class="text-center py-6">
+                            <i class="fas fa-check-circle text-green-400 text-5xl mb-4"></i>
+                            <h3 class="text-lg font-semibold text-gray-700 mb-2">No urgent actions</h3>
+                            <p class="text-gray-600">All items are on track</p>
+                        </div>
+                    <% } else { %>
+                        <div class="space-y-4" id="urgent-actions-list">
+                            <% urgentActions.forEach((action, index) => { %>
+                            <div class="border border-red-200 rounded-xl p-4 bg-red-50 hover:bg-red-100 transition" data-urgent-id="<%= index %>">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <h3 class="font-bold text-gray-900">
+                                            <i class="<%= action.icon %> mr-2"></i>
+                                            <%= action.title %>
+                                        </h3>
+                                        <p class="text-sm text-gray-600"><%= action.propertyTitle %></p>
+                                    </div>
+                                    <span class="status-badge status-expired">
+                                        <i class="fas fa-clock mr-1"></i>
+                                        <span data-countdown="<%= action.expiryDate || '' %>">
+                                            <%= action.daysLeft %> days left
+                                        </span>
+                                    </span>
+                                </div>
+                                <p class="text-red-700 text-sm mb-3"><%= action.message %></p>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-gray-500">
+                                        <i class="fas fa-user mr-1"></i>
+                                        <%= action.buyerName %>
+                                    </span>
+                                    <a href="<%= action.actionUrl %>" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm">
+                                        <i class="<%= action.actionIcon %> mr-2"></i>
+                                        <%= action.actionText %>
+                                    </a>
+                                </div>
+                            </div>
+                            <% }); %>
+                        </div>
+                    <% } %>
+                </div>
+                
+                <!-- COMMISSION HISTORY -->
+                <div class="bg-white rounded-xl shadow p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-bold text-gray-900">Recent Commissions</h2>
+                        <a href="/broker/commissions" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                            <i class="fas fa-history mr-2"></i>View All
+                        </a>
+                    </div>
+                    
+                    <% if (commissions.length === 0) { %>
+                        <div class="text-center py-12">
+                            <i class="fas fa-money-bill-wave text-gray-300 text-6xl mb-4"></i>
+                            <h3 class="text-xl font-semibold text-gray-700 mb-2">No commissions yet</h3>
+                            <p class="text-gray-600">Start adding or selling properties to earn commissions</p>
+                        </div>
+                    <% } else { %>
+                        <div class="space-y-4" id="commissions-list">
+                            <% commissions.forEach((commission, index) => { 
+                                const property = commission.property;
+                            %>
+                            <div class="border rounded-xl p-4 hover:bg-gray-50 transition <%= commission.commission_type === 'adder' ? 'commission-adder' : 'commission-seller' %>">
+                                <div class="flex justify-between items-start mb-3">
+                                    <div>
+                                        <div class="flex items-center mb-1">
+                                            <h3 class="font-bold text-lg text-gray-900">
+                                                <%= property ? property.title : 'Property #' + commission.property %>
+                                            </h3>
+                                            <span class="ml-2 px-2 py-1 text-xs rounded <%= commission.commission_type === 'adder' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800' %>">
+                                                <%= commission.commission_type === 'adder' ? 'Adder' : 'Seller' %>
+                                            </span>
+                                        </div>
+                                        <p class="text-gray-600 text-sm">
+                                            <% if (property && property.price) { %>
+                                            Price: ₹<%= property.price.toLocaleString() %>
+                                            <% } %>
+                                            <span class="mx-2">•</span>
+                                            Rate: <%= commission.rate %>%
+                                        </p>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="inline-block px-3 py-1 rounded-full text-sm font-medium 
+                                            <%= commission.status === 'pending' ? 'status-pending' : 
+                                               commission.status === 'approved' ? 'status-confirmed' : 
+                                               commission.status === 'paid' ? 'status-paid' : 'status-scheduled' %>">
+                                            <i class="<%= commission.status === 'pending' ? 'fas fa-clock' : 
+                                                       commission.status === 'approved' ? 'fas fa-check' : 
+                                                       commission.status === 'paid' ? 'fas fa-money-check' : 
+                                                       'fas fa-hourglass-half' %> mr-1"></i>
+                                            <%= commission.status.charAt(0).toUpperCase() + commission.status.slice(1) %>
+                                        </span>
+                                        <p class="text-lg font-bold <%= commission.commission_type === 'adder' ? 'text-blue-600' : 'text-green-600' %> mt-1">
+                                            ₹<%= commission.amount.toLocaleString() %>
+                                        </p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Commission Stages -->
+                                <div class="mt-3">
+                                    <div class="flex items-center text-sm text-gray-600">
+                                        <span class="mr-2">Progress:</span>
+                                        <div class="flex-1 flex space-x-1">
+                                            <% for(let i = 1; i <= 5; i++) { %>
+                                            <div class="flex-1 h-2 rounded <%= commission.stage >= i ? 'bg-green-500' : 'bg-gray-200' %>"></div>
+                                            <% } %>
+                                        </div>
+                                        <span class="ml-2 text-xs font-medium">
+                                            <%= ['Visit', 'Confirm', 'Book', 'Approve', 'Paid'][commission.stage - 1] || 'Pending' %>
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex justify-between items-center text-sm mt-3">
+                                    <div>
+                                        <% if (commission.next_action) { %>
+                                        <span class="text-gray-600">Next: </span>
+                                        <span class="font-medium <%= commission.commission_type === 'adder' ? 'text-blue-600' : 'text-green-600' %>">
+                                            <%= commission.next_action %>
+                                        </span>
+                                        <% } %>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-600"><%= new Date(commission.createdAt).toLocaleDateString('en-IN') %></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <% }); %>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+            
+            <!-- Right Sidebar -->
+            <div>
+                <!-- PERFORMANCE METRICS -->
+                <div class="bg-white rounded-xl shadow p-6 mb-6">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">Performance Metrics</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-gray-700">Visit Conversion Rate</span>
+                                <span class="font-bold text-green-600" id="percent-visitConversion"><%= performance.visitConversion %>%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-green-600 h-2 rounded-full" id="bar-visitConversion" style="width: <%= Math.min(performance.visitConversion, 100) %>%"></div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">
+                                <%= pipelineStats.visitConfirmed %> of <%= pipelineStats.visitScheduled + pipelineStats.visitConfirmed %> visits confirmed
+                            </p>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-gray-700">Booking Conversion Rate</span>
+                                <span class="font-bold text-blue-600" id="percent-bookingConversion"><%= performance.bookingConversion %>%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-blue-600 h-2 rounded-full" id="bar-bookingConversion" style="width: <%= Math.min(performance.bookingConversion, 100) %>%"></div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">
+                                <%= pipelineStats.completed %> of <%= pipelineStats.visitConfirmed %> confirmed visits converted
+                            </p>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-gray-700">Average Commission</span>
+                                <span class="font-bold text-purple-600" id="amount-avgCommission">₹<%= performance.avgCommission.toLocaleString() %></span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-purple-600 h-2 rounded-full" style="width: <%= Math.min((performance.avgCommission / 100000) * 100, 100) %>%"></div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">
+                                Average per transaction
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- QUICK ACTIONS -->
+                    <div class="mt-6 pt-6 border-t border-gray-200">
+                        <h3 class="font-semibold text-gray-700 mb-4">Quick Actions</h3>
+                        <div class="space-y-3">
+                            <a href="/broker/properties/add" class="block w-full bg-blue-600 text-white text-center py-3 rounded-lg hover:bg-blue-700 transition">
+                                <i class="fas fa-plus-circle mr-2"></i>Add Property (Adder Mode)
+                            </a>
+                            <a href="/broker/visits?status=pending" class="block w-full border border-yellow-600 text-yellow-600 text-center py-3 rounded-lg hover:bg-yellow-50 transition">
+                                <i class="fas fa-calendar-day mr-2"></i>Schedule Visits (<span id="counter-visitPending-small"><%= pipelineStats.visitPending %></span> pending)
+                            </a>
+                            <a href="/broker/visits?status=scheduled" class="block w-full border border-green-600 text-green-600 text-center py-3 rounded-lg hover:bg-green-50 transition">
+                                <i class="fas fa-check-circle mr-2"></i>Confirm Visits (<span id="counter-visitScheduled-small"><%= pipelineStats.visitScheduled %></span> scheduled)
+                            </a>
+                            <a href="/broker/bookings" class="block w-full border border-purple-600 text-purple-600 text-center py-3 rounded-lg hover:bg-purple-50 transition">
+                                <i class="fas fa-hourglass-half mr-2"></i>Track Bookings (<span id="counter-bookingPending-small"><%= pipelineStats.bookingPending %></span> active)
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- UPCOMING VISITS -->
+                <div class="bg-white rounded-xl shadow p-6 mb-6">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">
+                        <i class="fas fa-calendar-alt mr-2"></i>
+                        Upcoming Visits
+                    </h2>
+                    
+                    <% if (upcomingVisits.length === 0) { %>
+                        <div class="text-center py-4">
+                            <i class="fas fa-calendar text-gray-300 text-4xl mb-2"></i>
+                            <p class="text-gray-600 text-sm">No upcoming visits scheduled</p>
+                        </div>
+                    <% } else { %>
+                        <div class="space-y-3" id="upcoming-visits-list">
+                            <% upcomingVisits.forEach((visit, index) => { %>
+                            <div class="border border-blue-100 rounded-lg p-3 hover:bg-blue-50 transition">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <h4 class="font-semibold text-gray-900 text-sm"><%= visit.propertyTitle %></h4>
+                                        <p class="text-xs text-gray-600">
+                                            <i class="fas fa-user mr-1"></i><%= visit.buyerName %>
+                                        </p>
+                                    </div>
+                                    <span class="status-badge <%= visit.status === 'confirmed' ? 'status-confirmed' : 'status-scheduled' %> text-xs">
+                                        <%= visit.status %>
+                                    </span>
+                                </div>
+                                <div class="flex items-center text-xs text-gray-600">
+                                    <i class="fas fa-clock mr-2"></i>
+                                    <span><%= visit.date %></span>
+                                    <span class="mx-2">•</span>
+                                    <span><%= visit.time %></span>
+                                </div>
+                                <% if (visit.daysUntil >= 0) { %>
+                                <div class="mt-2 text-xs <%= visit.daysUntil <= 1 ? 'text-red-600 font-bold' : 'text-yellow-600' %>">
+                                    <i class="fas fa-bell mr-1"></i>
+                                    <%= visit.daysUntil === 0 ? 'Today' : visit.daysUntil === 1 ? 'Tomorrow' : visit.daysUntil + ' days' %>
+                                </div>
+                                <% } %>
+                            </div>
+                            <% }); %>
+                        </div>
+                    <% } %>
+                    
+                    <div class="mt-4">
+                        <a href="/broker/visits" class="block w-full text-center border border-blue-600 text-blue-600 py-2 rounded-lg hover:bg-blue-50 transition">
+                            <i class="fas fa-eye mr-2"></i>View All Visits
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- NEED HELP? -->
+                <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow p-6 text-white">
+                    <h3 class="text-lg font-bold mb-3">Need Help?</h3>
+                    <p class="mb-4 text-blue-100 text-sm">Get support for broker operations</p>
+                    <div class="space-y-2">
+                        <div class="flex items-center">
+                            <i class="fas fa-phone mr-3"></i>
+                            <span>Broker Support: 1800-123-4567</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-envelope mr-3"></i>
+                            <span>Email: broker@propbandhu.com</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-question-circle mr-3"></i>
+                            <span>FAQ: propbandhu.com/broker-help</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // Notification Functions
+        let notificationsDropdownVisible = false;
+        
+        function toggleNotifications() {
+            const dropdown = document.getElementById('notificationsDropdown');
+            dropdown.classList.toggle('show');
+            notificationsDropdownVisible = !notificationsDropdownVisible;
+            
+            if (notificationsDropdownVisible) {
+                loadNotifications();
+                document.addEventListener('click', closeNotificationsOnClickOutside);
+            } else {
+                document.removeEventListener('click', closeNotificationsOnClickOutside);
+            }
+        }
+        
+        function closeNotificationsOnClickOutside(event) {
+            const dropdown = document.getElementById('notificationsDropdown');
+            const button = event.target.closest('button');
+            
+            if (!dropdown.contains(event.target) && !button) {
+                dropdown.classList.remove('show');
+                notificationsDropdownVisible = false;
+                document.removeEventListener('click', closeNotificationsOnClickOutside);
+            }
+        }
+        
+        async function loadNotifications() {
+            try {
+                const response = await fetch('/broker/api/notifications/recent');
+                const data = await response.json();
+                
+                const notificationsList = document.getElementById('notificationsList');
+                
+                if (data.success && data.notifications.length > 0) {
+                    notificationsList.innerHTML = '';
+                    
+                    data.notifications.forEach(notification => {
+                        const item = document.createElement('div');
+                        item.className = `notification-item ${notification.is_unread ? 'unread' : ''}`;
+                        item.innerHTML = `
+                            <div class="flex items-start">
+                                <div class="notification-icon ${getNotificationIconColor(notification.type)}">
+                                    <i class="${getNotificationIcon(notification.type)} text-white"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between items-start">
+                                        <p class="font-medium text-gray-900 text-sm">${notification.title}</p>
+                                        <span class="text-xs text-gray-500">${notification.time_ago}</span>
+                                    </div>
+                                    <p class="text-gray-600 text-sm mt-1">${notification.message}</p>
+                                    ${notification.data && notification.data.action_url ? 
+                                        `<a href="${notification.data.action_url}" class="text-blue-600 text-xs mt-2 inline-block">View Details →</a>` : ''}
+                                </div>
+                            </div>
+                        `;
+                        
+                        item.addEventListener('click', async (e) => {
+                            if (e.target.tagName !== 'A' && notification.is_unread) {
+                                await markNotificationAsRead(notification._id, item);
+                            }
+                        });
+                        
+                        notificationsList.appendChild(item);
+                    });
+                } else {
+                    notificationsList.innerHTML = `
+                        <div class="p-8 text-center text-gray-500">
+                            <i class="fas fa-bell-slash text-3xl mb-3 text-gray-300"></i>
+                            <p>No notifications yet</p>
+                            <p class="text-sm mt-1">Notifications will appear here</p>
+                        </div>
+                    `;
+                }
+                
+                updateNotificationCount();
+                
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+            }
+        }
+        
+        function getNotificationIcon(type) {
+            const icons = {
+                'lead_assigned': 'fas fa-bullseye',
+                'commission_earned': 'fas fa-money-bill-wave',
+                'adder_commission_earned': 'fas fa-money-check',
+                'seller_commission_earned': 'fas fa-hand-holding-usd',
+                'property_added_approved': 'fas fa-check-circle',
+                'property_added_rejected': 'fas fa-times-circle',
+                'visit_scheduled': 'fas fa-calendar-alt',
+                'visit_confirmed': 'fas fa-calendar-check',
+                'booking_started': 'fas fa-file-contract',
+                'booking_completed': 'fas fa-trophy',
+                'inquiry_received': 'fas fa-question-circle',
+                'edit_permission_granted': 'fas fa-unlock-alt',
+                'property_assigned': 'fas fa-home',
+                'property_approved': 'fas fa-check',
+                'property_expiring': 'fas fa-clock',
+                'default': 'fas fa-bell'
+            };
+            return icons[type] || icons['default'];
+        }
+        
+        function getNotificationIconColor(type) {
+            const colors = {
+                'lead_assigned': 'bg-orange-500',
+                'commission_earned': 'bg-green-500',
+                'adder_commission_earned': 'bg-emerald-500',
+                'seller_commission_earned': 'bg-teal-500',
+                'property_added_approved': 'bg-blue-500',
+                'property_added_rejected': 'bg-red-500',
+                'visit_scheduled': 'bg-yellow-500',
+                'visit_confirmed': 'bg-green-500',
+                'booking_started': 'bg-purple-500',
+                'booking_completed': 'bg-indigo-500',
+                'inquiry_received': 'bg-cyan-500',
+                'edit_permission_granted': 'bg-purple-500',
+                'property_assigned': 'bg-blue-500',
+                'property_approved': 'bg-green-500',
+                'property_expiring': 'bg-red-500',
+                'default': 'bg-purple-500'
+            };
+            return colors[type] || colors['default'];
+        }
+        
+        async function markNotificationAsRead(notificationId, element) {
+            try {
+                const response = await fetch(`/broker/api/notifications/${notificationId}/read`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        element.classList.remove('unread');
+                        
+                        const badge = document.querySelector('.notification-badge');
+                        if (badge) {
+                            const badgeText = badge.textContent.trim();
+                            let count = parseInt(badgeText.replace('+', '')) || 0;
+                            
+                            if (count > 1) {
+                                const newCount = count - 1;
+                                badge.textContent = newCount > 9 ? '9+' : newCount.toString();
+                                badge.style.display = 'flex';
+                            } else {
+                                badge.style.display = 'none';
+                            }
+                        }
+                        
+                        updateNotificationCount();
+                    }
+                }
+            } catch (error) {
+                console.error('Error marking notification as read:', error);
+            }
+        }
+        
+        async function markAllAsRead() {
+            try {
+                const response = await fetch('/broker/api/notifications/read-all', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        document.querySelectorAll('.notification-item.unread').forEach(item => {
+                            item.classList.remove('unread');
+                        });
+                        
+                        const badge = document.querySelector('.notification-badge');
+                        if (badge) {
+                            badge.style.display = 'none';
+                        }
+                        
+                        updateNotificationCount();
+                        
+                        showToast('All notifications marked as read', 'success');
+                    }
+                }
+            } catch (error) {
+                console.error('Error marking all as read:', error);
+                showToast('Failed to mark all as read', 'error');
+            }
+        }
+        
+        async function updateNotificationCount() {
+            try {
+                const response = await fetch('/broker/api/notifications/unread-count');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const badge = document.querySelector('.notification-badge');
+                    
+                    if (!badge) return;
+                    
+                    if (data.count > 0) {
+                        badge.textContent = data.count > 9 ? '9+' : data.count.toString();
+                        badge.style.display = 'flex';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating notification count:', error);
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const colors = {
+                'success': 'bg-green-500',
+                'error': 'bg-red-500',
+                'warning': 'bg-yellow-500',
+                'info': 'bg-blue-500'
+            };
+            
+            const icon = {
+                'success': 'fas fa-check-circle',
+                'error': 'fas fa-exclamation-circle',
+                'warning': 'fas fa-exclamation-triangle',
+                'info': 'fas fa-info-circle'
+            };
+            
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 translate-x-0`;
+            toast.innerHTML = `
+                <div class="flex items-center">
+                    <i class="${icon[type]} mr-3 text-lg"></i>
+                    <span class="font-medium">${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
+        }
+        
+        function setupNotificationToasts() {
+            if (typeof EventSource !== 'undefined') {
+                const eventSource = new EventSource('/broker/api/notifications/stream');
+                
+                eventSource.onmessage = function(event) {
+                    const notification = JSON.parse(event.data);
+                    if (notification) {
+                        updateNotificationCount();
+                        
+                        if (notification.type !== 'read_update') {
+                            showToast(notification.message || 'New notification', 'info');
+                        }
+                    }
+                };
+                
+                eventSource.onerror = function() {
+                    setTimeout(setupNotificationToasts, 5000);
+                };
+            }
+        }
+
+        // Auto-refresh dashboard every 30 seconds
+        setInterval(() => {
+            fetch(`/broker/api/dashboard-stats?mode=<%= brokerMode %>`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update pipeline counters
+                        updateCounter('leads', data.pipelineStats.leads);
+                        updateCounter('visitPending', data.pipelineStats.visitPending);
+                        updateCounter('visitScheduled', data.pipelineStats.visitScheduled);
+                        updateCounter('visitConfirmed', data.pipelineStats.visitConfirmed);
+                        updateCounter('bookingPending', data.pipelineStats.bookingPending);
+                        updateCounter('completed', data.pipelineStats.completed);
+                        
+                        // Update critical bookings count
+                        const criticalEl = document.getElementById('critical-bookings');
+                        if (criticalEl) {
+                            criticalEl.textContent = `${data.pipelineStats.criticalBookings || 0} critical`;
+                        }
+                        
+                        // Update commission breakdown
+                        updateAmount('commission-adder', data.commissionBreakdown.adder);
+                        updateAmount('commission-seller', data.commissionBreakdown.seller);
+                        updateAmount('commission-monthly', data.commissionBreakdown.monthly);
+                        
+                        // Update performance metrics
+                        updatePercentage('visitConversion', data.performance.visitConversion);
+                        updatePercentage('bookingConversion', data.performance.bookingConversion);
+                        updateAmount('avgCommission', data.performance.avgCommission);
+                        
+                        // Update small counters
+                        updateCounter('visitPending-small', data.pipelineStats.visitPending);
+                        updateCounter('visitScheduled-small', data.pipelineStats.visitScheduled);
+                        updateCounter('bookingPending-small', data.pipelineStats.bookingPending);
+                        
+                        updateNotificationCount();
+                        
+                        if (data.urgentActions && data.urgentActions.length > 0) {
+                            const urgentList = document.getElementById('urgent-actions-list');
+                            if (urgentList && urgentList.children.length === 0) {
+                                showToast(`⚠️ You have ${data.urgentActions.length} urgent actions pending`, 'warning');
+                            }
+                        }
+                    }
+                })
+                .catch(error => console.error('Dashboard update error:', error));
+        }, 30000);
+
+        function updateCounter(elementId, newValue) {
+            const elements = document.querySelectorAll(`#counter-${elementId}, #${elementId}`);
+            elements.forEach(element => {
+                if (element) {
+                    const oldValue = parseInt(element.textContent.replace(/[^0-9]/g, '')) || 0;
+                    if (oldValue !== newValue) {
+                        element.textContent = newValue;
+                        element.classList.add('animate-pulse', 'text-blue-600');
+                        setTimeout(() => element.classList.remove('animate-pulse', 'text-blue-600'), 1000);
+                    }
+                }
+            });
+            
+            const smallElements = document.querySelectorAll(`#counter-${elementId}-small`);
+            smallElements.forEach(element => {
+                if (element && element.textContent !== newValue.toString()) {
+                    element.textContent = newValue;
+                }
+            });
+        }
+        
+        function updatePercentage(elementId, newValue) {
+            const percentElement = document.getElementById(`percent-${elementId}`);
+            const barElement = document.getElementById(`bar-${elementId}`);
+            
+            if (percentElement) {
+                const oldValue = parseInt(percentElement.textContent) || 0;
+                if (oldValue !== newValue) {
+                    percentElement.textContent = newValue + '%';
+                    percentElement.classList.add('animate-bounce');
+                    setTimeout(() => percentElement.classList.remove('animate-bounce'), 1000);
+                }
+            }
+            
+            if (barElement) {
+                barElement.style.width = Math.min(newValue, 100) + '%';
+            }
+        }
+        
+        function updateAmount(elementId, newValue) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                const formattedValue = '₹' + (newValue || 0).toLocaleString();
+                if (element.textContent !== formattedValue) {
+                    element.textContent = formattedValue;
+                    element.classList.add('animate-pulse');
+                    setTimeout(() => element.classList.remove('animate-pulse'), 1000);
+                }
+            }
+        }
+
+        // Request notification permission
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                    console.log('Browser notifications enabled');
+                }
+            });
+        }
+
+        // Real-time countdown updates for urgent actions
+        function updateCountdowns() {
+            document.querySelectorAll('[data-countdown]').forEach(element => {
+                const countdownDate = element.getAttribute('data-countdown');
+                if (!countdownDate) return;
+                
+                const endTime = new Date(countdownDate).getTime();
+                const now = new Date().getTime();
+                const distance = endTime - now;
+                
+                if (distance < 0) {
+                    element.innerHTML = '<span class="text-red-600 font-bold">EXPIRED</span>';
+                    const parent = element.closest('.border-red-200');
+                    if (parent) {
+                        parent.classList.add('bg-red-100', 'border-red-300');
+                        parent.classList.remove('bg-red-50');
+                    }
+                } else {
+                    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    
+                    let html = `${days}d ${hours}h left`;
+                    if (days === 0) {
+                        html = `<span class="${hours < 24 ? 'countdown-critical' : 'text-red-600'}">${hours}h left</span>`;
+                    } else if (days <= 1) {
+                        html = `<span class="text-red-600 font-bold">${days}d ${hours}h left</span>`;
+                    }
+                    
+                    element.innerHTML = html;
+                }
+            });
+        }
+
+        // Initial update and set interval
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCountdowns();
+            setInterval(updateCountdowns, 60000);
+            
+            // Load notifications on page load
+            updateNotificationCount();
+            setupNotificationToasts();
+        });
+
+        // Add click handler for urgent action dismissals
+        document.addEventListener('click', function(e) {
+            const urgentItem = e.target.closest('[data-urgent-id]');
+            if (urgentItem) {
+                const urgentId = urgentItem.getAttribute('data-urgent-id');
+                
+                fetch(`/broker/api/urgent-actions/${urgentId}/dismiss`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                }).then(response => response.json())
+                  .then(data => {
+                      if (data.success) {
+                          urgentItem.style.opacity = '0.5';
+                          setTimeout(() => {
+                              urgentItem.remove();
+                              
+                              const urgentList = document.getElementById('urgent-actions-list');
+                              if (urgentList && urgentList.children.length === 0) {
+                                  urgentList.innerHTML = `
+                                      <div class="text-center py-6">
+                                          <i class="fas fa-check-circle text-green-400 text-5xl mb-4"></i>
+                                          <h3 class="text-lg font-semibold text-gray-700 mb-2">No urgent actions</h3>
+                                          <p class="text-gray-600">All items are on track</p>
+                                      </div>
+                                  `;
+                              }
+                          }, 500);
+                      }
+                  })
+                  .catch(error => console.error('Error dismissing urgent action:', error));
+            }
+        });
+    </script>
+</body>
+</html>

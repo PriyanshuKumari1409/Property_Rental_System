@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Propbandhu Broker</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        
+        .document-viewer-container { max-width: 1200px; margin: 0 auto; }
+        
+        .document-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 1rem 1rem 0 0;
+        }
+        
+        .document-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 0 0 1rem 1rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .file-icon-large { font-size: 5rem; margin-bottom: 1rem; }
+        .pdf-icon { color: #ef4444; }
+        .doc-icon { color: #2563eb; }
+        .image-icon { color: #10b981; }
+        .other-icon { color: #6b7280; }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-primary:hover { background: #2563eb; transform: translateY(-2px); }
+        .btn-secondary { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+        .btn-secondary:hover { background: #e2e8f0; transform: translateY(-1px); }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-danger:hover { background: #dc2626; transform: translateY(-1px); }
+        
+        .document-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .info-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+        }
+        
+        .info-label {
+            font-size: 0.875rem;
+            color: #64748b;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+        
+        .info-value {
+            font-size: 1rem;
+            color: #1e293b;
+            font-weight: 600;
+        }
+        
+        .document-preview {
+            background: #f8fafc;
+            border: 2px dashed #cbd5e0;
+            border-radius: 1rem;
+            padding: 3rem;
+            text-align: center;
+            margin: 2rem 0;
+        }
+        
+        .nav-link {
+            color: #4b5563;
+            font-weight: 500;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+        
+        .nav-link:hover {
+            color: #1f2937;
+            background-color: #f3f4f6;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        
+        .badge-primary { background: #dbeafe; color: #1e40af; }
+        .badge-success { background: #d1fae5; color: #065f46; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Broker Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/broker/dashboard" class="flex items-center">
+                        <span class="text-xl font-bold text-gray-900">Propbandhu Broker</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-gray-700 font-medium">🤝 Broker: <%= user.name %></span>
+                    <a href="/broker/dashboard" class="nav-link">
+                        <i class="fas fa-tachometer-alt mr-1"></i>Dashboard
+                    </a>
+                    <a href="/broker/properties/<%= property._id %>" class="nav-link">
+                        <i class="fas fa-arrow-left mr-1"></i>Back to Property
+                    </a>
+                    <a href="/broker/documents" class="nav-link">
+                        <i class="fas fa-file-alt mr-1"></i>All Documents
+                    </a>
+                    <a href="/logout" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+                        <i class="fas fa-sign-out-alt mr-1"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="document-viewer-container py-8 px-4">
+        <!-- Document Header -->
+        <div class="document-header">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h1 class="text-3xl font-bold mb-2"><%= document.name %></h1>
+                    <div class="flex items-center gap-3 flex-wrap">
+                        <span class="badge badge-primary">
+                            <i class="fas fa-tag mr-1"></i>
+                            <%= getDocumentTypeLabel(document.type) %>
+                        </span>
+                        <span class="badge badge-success">
+                            <i class="fas fa-weight-hanging mr-1"></i>
+                            <%= formatFileSize(document.size) %>
+                        </span>
+                        <span class="text-blue-100">
+                            <i class="far fa-clock mr-1"></i>
+                            Uploaded: <%= formatDate(document.uploaded_at) %>
+                        </span>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                    <% const fileType = getFileType(document.original_name || ''); %>
+                    
+                    <% if (fileType === 'pdf' || fileType === 'image') { %>
+                        <a href="<%= document.url %>" 
+                           target="_blank"
+                           class="btn btn-primary">
+                            <i class="fas fa-eye mr-2"></i>View Document
+                        </a>
+                    <% } %>
+                    
+                    <!-- FIXED: Use download route instead of direct URL -->
+                    <a href="/broker/documents/download/<%= property._id %>/<%= docIndex %>" 
+                       download="<%= document.original_name || document.name %>"
+                       class="btn btn-secondary">
+                        <i class="fas fa-download mr-2"></i>Download
+                    </a>
+                    
+                    <button onclick="confirmDelete()" class="btn btn-danger">
+                        <i class="fas fa-trash mr-2"></i>Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Document Content -->
+        <div class="document-content">
+            <!-- Document Preview -->
+            <div class="document-preview">
+                <% 
+                    let iconClass = 'fas fa-file other-icon';
+                    let previewText = 'No preview available';
+                    
+                    if (fileType === 'pdf') {
+                        iconClass = 'fas fa-file-pdf pdf-icon';
+                        previewText = 'PDF Document - Click "View Document" to preview';
+                    } else if (fileType === 'word') {
+                        iconClass = 'fas fa-file-word doc-icon';
+                        previewText = 'Word Document - Download to view';
+                    } else if (fileType === 'image') {
+                        iconClass = 'fas fa-file-image image-icon';
+                        previewText = 'Image Document - Click "View Document" to preview';
+                    }
+                %>
+                
+                <i class="<%= iconClass %> file-icon-large"></i>
+                <h3 class="text-xl font-semibold text-gray-800 mb-2">
+                    <%= document.name %>
+                </h3>
+                <p class="text-gray-600 mb-6">
+                    <%= previewText %>
+                </p>
+                
+                <% if (fileType === 'pdf' || fileType === 'image') { %>
+                <div class="mt-6">
+                    <a href="<%= document.url %>" 
+                       target="_blank"
+                       class="btn btn-primary px-8">
+                        <i class="fas fa-external-link-alt mr-2"></i>Open in New Tab
+                    </a>
+                </div>
+                <% } else { %>
+                <div class="mt-6">
+                    <!-- FIXED: Use download route -->
+                    <a href="/broker/documents/download/<%= property._id %>/<%= docIndex %>" 
+                       download="<%= document.original_name || document.name %>"
+                       class="btn btn-primary px-8">
+                        <i class="fas fa-download mr-2"></i>Download to View
+                    </a>
+                </div>
+                <% } %>
+            </div>
+
+            <!-- Document Information -->
+            <div class="document-info-grid">
+                <!-- Document Details -->
+                <div class="info-card">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-3">
+                        <i class="fas fa-info-circle mr-2"></i>Document Details
+                    </h3>
+                    <div class="space-y-2">
+                        <div>
+                            <div class="info-label">Document Name</div>
+                            <div class="info-value"><%= document.name %></div>
+                        </div>
+                        <div>
+                            <div class="info-label">Original Filename</div>
+                            <div class="info-value truncate"><%= document.original_name || 'N/A' %></div>
+                        </div>
+                        <div>
+                            <div class="info-label">Document Type</div>
+                            <div class="info-value"><%= getDocumentTypeLabel(document.type) %></div>
+                        </div>
+                        <div>
+                            <div class="info-label">File Size</div>
+                            <div class="info-value"><%= formatFileSize(document.size) %></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upload Information -->
+                <div class="info-card">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-3">
+                        <i class="fas fa-upload mr-2"></i>Upload Information
+                    </h3>
+                    <div class="space-y-2">
+                        <div>
+                            <div class="info-label">Uploaded Date</div>
+                            <div class="info-value"><%= formatDate(document.uploaded_at) %></div>
+                        </div>
+                        <div>
+                            <div class="info-label">Uploaded Time</div>
+                            <div class="info-value"><%= formatTime(document.uploaded_at) %></div>
+                        </div>
+                        <div>
+                            <div class="info-label">Uploaded By</div>
+                            <div class="info-value">
+                                <%= document.uploaded_by?.name || 'Unknown' %>
+                                <span class="text-sm text-gray-500">(<%= document.uploaded_by?.role || 'user' %>)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Property Information -->
+                <div class="info-card">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-3">
+                        <i class="fas fa-home mr-2"></i>Property Information
+                    </h3>
+                    <div class="space-y-2">
+                        <div>
+                            <div class="info-label">Property Title</div>
+                            <div class="info-value">
+                                <a href="/broker/properties/<%= property._id %>" 
+                                   class="text-blue-600 hover:text-blue-800 hover:underline">
+                                    <%= property.title %>
+                                </a>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="info-label">Property Status</div>
+                            <div class="info-value capitalize">
+                                <%= property.status?.replace('_', ' ') || 'Unknown' %>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="info-label">Property Type</div>
+                            <div class="info-value"><%= property.property_type || 'Not specified' %></div>
+                        </div>
+                        <% if (property.seller) { %>
+                        <div>
+                            <div class="info-label">Seller</div>
+                            <div class="info-value"><%= property.seller.name %></div>
+                        </div>
+                        <% } %>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="info-card">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-3">
+                        <i class="fas fa-bolt mr-2"></i>Quick Actions
+                    </h3>
+                    <div class="space-y-2">
+                        <!-- FIXED: Use download route -->
+                        <a href="/broker/documents/download/<%= property._id %>/<%= docIndex %>" 
+                           download="<%= document.original_name || document.name %>"
+                           class="w-full btn btn-secondary justify-center">
+                            <i class="fas fa-download mr-2"></i>Download
+                        </a>
+                        
+                        <a href="/broker/properties/<%= property._id %>" 
+                           class="w-full btn btn-secondary justify-center">
+                            <i class="fas fa-arrow-left mr-2"></i>Back to Property
+                        </a>
+                        
+                        <button onclick="renameDocument()" 
+                                class="w-full btn btn-secondary justify-center">
+                            <i class="fas fa-edit mr-2"></i>Rename Document
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl p-6 max-w-md w-full">
+            <h3 class="text-xl font-semibold text-gray-900 mb-4">
+                <i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>
+                Delete Document
+            </h3>
+            <p class="text-gray-700 mb-6">
+                Are you sure you want to delete <strong>"<%= document.name %>"</strong>? This action cannot be undone.
+            </p>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeDeleteModal()" class="btn btn-secondary">
+                    Cancel
+                </button>
+                <button onclick="deleteDocument()" class="btn btn-danger">
+                    <i class="fas fa-trash mr-2"></i>Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Delete document functions
+        function confirmDelete() {
+            console.log('🗑️ Delete button clicked');
+            document.getElementById('deleteModal').classList.remove('hidden');
+        }
+        
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.add('hidden');
+        }
+        
+        async function deleteDocument() {
+            console.log('🗑️ Deleting document...');
+            try {
+                // IMPORTANT: Check if route has /broker prefix
+                // Your backend route is: /api/properties/:propertyId/documents/:docIndex
+                // Your frontend is calling: /broker/api/properties/:propertyId/documents/:docIndex
+                
+                // OPTION 1: Remove /broker prefix
+                const response = await fetch(`/api/properties/<%= property._id %>/documents/<%= docIndex %>`, {
+                    method: 'DELETE'
+                });
+                
+                // OPTION 2: Or add /broker prefix to your backend route (preferred)
+                // const response = await fetch(`/broker/api/properties/<%= property._id %>/documents/<%= docIndex %>`, {
+                //     method: 'DELETE'
+                // });
+                
+                console.log('📥 Delete response status:', response.status);
+                
+                if (!response.ok) {
+                    console.error('❌ HTTP error:', response.status);
+                    throw new Error(`HTTP error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('📦 Delete response data:', data);
+                
+                if (data.success) {
+                    alert('✅ Document deleted successfully!');
+                    window.location.href = '/broker/documents';
+                } else {
+                    alert('❌ ' + data.message);
+                }
+            } catch (error) {
+                console.error('❌ Delete error:', error);
+                alert('❌ Failed to delete document. Please try again.');
+            }
+        }
+        
+        // Rename document functions
+        async function renameDocument() {
+            console.log('✏️ Rename button clicked');
+            const newName = prompt('Enter new document name:', '<%= document.name %>');
+            
+            if (!newName || newName.trim() === '') {
+                alert('Please enter a document name');
+                return;
+            }
+            
+            if (newName === '<%= document.name %>') {
+                alert('Document name is unchanged');
+                return;
+            }
+            
+            try {
+                // IMPORTANT: Check if route has /broker prefix
+                // Your backend route is: /api/properties/:propertyId/documents/:docIndex/rename
+                // Your frontend is calling: /broker/api/properties/:propertyId/documents/:docIndex/rename
+                
+                // OPTION 1: Remove /broker prefix
+                const response = await fetch(`/api/properties/<%= property._id %>/documents/<%= docIndex %>/rename`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: newName
+                    })
+                });
+                
+                // OPTION 2: Or add /broker prefix to your backend route (preferred)
+                // const response = await fetch(`/broker/api/properties/<%= property._id %>/documents/<%= docIndex %>/rename`, {
+                //     method: 'PUT',
+                //     headers: {
+                //         'Content-Type': 'application/json'
+                //     },
+                //     body: JSON.stringify({
+                //         name: newName
+                //     })
+                // });
+                
+                console.log('📥 Rename response status:', response.status);
+                
+                if (!response.ok) {
+                    console.error('❌ HTTP error:', response.status);
+                    throw new Error(`HTTP error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('📦 Rename response data:', data);
+                
+                if (data.success) {
+                    alert('✅ Document renamed successfully!');
+                    window.location.reload();
+                } else {
+                    alert('❌ ' + data.message);
+                }
+            } catch (error) {
+                console.error('❌ Rename error:', error);
+                alert('❌ Failed to rename document. Please try again.');
+            }
+        }
+        
+        // Close modals when clicking outside
+        document.addEventListener('click', function(e) {
+            if (e.target.id === 'deleteModal') closeDeleteModal();
+        });
+        
+        // Close modals with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeDeleteModal();
+        });
+        
+        // Test function
+        console.log('📄 Document viewer loaded successfully');
+        console.log('📌 Document URL:', '<%= document.url %>');
+        console.log('📌 Download route:', '/broker/documents/download/<%= property._id %>/<%= docIndex %>');
+        console.log('📌 Delete route check:', '/broker/api/properties/<%= property._id %>/documents/<%= docIndex %>');
+        console.log('📌 Rename route check:', '/broker/api/properties/<%= property._id %>/documents/<%= docIndex %>/rename');
+    </script>
+</body>
+</html>

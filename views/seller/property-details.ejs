@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Propbandhu</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center">
+                        <span class="text-xl font-bold text-gray-900">Propbandhu</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/seller/dashboard" class="text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-home mr-1"></i>Dashboard
+                    </a>
+                    <a href="/seller/properties" class="text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-building mr-1"></i>Properties
+                    </a>
+                    <a href="/seller/analytics" class="text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-chart-line mr-1"></i>Analytics
+                    </a>
+                    <a href="/logout" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+                        <i class="fas fa-sign-out-alt mr-1"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- Property Header -->
+        <div class="flex justify-between items-start mb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900"><%= property.title %></h1>
+                <p class="text-gray-600 flex items-center mt-2">
+                    <i class="fas fa-map-marker-alt mr-2 text-gray-400"></i>
+                    <%= property.full_address %>
+                </p>
+            </div>
+            <div class="text-right">
+                <div class="text-2xl font-bold text-blue-600"><%= property.formatted_price %></div>
+                <div class="text-sm text-gray-500"><%= property.price_type || 'Fixed Price' %></div>
+            </div>
+        </div>
+
+        <!-- Property Status Badges -->
+        <div class="flex flex-wrap gap-2 mb-6">
+            <span class="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
+                <%= property.property_type %>
+            </span>
+            <span class="bg-<%= property.status === 'live' ? 'green' : property.status === 'pending_approval' ? 'yellow' : property.status === 'changes_requested' ? 'amber' : 'gray' %>-100 text-<%= property.status === 'live' ? 'green' : property.status === 'pending_approval' ? 'yellow' : property.status === 'changes_requested' ? 'amber' : 'gray' %>-800 text-sm font-medium px-3 py-1 rounded-full">
+                <%= property.status.replace('_', ' ') %>
+            </span>
+            <% if (property.is_featured) { %>
+            <span class="bg-yellow-100 text-yellow-800 text-sm font-medium px-3 py-1 rounded-full">
+                Featured
+            </span>
+            <% } %>
+            <% if (property.is_verified) { %>
+            <span class="bg-purple-100 text-purple-800 text-sm font-medium px-3 py-1 rounded-full">
+                Verified
+            </span>
+            <% } %>
+            <% if (property.cart_status?.in_cart) { %>
+            <span class="bg-red-100 text-red-800 text-sm font-medium px-3 py-1 rounded-full">
+                <i class="fas fa-lock mr-1"></i>Locked in Cart
+            </span>
+            <% } %>
+        </div>
+
+        <!-- ADMIN REVIEW MESSAGE -->
+        <% if (property.admin_review && property.admin_review.remark) { %>
+        <div class="mb-6">
+            <!-- CHANGES REQUESTED -->
+            <% if (property.admin_review.status === 'changes_requested') { %>
+            <div class="bg-yellow-50 border border-yellow-300 rounded-xl p-5">
+                <div class="flex items-start">
+                    <i class="fas fa-exclamation-triangle text-yellow-600 text-2xl mr-4"></i>
+                    <div>
+                        <h3 class="text-lg font-bold text-yellow-800 mb-2">
+                            Changes Requested by Admin
+                        </h3>
+                        <p class="text-yellow-700 mb-3">
+                            <%= property.admin_review.remark %>
+                        </p>
+
+                        <% if (property.admin_review.requested_at) { %>
+                        <p class="text-sm text-yellow-600 mb-2">
+                            <i class="fas fa-clock mr-1"></i>
+                            Requested on: <%= new Date(property.admin_review.requested_at).toLocaleDateString() %>
+                        </p>
+                        <% } %>
+
+                        <% if (property.admin_review.deadline) { %>
+                        <p class="text-sm text-yellow-600 mb-2">
+                            <i class="fas fa-calendar-alt mr-1"></i>
+                            Deadline: <%= new Date(property.admin_review.deadline).toLocaleDateString() %>
+                            <% 
+                                const now = new Date();
+                                const deadline = new Date(property.admin_review.deadline);
+                                const daysLeft = Math.ceil((deadline - now) / (1000 * 60 * 60 * 24));
+                            %>
+                            <span class="font-bold <%= daysLeft <= 2 ? 'text-red-600' : '' %>">
+                                (<%= daysLeft %> <%= daysLeft === 1 ? 'day' : 'days' %> left)
+                            </span>
+                        </p>
+                        <% } %>
+
+                        <% if (property.edit_permissions?.enabled) { %>
+                        <div class="mt-4">
+                            <a href="/seller/properties/<%= property._id %>/edit" 
+                               class="inline-flex items-center bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700">
+                                <i class="fas fa-edit mr-2"></i>Fix & Resubmit Property
+                            </a>
+                            <p class="text-sm text-yellow-700 mt-2">
+                                ⏳ Please update the property and resubmit for approval before the deadline.
+                            </p>
+                        </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+            <% } %>
+
+            <!-- REJECTED -->
+            <% if (property.admin_review.status === 'rejected') { %>
+            <div class="bg-red-50 border border-red-300 rounded-xl p-5">
+                <div class="flex items-start">
+                    <i class="fas fa-times-circle text-red-600 text-2xl mr-4"></i>
+                    <div>
+                        <h3 class="text-lg font-bold text-red-800 mb-2">
+                            Property Rejected
+                        </h3>
+                        <p class="text-red-700 mb-2">
+                            <%= property.admin_review.remark %>
+                        </p>
+                        
+                        <% if (property.admin_review.rejected_at) { %>
+                        <p class="text-sm text-red-600 mb-2">
+                            <i class="fas fa-clock mr-1"></i>
+                            Rejected on: <%= new Date(property.admin_review.rejected_at).toLocaleDateString() %>
+                        </p>
+                        <% } %>
+                        
+                        <p class="text-sm text-red-600">
+                            ❌ This property cannot be edited or resubmitted. Please create a new listing.
+                        </p>
+                        
+                        <div class="mt-4">
+                            <a href="/seller/properties/new" 
+                               class="inline-flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                                <i class="fas fa-plus mr-2"></i>Create New Listing
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <% } %>
+        </div>
+        <% } %>
+
+        <!-- Property Images -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <% if (property.images && property.images.length > 0) { %>
+            <div class="lg:col-span-2">
+                <img src="<%= property.images[0].url %>" alt="<%= property.title %>" 
+                     class="w-full h-96 object-cover rounded-xl shadow-lg">
+            </div>
+            
+            <div class="grid grid-cols-2 gap-2">
+                <% property.images.slice(1, 5).forEach((image, index) => { %>
+                <img src="<%= image.url %>" alt="Property Image <%= index + 2 %>" 
+                     class="w-full h-48 object-cover rounded-lg">
+                <% }); %>
+                <% if (property.images.length > 5) { %>
+                <div class="relative">
+                    <img src="<%= property.images[4].url %>" alt="More images" 
+                         class="w-full h-48 object-cover rounded-lg opacity-50">
+                    <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded-lg">
+                        <span class="text-white font-bold">+<%= property.images.length - 5 %> more</span>
+                    </div>
+                </div>
+                <% } %>
+            </div>
+            <% } else { %>
+            <div class="lg:col-span-3">
+                <div class="w-full h-96 bg-gray-200 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-home text-gray-400 text-8xl"></i>
+                </div>
+            </div>
+            <% } %>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Property Details -->
+            <div class="lg:col-span-2">
+                <!-- Property Description -->
+                <div class="bg-white rounded-xl shadow p-6 mb-6">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">Property Description</h2>
+                    <p class="text-gray-700 leading-relaxed"><%= property.description %></p>
+                </div>
+
+                <!-- Property Specifications -->
+                <div class="bg-white rounded-xl shadow p-6 mb-6">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">Property Specifications</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="text-center p-4 border rounded-lg">
+                            <div class="text-2xl font-bold text-blue-600 mb-2"><%= property.bedrooms || 'NA' %></div>
+                            <p class="text-gray-600">Bedrooms</p>
+                        </div>
+                        <div class="text-center p-4 border rounded-lg">
+                            <div class="text-2xl font-bold text-blue-600 mb-2"><%= property.bathrooms || 'NA' %></div>
+                            <p class="text-gray-600">Bathrooms</p>
+                        </div>
+                        <div class="text-center p-4 border rounded-lg">
+                            <div class="text-2xl font-bold text-blue-600 mb-2"><%= property.balconies || 'NA' %></div>
+                            <p class="text-gray-600">Balconies</p>
+                        </div>
+                        <div class="text-center p-4 border rounded-lg">
+                            <div class="text-2xl font-bold text-blue-600 mb-2">
+                                <%= property.built_up_area || property.carpet_area || 'NA' %>
+                            </div>
+                            <p class="text-gray-600">Area (<%= property.area_unit || 'sq ft' %>)</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                        <div class="text-center p-4 border rounded-lg">
+                            <div class="text-lg font-bold text-gray-700 mb-2"><%= property.floor_number || 'NA' %></div>
+                            <p class="text-gray-600">Floor No.</p>
+                        </div>
+                        <div class="text-center p-4 border rounded-lg">
+                            <div class="text-lg font-bold text-gray-700 mb-2"><%= property.total_floors || 'NA' %></div>
+                            <p class="text-gray-600">Total Floors</p>
+                        </div>
+                        <div class="text-center p-4 border rounded-lg">
+                            <div class="text-lg font-bold text-gray-700 mb-2"><%= property.age_of_property || 'NA' %></div>
+                            <p class="text-gray-600">Age (years)</p>
+                        </div>
+                        <div class="text-center p-4 border rounded-lg">
+                            <div class="text-lg font-bold text-gray-700 mb-2"><%= property.furnishing || 'NA' %></div>
+                            <p class="text-gray-600">Furnishing</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Amenities -->
+                <% if (property.amenities && property.amenities.length > 0) { %>
+                <div class="bg-white rounded-xl shadow p-6 mb-6">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">Amenities</h2>
+                    <div class="flex flex-wrap gap-3">
+                        <% property.amenities.forEach(amenity => { %>
+                        <span class="bg-gray-100 text-gray-800 px-3 py-2 rounded-lg">
+                            <i class="fas fa-check text-green-500 mr-2"></i><%= amenity %>
+                        </span>
+                        <% }); %>
+                    </div>
+                </div>
+                <% } %>
+
+                <!-- Documents -->
+                <% if (property.documents && property.documents.length > 0) { %>
+                <div class="bg-white rounded-xl shadow p-6 mb-6">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">Property Documents</h2>
+                    <div class="space-y-3">
+                        <% property.documents.forEach(doc => { %>
+                        <div class="flex items-center justify-between p-3 border rounded-lg">
+                            <div class="flex items-center">
+                                <i class="fas fa-file-alt text-blue-500 text-xl mr-3"></i>
+                                <div>
+                                    <p class="font-medium"><%= doc.name %></p>
+                                    <p class="text-sm text-gray-600"><%= doc.type %></p>
+                                </div>
+                            </div>
+                            <a href="<%= doc.url %>" target="_blank" 
+                               class="text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-download mr-1"></i>Download
+                            </a>
+                        </div>
+                        <% }); %>
+                    </div>
+                </div>
+                <% } %>
+            </div>
+
+            <!-- Sidebar - Property Actions -->
+            <div class="space-y-6">
+                <!-- Property Status Card -->
+                <div class="bg-white rounded-xl shadow p-6">
+                    <h3 class="font-bold text-lg text-gray-900 mb-4">Property Status</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Current Status</span>
+                            <span class="font-bold capitalize"><%= property.status.replace('_', ' ') %></span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Listed On</span>
+                            <span class="font-bold"><%= new Date(property.createdAt).toLocaleDateString() %></span>
+                        </div>
+                        <% if (property.approved_at) { %>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Approved On</span>
+                            <span class="font-bold"><%= new Date(property.approved_at).toLocaleDateString() %></span>
+                        </div>
+                        <% } %>
+                        <% if (property.live_at) { %>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Went Live</span>
+                            <span class="font-bold"><%= new Date(property.live_at).toLocaleDateString() %></span>
+                        </div>
+                        <% } %>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Expires On</span>
+                            <span class="font-bold"><%= new Date(property.expires_at).toLocaleDateString() %></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cart Lock Status -->
+                <% if (property.cart_status?.in_cart) { 
+                    const addedDate = new Date(property.cart_status.added_at);
+                    const visitExpiry = new Date(addedDate);
+                    visitExpiry.setDate(visitExpiry.getDate() + 7);
+                    const now = new Date();
+                    const daysLeft = Math.ceil((visitExpiry - now) / (1000 * 60 * 60 * 24));
+                %>
+                <div class="bg-yellow-50 border border-yellow-200 rounded-xl shadow p-6">
+                    <h3 class="font-bold text-lg text-yellow-800 mb-4">
+                        <i class="fas fa-shopping-cart mr-2"></i>Property in Buyer Cart
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-yellow-700">Locked Since</span>
+                            <span class="font-bold"><%= new Date(property.cart_status.added_at).toLocaleDateString() %></span>
+                        </div>
+                        
+                        <% if (property.cart_status.visit_confirmed) { %>
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+                            <p class="font-medium text-green-800 flex items-center">
+                                <i class="fas fa-check-circle mr-2"></i>Visit Confirmed
+                            </p>
+                            <p class="text-sm text-green-700 mt-1">
+                                Booking window active until: 
+                                <span class="font-bold">
+                                    <%= new Date(property.cart_status.booking_window_end).toLocaleDateString() %>
+                                </span>
+                            </p>
+                        </div>
+                        <% } else { %>
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                            <p class="font-medium text-yellow-800 flex items-center">
+                                <i class="fas fa-clock mr-2"></i>Visit Pending
+                            </p>
+                            <p class="text-sm text-yellow-700 mt-1">
+                                Buyer must visit within: 
+                                <span class="font-bold <%= daysLeft <= 2 ? 'text-red-600' : '' %>">
+                                    <%= daysLeft %> <%= daysLeft === 1 ? 'day' : 'days' %>
+                                </span>
+                            </p>
+                        </div>
+                        <% } %>
+                        
+                        <p class="text-sm text-yellow-700">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Property cannot be sold outside platform while locked
+                        </p>
+                        
+                        <a href="/seller/properties/<%= property._id %>/cart-details" 
+                           class="block w-full bg-yellow-100 text-yellow-800 text-center py-2 rounded-lg hover:bg-yellow-200 mt-3">
+                            <i class="fas fa-eye mr-2"></i>View Cart Details
+                        </a>
+                    </div>
+                </div>
+                <% } %>
+
+                <!-- Action Buttons -->
+                <div class="bg-white rounded-xl shadow p-6">
+                    <h3 class="font-bold text-lg text-gray-900 mb-4">Property Actions</h3>
+                    <div class="space-y-3">
+                        <!-- Fix & Resubmit Button (Changes Requested) -->
+                        <% if (
+                            property.admin_review?.status === 'changes_requested' &&
+                            property.edit_permissions?.enabled &&
+                            !property.cart_status?.in_cart
+                        ) { %>
+                        <a href="/seller/properties/<%= property._id %>/edit"
+                           class="block w-full bg-yellow-600 text-white text-center py-3 rounded-lg hover:bg-yellow-700">
+                            <i class="fas fa-edit mr-2"></i>Fix & Resubmit Property
+                        </a>
+
+                        <!-- Regular Edit Button (Available for other statuses except rejected) -->
+                        <% } else if (
+                            property.admin_review?.status !== 'rejected' &&
+                            !property.cart_status?.in_cart &&
+                            property.status !== 'sold'
+                        ) { %>
+                        <a href="/seller/properties/<%= property._id %>/edit"
+                           class="block w-full bg-blue-600 text-white text-center py-3 rounded-lg hover:bg-blue-700">
+                            <i class="fas fa-edit mr-2"></i>Edit Property
+                        </a>
+                        <% } %>
+                        
+                       <!-- Change this link from /property/<%= property._id %> to /browse -->
+               <a href="/seller/properties" target="_blank"
+                       class="block w-full bg-green-600 text-white text-center py-3 rounded-lg hover:bg-green-700">
+                    <i class="fas fa-external-link-alt mr-2"></i>Browse All Properties
+               </a>
+                        
+                        <!-- Delete Button (Not available for rejected or in cart) -->
+                        <% if (
+                            property.admin_review?.status !== 'rejected' &&
+                            property.status !== 'sold' && 
+                            !property.cart_status?.in_cart
+                        ) { %>
+                        <button onclick="confirmDelete('<%= property._id %>')" 
+                                class="block w-full bg-red-600 text-white text-center py-3 rounded-lg hover:bg-red-700">
+                            <i class="fas fa-trash mr-2"></i>Delete Property
+                        </button>
+                        <% } %>
+                        
+                        <!-- Create New Listing Button (Shown when rejected) -->
+                        <% if (property.admin_review?.status === 'rejected') { %>
+                        <a href="/seller/properties/new" 
+                           class="block w-full bg-blue-600 text-white text-center py-3 rounded-lg hover:bg-blue-700">
+                            <i class="fas fa-plus mr-2"></i>Create New Listing
+                        </a>
+                        <% } %>
+                    </div>
+                </div>
+
+                <!-- Property Stats -->
+                <div class="bg-white rounded-xl shadow p-6">
+                    <h3 class="font-bold text-lg text-gray-900 mb-4">Property Performance</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Total Views</span>
+                            <span class="font-bold text-purple-600"><%= property.views || 0 %></span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Inquiries</span>
+                            <span class="font-bold text-green-600"><%= property.inquiries || 0 %></span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Cart Adds</span>
+                            <span class="font-bold text-yellow-600"><%= property.cart_status?.in_cart ? 1 : 0 %></span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Last Updated</span>
+                            <span class="font-bold"><%= new Date(property.updatedAt).toLocaleDateString() %></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function confirmDelete(propertyId) {
+            if (confirm('Are you sure you want to delete this property? This action cannot be undone.')) {
+                fetch(`/seller/properties/${propertyId}/delete`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Property deleted successfully');
+                        window.location.href = '/seller/dashboard';
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to delete property');
+                });
+            }
+        }
+        
+        // Update countdown timer for cart status
+        function updateCartCountdown() {
+            const countdownElement = document.querySelector('.bg-yellow-50 .font-bold.text-red-600, .bg-yellow-50 .font-bold');
+            if (countdownElement && countdownElement.textContent.includes('day')) {
+                const text = countdownElement.textContent;
+                const match = text.match(/(\d+)\s*days?/);
+                if (match) {
+                    const days = parseInt(match[1]);
+                    if (days > 0) {
+                        countdownElement.textContent = (days - 1) + (days - 1 === 1 ? ' day' : ' days');
+                        if (days - 1 <= 2) {
+                            countdownElement.classList.add('text-red-600');
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Update countdown timer for changes requested deadline
+        function updateDeadlineCountdown() {
+            const deadlineElement = document.querySelector('.bg-yellow-50 .font-bold.text-red-600, .bg-yellow-50 .font-bold');
+            if (deadlineElement && deadlineElement.textContent.includes('left')) {
+                const text = deadlineElement.textContent;
+                const match = text.match(/\((\d+)\s*days?\s*left\)/);
+                if (match) {
+                    const days = parseInt(match[1]);
+                    if (days > 0) {
+                        const newText = text.replace(/\(\d+\s*days?\s*left\)/, '(' + (days - 1) + (days - 1 === 1 ? ' day left)' : ' days left)'));
+                        deadlineElement.textContent = newText;
+                        if (days - 1 <= 2) {
+                            deadlineElement.classList.add('text-red-600');
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Update every minute
+        setInterval(() => {
+            updateCartCountdown();
+            updateDeadlineCountdown();
+        }, 60000);
+    </script>
+</body>
+</html>

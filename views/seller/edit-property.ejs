@@ -1,0 +1,2014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Property - Seller Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Field Disabled Styling */
+        .field-disabled {
+            background-color: #f3f4f6;
+            cursor: not-allowed;
+            color: #6b7280;
+        }
+        
+        .field-enabled {
+            background-color: white;
+        }
+        
+        .readonly-badge {
+            background-color: #e5e7eb;
+            color: #4b5563;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 8px;
+        }
+        
+        .editable-badge {
+            background-color: #10b981;
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 8px;
+        }
+        
+        .urgent-deadline {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        .image-preview-container {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+        .image-preview-container:hover {
+            border-color: #3b82f6;
+        }
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+        }
+        
+        /* Submit button animation */
+        .submit-btn {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .submit-btn:after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 5px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.5);
+            opacity: 0;
+            border-radius: 100%;
+            transform: scale(1, 1) translate(-50%);
+            transform-origin: 50% 50%;
+        }
+        
+        .submit-btn:focus:not(:active)::after {
+            animation: ripple 1s ease-out;
+        }
+        
+        @keyframes ripple {
+            0% {
+                transform: scale(0, 0);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(20, 20);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center">
+                        <span class="text-xl font-bold text-gray-900">Propbandhu Seller</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/seller/dashboard" class="text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-home mr-1"></i>Dashboard
+                    </a>
+                    <a href="/seller/properties" class="text-blue-600 font-medium">
+                        <i class="fas fa-building mr-1"></i>Properties
+                    </a>
+                    <a href="/logout" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+                        <i class="fas fa-sign-out-alt mr-1"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- ✅ CORRECTED: CALCULATE EDIT PERMISSIONS USING edit_permissions -->
+        <% 
+        // Determine edit mode
+        const isDraft = property.status === 'draft';
+        const isChangesRequested = property.status === 'changes_requested';
+        const isPendingApproval = property.status === 'pending_approval';
+        const isRejected = property.status === 'rejected';
+        const isApproved = property.status === 'approved';
+        
+        // ✅ FIXED: Use edit_permissions (your actual schema field)
+        const editPermissions = property.edit_permissions || {};
+        
+        // ✅ FIXED: CORRECT LOGIC FOR edit_permissions
+        const canEditAll = 
+            property.status === 'draft' || 
+            (editPermissions.enabled && editPermissions.allowed_fields && editPermissions.allowed_fields.includes('*'));
+        
+        const canEditLimited = 
+            editPermissions.enabled && 
+            editPermissions.allowed_fields && 
+            editPermissions.allowed_fields.length > 0 &&
+            !editPermissions.allowed_fields.includes('*');
+        
+        const canEdit = canEditAll || canEditLimited;
+        
+        // Allowed fields for limited edit mode
+        const allowedFields = editPermissions.allowed_fields || [];
+        
+        // ✅ FIXED: Helper function to check if field is editable
+        const canEditField = (fieldName) => {
+            if (canEditAll) return true;
+            if (canEditLimited && allowedFields.includes(fieldName)) return true;
+            return false;
+        };
+        
+        // Check if address field is editable
+        const canEditAddressField = (addressField) => {
+            return canEditField('address') || canEditField(`address.${addressField}`) || canEditField(`address[${addressField}]`);
+        };
+        
+        // Parse property address
+        const propertyAddress = property.address || {};
+        
+        // Deadline calculation
+        let deadlineInfo = null;
+        if (property.admin_review?.deadline) {
+            const deadline = new Date(property.admin_review.deadline);
+            const now = new Date();
+            const daysLeft = Math.ceil((deadline - now) / (1000 * 60 * 60 * 24));
+            deadlineInfo = {
+                date: deadline,
+                daysLeft: daysLeft,
+                isUrgent: daysLeft <= 2
+            };
+        }
+        
+        // Edit expiry if applicable
+        let editExpiryInfo = null;
+        if (editPermissions.end_time) {
+            const expiry = new Date(editPermissions.end_time);
+            const now = new Date();
+            const hoursLeft = Math.ceil((expiry - now) / (1000 * 60 * 60));
+            editExpiryInfo = {
+                date: expiry,
+                hoursLeft: hoursLeft,
+                isExpiringSoon: hoursLeft <= 6
+            };
+        }
+        
+        // Property type to sub-type mapping
+        const propertyTypes = {
+            'Residential': ['Apartment', 'Independent House', 'Villa', 'Penthouse', 'Studio', 'Farmhouse'],
+            'Commercial': ['Office Space', 'Shop', 'Showroom', 'Warehouse', 'Industrial Building'],
+            'Plot': ['Residential Plot', 'Commercial Plot', 'Agricultural Land', 'Industrial Plot'],
+            'Agricultural': ['Farm Land', 'Orchard', 'Plantation'],
+            'Industrial': ['Factory', 'Manufacturing Unit', 'Storage Unit']
+        };
+        
+        // City to Locations mapping
+        const cityLocationMap = {
+            Noida: [
+                "Sector 62", "Sector 18", "Sector 15", "Sector 50",
+                "Sector 76", "Sector 137", "Sector 128",
+                "Sector 44", "Greater Noida West", "Noida Extension"
+            ],
+            Ghaziabad: [
+                "Indirapuram", "Vaishali", "Raj Nagar",
+                "Raj Nagar Extension", "Crossings Republik",
+                "Kavi Nagar", "Sanjay Nagar", "Shastri Nagar",
+                "Mohan Nagar", "Vasundhara"
+            ],
+            Gorakhpur: [
+                "Golghar", "Medical Road", "Rustampur",
+                "Taramandal", "Chargawan", "Basharatpur",
+                "Betiahata", "Civil Lines", "Transport Nagar",
+                "Padri Bazar"
+            ]
+        };
+        
+        // City to State mapping
+        const cityStateMap = {
+            'Noida': 'Uttar Pradesh',
+            'Ghaziabad': 'Uttar Pradesh',
+            'Gorakhpur': 'Uttar Pradesh'
+        };
+        
+        // Parse current areas from property
+        let currentAreas = [];
+        if (propertyAddress.areas && Array.isArray(propertyAddress.areas)) {
+            currentAreas = propertyAddress.areas;
+        } else if (propertyAddress.areas && typeof propertyAddress.areas === 'string') {
+            currentAreas = propertyAddress.areas.split(',').map(area => area.trim());
+        }
+        
+        console.log('🔍 EDIT PERMISSIONS DEBUG:', {
+            status: property.status,
+            editPermissions: editPermissions,
+            canEditAll: canEditAll,
+            canEditLimited: canEditLimited,
+            allowedFields: allowedFields,
+            isDraft: isDraft,
+            currentAreas: currentAreas
+        });
+        %>
+
+        <!-- Page Header -->
+        <div class="mb-8">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900 mb-2">
+                        <% if (isChangesRequested) { %>
+                        <i class="fas fa-exclamation-triangle text-yellow-600 mr-2"></i>
+                        Fix Requested Changes
+                        <% } else if (isDraft) { %>
+                        <i class="fas fa-edit text-blue-600 mr-2"></i>
+                        Edit Draft Property
+                        <% } else { %>
+                        <i class="fas fa-edit text-gray-600 mr-2"></i>
+                        Edit Property
+                        <% } %>
+                    </h1>
+                    <p class="text-gray-600">Editing: <span class="font-medium"><%= property.title %></span></p>
+                </div>
+                <div class="flex flex-col items-end space-y-2">
+                    <!-- ✅ FIXED: Use correct edit permission status -->
+                    <span class="px-3 py-1 rounded-full text-sm font-medium 
+                        <%= canEdit ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' %>">
+                        <%= canEditAll ? 'Full Edit Mode' : canEditLimited ? 'Limited Edit Mode' : 'Edit Restricted' %>
+                    </span>
+                    
+                    <!-- Status Badge -->
+                    <span class="px-3 py-1 rounded-full text-sm font-medium 
+                        <%= isDraft ? 'bg-blue-100 text-blue-800' : 
+                           isPendingApproval ? 'bg-yellow-100 text-yellow-800' :
+                           isChangesRequested ? 'bg-orange-100 text-orange-800' :
+                           isApproved ? 'bg-green-100 text-green-800' :
+                           'bg-red-100 text-red-800' %>">
+                        <%= property.status ? property.status.replace('_', ' ') : 'draft' %>
+                    </span>
+                </div>
+            </div>
+            
+            <!-- ✅ ADMIN CHANGES REQUESTED BANNER -->
+            <% if (isChangesRequested && property.admin_review?.remark) { %>
+            <div class="mt-4 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-300 rounded-lg shadow-sm">
+                <div class="flex items-start">
+                    <i class="fas fa-exclamation-circle text-yellow-600 text-xl mr-3 mt-1"></i>
+                    <div class="flex-1">
+                        <h3 class="font-bold text-yellow-800 text-lg mb-1">
+                            Admin Requested Changes
+                        </h3>
+                        <div class="bg-white p-3 rounded-lg border border-yellow-200 mb-3">
+                            <p class="text-gray-800">
+                                <i class="fas fa-comment-alt text-gray-400 mr-2"></i>
+                                <%= property.admin_review.remark %>
+                            </p>
+                        </div>
+                        
+                        <% if (deadlineInfo) { %>
+                        <div class="flex flex-wrap items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-clock text-yellow-600 mr-2"></i>
+                                <span class="text-yellow-700 font-medium">
+                                    Deadline: <%= deadlineInfo.date.toLocaleDateString() %>
+                                    <% if (deadlineInfo.isUrgent) { %>
+                                    <span class="bg-red-600 text-white px-2 py-1 rounded-full text-xs font-bold ml-2 urgent-deadline">
+                                        <i class="fas fa-fire mr-1"></i>URGENT: <%= deadlineInfo.daysLeft %> day<%= deadlineInfo.daysLeft === 1 ? '' : 's' %> left
+                                    </span>
+                                    <% } else { %>
+                                    <span class="text-sm font-normal">(<%= deadlineInfo.daysLeft %> days left)</span>
+                                    <% } %>
+                                </span>
+                            </div>
+                            <div class="mt-2 md:mt-0">
+                                <span class="text-sm <%= canEdit ? 'text-green-600' : 'text-red-600' %> font-medium">
+                                    <i class="fas fa-edit mr-1"></i>
+                                    <%= canEditAll ? 'You can edit all fields' : 
+                                       canEditLimited ? 'You can edit specific fields only' : 
+                                       'Contact admin for edit permissions' %>
+                                </span>
+                            </div>
+                        </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+            <% } %>
+            
+            <!-- ✅ EDIT PERMISSIONS INFORMATION -->
+            <% if (editPermissions.enabled && editExpiryInfo) { %>
+            <div class="mt-4 p-3 <%= canEditAll ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200' %> border rounded-lg">
+                <div class="flex items-center">
+                    <i class="fas <%= canEditAll ? 'fa-unlock text-blue-600' : 'fa-filter text-green-600' %> mr-2"></i>
+                    <div>
+                        <p class="text-sm <%= canEditAll ? 'text-blue-800' : 'text-green-800' %> font-medium">
+                            <strong><%= canEditAll ? 'Full edit access' : 'Limited edit access' %> granted</strong>
+                            <% if (canEditLimited && allowedFields.length > 0) { %>
+                            — You can edit: <span class="font-semibold"><%= allowedFields.map(f => f.replace('_', ' ')).join(', ') %></span>
+                            <% } %>
+                        </p>
+                        <p class="text-sm <%= canEditAll ? 'text-blue-700' : 'text-green-700' %> mt-1">
+                            Access until: <span class="font-bold"><%= editExpiryInfo.date.toLocaleString() %></span>
+                            <% if (editExpiryInfo.isExpiringSoon) { %>
+                            <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-bold ml-2">
+                                <i class="fas fa-clock mr-1"></i>Expires in <%= editExpiryInfo.hoursLeft %> hours
+                            </span>
+                            <% } %>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <% } else if (isDraft) { %>
+            <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div class="flex items-center">
+                    <i class="fas fa-pencil-alt text-blue-600 mr-2"></i>
+                    <p class="text-sm text-blue-800">
+                        <strong>Draft Mode</strong> — You have full edit access. Submit when ready for admin approval.
+                    </p>
+                </div>
+            </div>
+            <% } else if (!canEdit && isPendingApproval) { %>
+            <div class="mt-4 p-3 bg-gray-100 border border-gray-300 rounded-lg">
+                <div class="flex items-center">
+                    <i class="fas fa-lock text-gray-500 mr-2"></i>
+                    <p class="text-sm text-gray-700">
+                        <strong>Property is under admin review</strong> — Editing is locked. 
+                        If you need to make changes, 
+                        <button onclick="requestEditAccess('<%= property._id %>')" class="text-blue-600 hover:underline font-medium">
+                            request edit access from admin
+                        </button>.
+                    </p>
+                </div>
+            </div>
+            <% } %>
+            
+            <!-- ✅ FIELD EDIT STATUS SUMMARY -->
+            <% if (canEditLimited && allowedFields.length > 0) { %>
+            <div class="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                <p class="text-sm text-gray-700 mb-2">
+                    <i class="fas fa-info-circle text-gray-500 mr-1"></i>
+                    <span class="font-medium"><%= allowedFields.length %></span> fields are editable, 
+                    others are read-only
+                </p>
+                <div class="flex flex-wrap gap-2">
+                    <% 
+                    const allFieldNames = [
+                        'title', 'description', 'short_description', 'price', 'price_type', 'bedrooms', 
+                        'bathrooms', 'balconies', 'built_up_area', 'carpet_area', 'area_unit', 'furnishing', 
+                        'property_type', 'sub_type', 'ownership', 'floor_number', 'total_floors', 'age_of_property',
+                        'facing', 'parking', 'amenities', 'images', 'documents', 'contact_name', 
+                        'contact_phone', 'contact_email', 'address.street', 'address.landmark', 'address.city',
+                        'address.areas', 'address.state', 'address.pincode'
+                    ];
+                    
+                    allFieldNames.forEach(field => {
+                        const isEditable = canEditField(field);
+                    %>
+                    <span class="text-xs px-2 py-1 rounded <%= isEditable ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-600' %>">
+                        <%= field.replace('_', ' ').replace('.', ' - ') %>
+                        <% if (isEditable) { %>
+                        <i class="fas fa-check ml-1"></i>
+                        <% } else { %>
+                        <i class="fas fa-lock ml-1"></i>
+                        <% } %>
+                    </span>
+                    <% }); %>
+                </div>
+            </div>
+            <% } %>
+        </div>
+
+        <!-- Edit Form -->
+        <form id="editForm" class="bg-white rounded-xl shadow p-6" enctype="multipart/form-data">
+            <!-- Basic Information -->
+            <div class="space-y-6 mb-8">
+                <div class="flex items-center justify-between border-b pb-2">
+                    <h2 class="text-xl font-bold text-gray-900">Basic Information</h2>
+                    <span class="text-sm text-gray-500">
+                        <%= canEditField('title') || canEditField('description') || canEditField('short_description') ? 'Editable' : 'Read-only' %>
+                    </span>
+                </div>
+                
+                <!-- Property Title -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Property Title
+                        <% if (canEditField('title')) { %>
+                        <span class="editable-badge">Editable</span>
+                        <% } else { %>
+                        <span class="readonly-badge">Read-only</span>
+                        <% } %>
+                    </label>
+                    <input type="text" name="title" value="<%= property.title %>"
+                           <%= canEditField('title') ? '' : 'disabled readonly' %>
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg 
+                                  <%= canEditField('title') ? 'field-enabled' : 'field-disabled' %>"
+                           placeholder="e.g., Luxury 3BHK Apartment in Prime Location">
+                </div>
+
+                <!-- Property Type & Sub Type -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Property Type
+                            <% if (canEditField('property_type')) { %>
+                            <span class="editable-badge">Editable</span>
+                            <% } else { %>
+                            <span class="readonly-badge">Read-only</span>
+                            <% } %>
+                        </label>
+                        <select name="property_type" id="propertyTypeSelect"
+                                <%= canEditField('property_type') ? '' : 'disabled' %>
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg 
+                                       <%= canEditField('property_type') ? 'field-enabled' : 'field-disabled' %>">
+                            <option value="">Select Type</option>
+                            <option value="Residential" <%= property.property_type === 'Residential' ? 'selected' : '' %>>Residential</option>
+                            <option value="Commercial" <%= property.property_type === 'Commercial' ? 'selected' : '' %>>Commercial</option>
+                            <option value="Plot" <%= property.property_type === 'Plot' ? 'selected' : '' %>>Plot</option>
+                            <option value="Agricultural" <%= property.property_type === 'Agricultural' ? 'selected' : '' %>>Agricultural</option>
+                            <option value="Industrial" <%= property.property_type === 'Industrial' ? 'selected' : '' %>>Industrial</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Sub Type
+                            <% if (canEditField('sub_type')) { %>
+                            <span class="editable-badge">Editable</span>
+                            <% } else { %>
+                            <span class="readonly-badge">Read-only</span>
+                            <% } %>
+                        </label>
+                        <select name="sub_type" id="subTypeSelect"
+                                <%= canEditField('sub_type') ? '' : 'disabled' %>
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg 
+                                       <%= canEditField('sub_type') ? 'field-enabled' : 'field-disabled' %>">
+                            <option value="">Select Sub Type</option>
+                            <% if (property.property_type && propertyTypes[property.property_type]) { 
+                                propertyTypes[property.property_type].forEach(subType => { %>
+                                <option value="<%= subType %>" <%= property.sub_type === subType ? 'selected' : '' %>><%= subType %></option>
+                            <% }); } %>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Description
+                        <% if (canEditField('description')) { %>
+                        <span class="editable-badge">Editable</span>
+                        <% } else { %>
+                        <span class="readonly-badge">Read-only</span>
+                        <% } %>
+                    </label>
+                    <textarea name="description" rows="4"
+                              <%= canEditField('description') ? '' : 'disabled readonly' %>
+                              class="w-full px-4 py-2 border border-gray-300 rounded-lg 
+                                     <%= canEditField('description') ? 'field-enabled' : 'field-disabled' %>"
+                              placeholder="Describe your property in detail (minimum 50 characters)"><%= property.description %></textarea>
+                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>Include features, amenities, and unique selling points</span>
+                        <span id="descCount"><%= property.description ? property.description.length : 0 %>/5000</span>
+                    </div>
+                </div>
+
+                <!-- Short Description -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Short Description
+                        <% if (canEditField('short_description')) { %>
+                        <span class="editable-badge">Editable</span>
+                        <% } else { %>
+                        <span class="readonly-badge">Read-only</span>
+                        <% } %>
+                    </label>
+                    <input type="text" name="short_description" value="<%= property.short_description || '' %>"
+                           <%= canEditField('short_description') ? '' : 'disabled readonly' %>
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg 
+                                  <%= canEditField('short_description') ? 'field-enabled' : 'field-disabled' %>"
+                           placeholder="Brief summary (max 200 characters)">
+                    <p class="text-xs text-gray-500 mt-1">Shown in property cards</p>
+                </div>
+            </div>
+
+            <!-- Price Details -->
+            <div class="space-y-6 mb-8">
+                <div class="flex items-center justify-between border-b pb-2">
+                    <h2 class="text-xl font-bold text-gray-900">Price Details</h2>
+                    <span class="text-sm text-gray-500">
+                        <%= canEditField('price') || canEditField('price_type') ? 'Editable' : 'Read-only' %>
+                    </span>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Price (₹)
+                            <% if (canEditField('price')) { %>
+                            <span class="editable-badge">Editable</span>
+                            <% } else { %>
+                            <span class="readonly-badge">Read-only</span>
+                            <% } %>
+                        </label>
+                        <input type="number" name="price" value="<%= property.price %>" min="1000"
+                               <%= canEditField('price') ? '' : 'disabled readonly' %>
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg 
+                                      <%= canEditField('price') ? 'field-enabled' : 'field-disabled' %>"
+                               placeholder="e.g., 5000000">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Price Type
+                            <% if (canEditField('price_type')) { %>
+                            <span class="editable-badge">Editable</span>
+                            <% } else { %>
+                            <span class="readonly-badge">Read-only</span>
+                            <% } %>
+                        </label>
+                        <select name="price_type"
+                                <%= canEditField('price_type') ? '' : 'disabled' %>
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg 
+                                       <%= canEditField('price_type') ? 'field-enabled' : 'field-disabled' %>">
+                            <option value="fixed" <%= property.price_type === 'fixed' ? 'selected' : '' %>>Fixed Price</option>
+                            <option value="negotiable" <%= property.price_type === 'negotiable' ? 'selected' : '' %>>Negotiable</option>
+                            <option value="auction" <%= property.price_type === 'auction' ? 'selected' : '' %>>Auction</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Property Specifications -->
+            <div class="space-y-6 mb-8">
+                <div class="flex items-center justify-between border-b pb-2">
+                    <h2 class="text-xl font-bold text-gray-900">Property Specifications</h2>
+                    <span class="text-sm text-gray-500">
+                        <%= canEditField('bedrooms') || canEditField('bathrooms') || canEditField('balconies') || canEditField('built_up_area') ? 'Editable' : 'Read-only' %>
+                    </span>
+                </div>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Bedrooms
+                            <% if (canEditField('bedrooms')) { %>
+                            <span class="editable-badge">Editable</span>
+                            <% } else { %>
+                            <span class="readonly-badge">Read-only</span>
+                            <% } %>
+                        </label>
+                        <input type="number" name="bedrooms" value="<%= property.bedrooms || '' %>" min="0" max="50"
+                               <%= canEditField('bedrooms') ? '' : 'disabled readonly' %>
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg 
+                                      <%= canEditField('bedrooms') ? 'field-enabled' : 'field-disabled' %>">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Bathrooms
+                            <% if (canEditField('bathrooms')) { %>
+                            <span class="editable-badge">Editable</span>
+                            <% } else { %>
+                            <span class="readonly-badge">Read-only</span>
+                            <% } %>
+                        </label>
+                        <input type="number" name="bathrooms" value="<%= property.bathrooms || '' %>" min="0" max="50"
+                               <%= canEditField('bathrooms') ? '' : 'disabled readonly' %>
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg 
+                                      <%= canEditField('bathrooms') ? 'field-enabled' : 'field-disabled' %>">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Balconies
+                            <% if (canEditField('balconies')) { %>
+                            <span class="editable-badge">Editable</span>
+                            <% } else { %>
+                            <span class="readonly-badge">Read-only</span>
+                            <% } %>
+                        </label>
+                        <input type="number" name="balconies" value="<%= property.balconies || '' %>" min="0" max="20"
+                               <%= canEditField('balconies') ? '' : 'disabled readonly' %>
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg 
+                                      <%= canEditField('balconies') ? 'field-enabled' : 'field-disabled' %>">
+                    </div>
+
+                    <!-- Built-up Area -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Built-up Area
+                            <% if (canEditField('built_up_area')) { %>
+                            <span class="editable-badge">Editable</span>
+                            <% } else { %>
+                            <span class="readonly-badge">Read-only</span>
+                            <% } %>
+                        </label>
+                        <div class="flex">
+                            <input type="number" name="built_up_area" value="<%= property.built_up_area %>" min="1"
+                                   <%= canEditField('built_up_area') ? '' : 'disabled readonly' %>
+                                   class="flex-1 px-4 py-2 border border-gray-300 rounded-l-lg 
+                                          <%= canEditField('built_up_area') ? 'field-enabled' : 'field-disabled' %>">
+                            <select name="area_unit"
+                                    <%= canEditField('area_unit') ? '' : 'disabled' %>
+                                    class="w-24 px-2 border border-l-0 border-gray-300 rounded-r-lg 
+                                           <%= canEditField('area_unit') ? 'field-enabled' : 'field-disabled' %>">
+                                <option value="sqft" <%= property.area_unit === 'sqft' ? 'selected' : '' %>>sq ft</option>
+                                <option value="sqm" <%= property.area_unit === 'sqm' ? 'selected' : '' %>>sq m</option>
+                                <option value="acre" <%= property.area_unit === 'acre' ? 'selected' : '' %>>acre</option>
+                                <option value="hectare" <%= property.area_unit === 'hectare' ? 'selected' : '' %>>hectare</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Additional Specifications -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                    <!-- Carpet Area -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Carpet Area
+                            <% if (canEditField('carpet_area')) { %>
+                            <span class="editable-badge">Editable</span>
+                            <% } else { %>
+                            <span class="readonly-badge">Read-only</span>
+                            <% } %>
+                        </label>
+                        <input type="number" name="carpet_area" value="<%= property.carpet_area || '' %>" min="0"
+                               <%= canEditField('carpet_area') ? '' : 'disabled readonly' %>
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg 
+                                      <%= canEditField('carpet_area') ? 'field-enabled' : 'field-disabled' %>">
+                    </div>
+
+                    <!-- Floor Number -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Floor Number
+                            <% if (canEditField('floor_number')) { %>
+                            <span class="editable-badge">Editable</span>
+                            <% } else { %>
+                            <span class="readonly-badge">Read-only</span>
+                            <% } %>
+                        </label>
+                        <input type="number" name="floor_number" value="<%= property.floor_number || '' %>" min="0"
+                               <%= canEditField('floor_number') ? '' : 'disabled readonly' %>
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg 
+                                      <%= canEditField('floor_number') ? 'field-enabled' : 'field-disabled' %>">
+                    </div>
+                    
+                    <!-- Total Floors -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Total Floors
+                            <% if (canEditField('total_floors')) { %>
+                            <span class="editable-badge">Editable</span>
+                            <% } else { %>
+                            <span class="readonly-badge">Read-only</span>
+                            <% } %>
+                        </label>
+                        <input type="number" name="total_floors" value="<%= property.total_floors || '' %>" min="0"
+                               <%= canEditField('total_floors') ? '' : 'disabled readonly' %>
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg 
+                                      <%= canEditField('total_floors') ? 'field-enabled' : 'field-disabled' %>">
+                    </div>
+                    
+                    <!-- Age of Property -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Age of Property (years)
+                            <% if (canEditField('age_of_property')) { %>
+                            <span class="editable-badge">Editable</span>
+                            <% } else { %>
+                            <span class="readonly-badge">Read-only</span>
+                            <% } %>
+                        </label>
+                        <input type="number" name="age_of_property" value="<%= property.age_of_property || '' %>" min="0" max="100"
+                               <%= canEditField('age_of_property') ? '' : 'disabled readonly' %>
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg 
+                                      <%= canEditField('age_of_property') ? 'field-enabled' : 'field-disabled' %>">
+                    </div>
+                </div>
+
+                <!-- Furnishing & Facing -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <!-- Furnishing -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Furnishing
+                            <% if (canEditField('furnishing')) { %>
+                            <span class="editable-badge">Editable</span>
+                            <% } else { %>
+                            <span class="readonly-badge">Read-only</span>
+                            <% } %>
+                        </label>
+                        <select name="furnishing"
+                                <%= canEditField('furnishing') ? '' : 'disabled' %>
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg 
+                                       <%= canEditField('furnishing') ? 'field-enabled' : 'field-disabled' %>">
+                            <option value="unfurnished" <%= property.furnishing === 'unfurnished' ? 'selected' : '' %>>Unfurnished</option>
+                            <option value="semi_furnished" <%= property.furnishing === 'semi_furnished' ? 'selected' : '' %>>Semi Furnished</option>
+                            <option value="fully_furnished" <%= property.furnishing === 'fully_furnished' ? 'selected' : '' %>>Fully Furnished</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Facing -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Facing
+                            <% if (canEditField('facing')) { %>
+                            <span class="editable-badge">Editable</span>
+                            <% } else { %>
+                            <span class="readonly-badge">Read-only</span>
+                            <% } %>
+                        </label>
+                        <select name="facing"
+                                <%= canEditField('facing') ? '' : 'disabled' %>
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg 
+                                       <%= canEditField('facing') ? 'field-enabled' : 'field-disabled' %>">
+                            <option value="">Select Facing</option>
+                            <option value="North" <%= property.facing === 'North' ? 'selected' : '' %>>North</option>
+                            <option value="South" <%= property.facing === 'South' ? 'selected' : '' %>>South</option>
+                            <option value="East" <%= property.facing === 'East' ? 'selected' : '' %>>East</option>
+                            <option value="West" <%= property.facing === 'West' ? 'selected' : '' %>>West</option>
+                            <option value="North-East" <%= property.facing === 'North-East' ? 'selected' : '' %>>North-East</option>
+                            <option value="North-West" <%= property.facing === 'North-West' ? 'selected' : '' %>>North-West</option>
+                            <option value="South-East" <%= property.facing === 'South-East' ? 'selected' : '' %>>South-East</option>
+                            <option value="South-West" <%= property.facing === 'South-West' ? 'selected' : '' %>>South-West</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Location Details -->
+            <div class="space-y-6 mb-8">
+                <div class="flex items-center justify-between border-b pb-2">
+                    <h2 class="text-xl font-bold text-gray-900">Location Details</h2>
+                    <span class="text-sm text-gray-500">
+                        <%= canEditField('address') || canEditField('address.city') || canEditField('address.areas') ? 'Editable' : 'Read-only' %>
+                    </span>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Street -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Street
+                            <% if (canEditAddressField('street')) { %>
+                            <span class="editable-badge">Editable</span>
+                            <% } else { %>
+                            <span class="readonly-badge">Read-only</span>
+                            <% } %>
+                        </label>
+                        <input type="text" name="address[street]" value="<%= propertyAddress.street || '' %>"
+                               <%= canEditAddressField('street') ? '' : 'disabled readonly' %>
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg 
+                                      <%= canEditAddressField('street') ? 'field-enabled' : 'field-disabled' %>">
+                    </div>
+                    
+                    <!-- Landmark -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Landmark
+                            <% if (canEditAddressField('landmark')) { %>
+                            <span class="editable-badge">Editable</span>
+                            <% } else { %>
+                            <span class="readonly-badge">Read-only</span>
+                            <% } %>
+                        </label>
+                        <input type="text" name="address[landmark]" value="<%= propertyAddress.landmark || '' %>"
+                               <%= canEditAddressField('landmark') ? '' : 'disabled readonly' %>
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg 
+                                      <%= canEditAddressField('landmark') ? 'field-enabled' : 'field-disabled' %>">
+                    </div>
+                    
+                    <!-- City -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            City
+                            <% if (canEditAddressField('city')) { %>
+                            <span class="editable-badge">Editable</span>
+                            <% } else { %>
+                            <span class="readonly-badge">Read-only</span>
+                            <% } %>
+                        </label>
+                        <select name="address[city]" id="citySelect"
+                                <%= canEditAddressField('city') ? '' : 'disabled' %>
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg 
+                                       <%= canEditAddressField('city') ? 'field-enabled' : 'field-disabled' %>">
+                            <option value="">Select City</option>
+                            <option value="Noida" <%= propertyAddress.city === 'Noida' ? 'selected' : '' %>>Noida</option>
+                            <option value="Ghaziabad" <%= propertyAddress.city === 'Ghaziabad' ? 'selected' : '' %>>Ghaziabad</option>
+                            <option value="Gorakhpur" <%= propertyAddress.city === 'Gorakhpur' ? 'selected' : '' %>>Gorakhpur</option>
+                        </select>
+                    </div>
+                    
+                    <!-- State -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            State
+                            <% if (canEditAddressField('state')) { %>
+                            <span class="editable-badge">Editable</span>
+                            <% } else { %>
+                            <span class="readonly-badge">Read-only</span>
+                            <% } %>
+                        </label>
+                        <input type="text" name="address[state]" id="stateInput" value="<%= propertyAddress.state || '' %>"
+                               <%= canEditAddressField('state') ? '' : 'disabled readonly' %>
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg 
+                                      <%= canEditAddressField('state') ? 'field-enabled' : 'field-disabled' %>">
+                    </div>
+                    
+                    <!-- Pincode -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Pincode
+                            <% if (canEditAddressField('pincode')) { %>
+                            <span class="editable-badge">Editable</span>
+                            <% } else { %>
+                            <span class="readonly-badge">Read-only</span>
+                            <% } %>
+                        </label>
+                        <input type="text" name="address[pincode]" value="<%= propertyAddress.pincode || '' %>" pattern="[0-9]{6}"
+                               <%= canEditAddressField('pincode') ? '' : 'disabled readonly' %>
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg 
+                                      <%= canEditAddressField('pincode') ? 'field-enabled' : 'field-disabled' %>">
+                    </div>
+                </div>
+                
+                <!-- Areas/Locations -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Locations/Areas
+                        <% if (canEditAddressField('areas')) { %>
+                        <span class="editable-badge">Editable</span>
+                        <% } else { %>
+                        <span class="readonly-badge">Read-only</span>
+                            <% } %>
+                        </label>
+                        <select name="address[areas][]" id="locationSelect" multiple
+                                <%= canEditAddressField('areas') ? '' : 'disabled' %>
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg 
+                                       <%= canEditAddressField('areas') ? 'field-enabled' : 'field-disabled' %> h-32">
+                            <option value="">Please select a city first</option>
+                            <% if (propertyAddress.city && cityLocationMap[propertyAddress.city]) { 
+                                cityLocationMap[propertyAddress.city].forEach(location => { %>
+                                <option value="<%= location %>" 
+                                        <%= currentAreas.includes(location) ? 'selected' : '' %>>
+                                    <%= location %>
+                                </option>
+                            <% }); } %>
+                        </select>
+                        <p id="locationCount" class="text-xs text-gray-500 mt-1">
+                            Hold Ctrl (Windows) / Cmd (Mac) to select multiple locations. 
+                            <% if (currentAreas.length > 0) { %>
+                            Currently selected: <%= currentAreas.length %> location(s)
+                            <% } %>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Ownership & Features -->
+                <div class="space-y-6 mb-8">
+                    <div class="flex items-center justify-between border-b pb-2">
+                        <h2 class="text-xl font-bold text-gray-900">Ownership & Features</h2>
+                        <span class="text-sm text-gray-500">
+                            <%= canEditField('ownership') || canEditField('parking') || canEditField('amenities') ? 'Editable' : 'Read-only' %>
+                        </span>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Ownership -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Ownership
+                                <% if (canEditField('ownership')) { %>
+                                <span class="editable-badge">Editable</span>
+                                <% } else { %>
+                                <span class="readonly-badge">Read-only</span>
+                                <% } %>
+                            </label>
+                            <select name="ownership"
+                                    <%= canEditField('ownership') ? '' : 'disabled' %>
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg 
+                                           <%= canEditField('ownership') ? 'field-enabled' : 'field-disabled' %>">
+                                <option value="freehold" <%= property.ownership === 'freehold' ? 'selected' : '' %>>Freehold</option>
+                                <option value="leasehold" <%= property.ownership === 'leasehold' ? 'selected' : '' %>>Leasehold</option>
+                                <option value="cooperative" <%= property.ownership === 'cooperative' ? 'selected' : '' %>>Cooperative</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Parking -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Parking
+                                <% if (canEditField('parking')) { %>
+                                <span class="editable-badge">Editable</span>
+                                <% } else { %>
+                                <span class="readonly-badge">Read-only</span>
+                                <% } %>
+                            </label>
+                            <select name="parking"
+                                    <%= canEditField('parking') ? '' : 'disabled' %>
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg 
+                                           <%= canEditField('parking') ? 'field-enabled' : 'field-disabled' %>">
+                                <option value="none" <%= property.parking === 'none' ? 'selected' : '' %>>None</option>
+                                <option value="1" <%= property.parking === '1' ? 'selected' : '' %>>1 Vehicle</option>
+                                <option value="2" <%= property.parking === '2' ? 'selected' : '' %>>2 Vehicles</option>
+                                <option value="3+" <%= property.parking === '3+' ? 'selected' : '' %>>3+ Vehicles</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Amenities -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Amenities
+                            <% if (canEditField('amenities')) { %>
+                            <span class="editable-badge">Editable</span>
+                            <% } else { %>
+                            <span class="readonly-badge">Read-only</span>
+                            <% } %>
+                        </label>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <!-- Basic Amenities -->
+                            <label class="flex items-center space-x-2 <%= canEditField('amenities') ? 'cursor-pointer' : 'cursor-not-allowed' %>">
+                                <input type="checkbox" name="amenities" value="Swimming Pool"
+                                       <%= property.amenities && property.amenities.includes('Swimming Pool') ? 'checked' : '' %>
+                                       <%= canEditField('amenities') ? '' : 'disabled' %>
+                                       class="rounded text-blue-600 focus:ring-blue-500">
+                                <span class="text-sm <%= canEditField('amenities') ? 'text-gray-700' : 'text-gray-400' %>">Swimming Pool</span>
+                            </label>
+                            <label class="flex items-center space-x-2 <%= canEditField('amenities') ? 'cursor-pointer' : 'cursor-not-allowed' %>">
+                                <input type="checkbox" name="amenities" value="Gym"
+                                       <%= property.amenities && property.amenities.includes('Gym') ? 'checked' : '' %>
+                                       <%= canEditField('amenities') ? '' : 'disabled' %>
+                                       class="rounded text-blue-600 focus:ring-blue-500">
+                                <span class="text-sm <%= canEditField('amenities') ? 'text-gray-700' : 'text-gray-400' %>">Gym</span>
+                            </label>
+                            <label class="flex items-center space-x-2 <%= canEditField('amenities') ? 'cursor-pointer' : 'cursor-not-allowed' %>">
+                                <input type="checkbox" name="amenities" value="Park"
+                                       <%= property.amenities && property.amenities.includes('Park') ? 'checked' : '' %>
+                                       <%= canEditField('amenities') ? '' : 'disabled' %>
+                                       class="rounded text-blue-600 focus:ring-blue-500">
+                                <span class="text-sm <%= canEditField('amenities') ? 'text-gray-700' : 'text-gray-400' %>">Park</span>
+                            </label>
+                            <label class="flex items-center space-x-2 <%= canEditField('amenities') ? 'cursor-pointer' : 'cursor-not-allowed' %>">
+                                <input type="checkbox" name="amenities" value="Power Backup"
+                                       <%= property.amenities && property.amenities.includes('Power Backup') ? 'checked' : '' %>
+                                       <%= canEditField('amenities') ? '' : 'disabled' %>
+                                       class="rounded text-blue-600 focus:ring-blue-500">
+                                <span class="text-sm <%= canEditField('amenities') ? 'text-gray-700' : 'text-gray-400' %>">Power Backup</span>
+                            </label>
+                            
+                            <!-- Security Amenities -->
+                            <label class="flex items-center space-x-2 <%= canEditField('amenities') ? 'cursor-pointer' : 'cursor-not-allowed' %>">
+                                <input type="checkbox" name="amenities" value="24/7 Security"
+                                       <%= property.amenities && property.amenities.includes('24/7 Security') ? 'checked' : '' %>
+                                       <%= canEditField('amenities') ? '' : 'disabled' %>
+                                       class="rounded text-blue-600 focus:ring-blue-500">
+                                <span class="text-sm <%= canEditField('amenities') ? 'text-gray-700' : 'text-gray-400' %>">24/7 Security</span>
+                            </label>
+                            <label class="flex items-center space-x-2 <%= canEditField('amenities') ? 'cursor-pointer' : 'cursor-not-allowed' %>">
+                                <input type="checkbox" name="amenities" value="CCTV Surveillance"
+                                       <%= property.amenities && property.amenities.includes('CCTV Surveillance') ? 'checked' : '' %>
+                                       <%= canEditField('amenities') ? '' : 'disabled' %>
+                                       class="rounded text-blue-600 focus:ring-blue-500">
+                                <span class="text-sm <%= canEditField('amenities') ? 'text-gray-700' : 'text-gray-400' %>">CCTV Surveillance</span>
+                            </label>
+                            <label class="flex items-center space-x-2 <%= canEditField('amenities') ? 'cursor-pointer' : 'cursor-not-allowed' %>">
+                                <input type="checkbox" name="amenities" value="Security Guard"
+                                       <%= property.amenities && property.amenities.includes('Security Guard') ? 'checked' : '' %>
+                                       <%= canEditField('amenities') ? '' : 'disabled' %>
+                                       class="rounded text-blue-600 focus:ring-blue-500">
+                                <span class="text-sm <%= canEditField('amenities') ? 'text-gray-700' : 'text-gray-400' %>">Security Guard</span>
+                            </label>
+                            <label class="flex items-center space-x-2 <%= canEditField('amenities') ? 'cursor-pointer' : 'cursor-not-allowed' %>">
+                                <input type="checkbox" name="amenities" value="Intercom"
+                                       <%= property.amenities && property.amenities.includes('Intercom') ? 'checked' : '' %>
+                                       <%= canEditField('amenities') ? '' : 'disabled' %>
+                                       class="rounded text-blue-600 focus:ring-blue-500">
+                                <span class="text-sm <%= canEditField('amenities') ? 'text-gray-700' : 'text-gray-400' %>">Intercom</span>
+                            </label>
+                            
+                            <!-- Community Amenities -->
+                            <label class="flex items-center space-x-2 <%= canEditField('amenities') ? 'cursor-pointer' : 'cursor-not-allowed' %>">
+                                <input type="checkbox" name="amenities" value="Club House"
+                                       <%= property.amenities && property.amenities.includes('Club House') ? 'checked' : '' %>
+                                       <%= canEditField('amenities') ? '' : 'disabled' %>
+                                       class="rounded text-blue-600 focus:ring-blue-500">
+                                <span class="text-sm <%= canEditField('amenities') ? 'text-gray-700' : 'text-gray-400' %>">Club House</span>
+                            </label>
+                            <label class="flex items-center space-x-2 <%= canEditField('amenities') ? 'cursor-pointer' : 'cursor-not-allowed' %>">
+                                <input type="checkbox" name="amenities" value="Children's Play Area"
+                                       <%= property.amenities && property.amenities.includes("Children's Play Area") ? 'checked' : '' %>
+                                       <%= canEditField('amenities') ? '' : 'disabled' %>
+                                       class="rounded text-blue-600 focus:ring-blue-500">
+                                <span class="text-sm <%= canEditField('amenities') ? 'text-gray-700' : 'text-gray-400' %>">Children's Play Area</span>
+                            </label>
+                            <label class="flex items-center space-x-2 <%= canEditField('amenities') ? 'cursor-pointer' : 'cursor-not-allowed' %>">
+                                <input type="checkbox" name="amenities" value="Jogging Track"
+                                       <%= property.amenities && property.amenities.includes('Jogging Track') ? 'checked' : '' %>
+                                       <%= canEditField('amenities') ? '' : 'disabled' %>
+                                       class="rounded text-blue-600 focus:ring-blue-500">
+                                <span class="text-sm <%= canEditField('amenities') ? 'text-gray-700' : 'text-gray-400' %>">Jogging Track</span>
+                            </label>
+                            <label class="flex items-center space-x-2 <%= canEditField('amenities') ? 'cursor-pointer' : 'cursor-not-allowed' %>">
+                                <input type="checkbox" name="amenities" value="Lift"
+                                       <%= property.amenities && property.amenities.includes('Lift') ? 'checked' : '' %>
+                                       <%= canEditField('amenities') ? '' : 'disabled' %>
+                                       class="rounded text-blue-600 focus:ring-blue-500">
+                                <span class="text-sm <%= canEditField('amenities') ? 'text-gray-700' : 'text-gray-400' %>">Lift/Elevator</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Media Upload -->
+                <div class="space-y-6 mb-8">
+                    <div class="flex items-center justify-between border-b pb-2">
+                        <h2 class="text-xl font-bold text-gray-900">Media</h2>
+                        <span class="text-sm text-gray-500">
+                            <%= canEditField('images') || canEditField('documents') ? 'Editable' : 'Read-only' %>
+                        </span>
+                    </div>
+                    
+                    <!-- Single Image Upload -->
+                    <div class="space-y-4">
+                        <h3 class="font-medium text-gray-900">Property Image</h3>
+                        <p class="text-sm text-gray-600 mb-2">
+                            <% if (canEditField('images')) { %>
+                            Upload one image of your property (Max 10MB)
+                            <% } else { %>
+                            Image cannot be edited
+                            <% } %>
+                        </p>
+                        
+                        <!-- Hidden file input -->
+                        <input type="file" id="imageInput" name="images" accept="image/*" class="hidden" 
+                               <%= canEditField('images') ? '' : 'disabled' %>
+                               onchange="handleImageUpload(this)">
+                        
+                        <!-- Image preview container -->
+                        <div class="image-preview-container <%= canEditField('images') ? 'cursor-pointer' : 'cursor-not-allowed' %>" 
+                             <%= canEditField('images') ? 'onclick="document.getElementById(\'imageInput\').click()"' : '' %>>
+                            <% if (property.images && property.images.length > 0) { %>
+                                <img src="<%= property.images[0] %>" id="imagePreview" class="image-preview" alt="Property preview">
+                            <% } else { %>
+                                <div id="imagePlaceholder" class="text-center">
+                                    <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
+                                    <p class="text-gray-600">
+                                        <%= canEditField('images') ? 'Click to upload image' : 'No image uploaded' %>
+                                    </p>
+                                    <% if (canEditField('images')) { %>
+                                    <p class="text-sm text-gray-500 mt-1">Supports JPG, PNG, WebP</p>
+                                    <% } %>
+                                </div>
+                            <% } %>
+                        </div>
+                        
+                        <!-- Remove image button -->
+                        <% if (canEditField('images') && property.images && property.images.length > 0) { %>
+                        <button type="button" id="removeImageBtn" class="text-red-600 hover:text-red-800 text-sm"
+                                onclick="removeImage()">
+                            <i class="fas fa-times mr-1"></i> Remove Image
+                        </button>
+                        <% } %>
+                    </div>
+                </div>
+
+                <!-- Contact Information -->
+                <div class="space-y-6 mb-8">
+                    <div class="flex items-center justify-between border-b pb-2">
+                        <h2 class="text-xl font-bold text-gray-900">Contact Information</h2>
+                        <span class="text-sm text-gray-500">
+                            <%= canEditField('contact_name') || canEditField('contact_phone') || canEditField('contact_email') ? 'Editable' : 'Read-only' %>
+                        </span>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Contact Name
+                                <% if (canEditField('contact_name')) { %>
+                                <span class="editable-badge">Editable</span>
+                                <% } else { %>
+                                <span class="readonly-badge">Read-only</span>
+                                <% } %>
+                            </label>
+                            <input type="text" name="contact_name" value="<%= property.contact_name || '' %>"
+                                   <%= canEditField('contact_name') ? '' : 'disabled readonly' %>
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg 
+                                          <%= canEditField('contact_name') ? 'field-enabled' : 'field-disabled' %>">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Contact Phone
+                                <% if (canEditField('contact_phone')) { %>
+                                <span class="editable-badge">Editable</span>
+                                <% } else { %>
+                                <span class="readonly-badge">Read-only</span>
+                                <% } %>
+                            </label>
+                            <input type="tel" name="contact_phone" value="<%= property.contact_phone || '' %>"
+                                   <%= canEditField('contact_phone') ? '' : 'disabled readonly' %>
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg 
+                                          <%= canEditField('contact_phone') ? 'field-enabled' : 'field-disabled' %>">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Contact Email
+                                <% if (canEditField('contact_email')) { %>
+                                <span class="editable-badge">Editable</span>
+                                <% } else { %>
+                                <span class="readonly-badge">Read-only</span>
+                                <% } %>
+                            </label>
+                            <input type="email" name="contact_email" value="<%= property.contact_email || '' %>"
+                                   <%= canEditField('contact_email') ? '' : 'disabled readonly' %>
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg 
+                                          <%= canEditField('contact_email') ? 'field-enabled' : 'field-disabled' %>">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="flex flex-wrap justify-between border-t pt-6 gap-4">
+                    <div class="flex space-x-3">
+                        <a href="/seller/properties/<%= property._id %>" 
+                           class="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 flex items-center">
+                            <i class="fas fa-times mr-2"></i> Cancel
+                        </a>
+                        
+                        <a href="/seller/dashboard" 
+                           class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 flex items-center">
+                            <i class="fas fa-home mr-2"></i> Dashboard
+                        </a>
+                    </div>
+                    
+                    <div class="flex space-x-3">
+                        <!-- Different submit buttons based on state -->
+                        <% if (canEdit) { %>
+                            <% if (isChangesRequested) { %>
+                            <button type="submit" 
+                                    class="bg-orange-600 text-white px-6 py-2 rounded-lg hover:bg-orange-700 flex items-center shadow-md submit-btn">
+                                <i class="fas fa-check-circle mr-2"></i> Save & Resubmit for Approval
+                            </button>
+                            <% } else if (isDraft) { %>
+                            <button type="button" onclick="saveAsDraft()"
+                                    class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 flex items-center submit-btn">
+                                <i class="fas fa-save mr-2"></i> Save Draft
+                            </button>
+                            <button type="button" onclick="submitForApproval('<%= property._id %>')"
+                                    class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 flex items-center submit-btn">
+                                <i class="fas fa-paper-plane mr-2"></i> Submit for Approval
+                            </button>
+                            <% } else { %>
+                            <!-- ✅ NEW: Submit button for limited/full edit mode -->
+                            <button type="button" onclick="saveChanges()"
+                                    class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 flex items-center shadow-md submit-btn">
+                                <i class="fas fa-save mr-2"></i> Save Changes
+                            </button>
+                            <% } %>
+                        <% } else if (isPendingApproval) { %>
+                        <button type="button" onclick="requestEditAccess('<%= property._id %>')"
+                                class="bg-yellow-600 text-white px-6 py-2 rounded-lg hover:bg-yellow-700 flex items-center submit-btn">
+                            <i class="fas fa-unlock mr-2"></i> Request Edit Access
+                        </button>
+                        <% } else if (isRejected) { %>
+                        <button type="button" onclick="createNewFromRejected('<%= property._id %>')"
+                                class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 flex items-center submit-btn">
+                            <i class="fas fa-plus-circle mr-2"></i> Create New from Rejected
+                        </button>
+                        <% } %>
+                        
+                        <!-- Request extension if editing -->
+                        <% if (canEdit && editExpiryInfo) { %>
+                        <button type="button" onclick="requestExtension('<%= property._id %>')"
+                                class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 flex items-center submit-btn">
+                            <i class="fas fa-clock mr-2"></i> Request More Time
+                        </button>
+                        <% } %>
+                    </div>
+                </div>
+                
+                <!-- Form Help Text -->
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                    <p class="text-sm text-gray-600">
+                        <i class="fas fa-info-circle text-gray-400 mr-1"></i>
+                        <% if (canEditAll) { %>
+                            You have <strong>full edit access</strong> to all fields.
+                        <% } else if (canEditLimited) { %>
+                            You have <strong>limited edit access</strong> to specific fields only. Other fields are read-only.
+                        <% } else if (isPendingApproval) { %>
+                            This property is <strong>under admin review</strong>. You cannot edit until admin completes review or grants edit access.
+                        <% } else if (isRejected) { %>
+                            This property was <strong>rejected</strong> by admin. You cannot edit it, but can create a new listing.
+                        <% } else { %>
+                            Edit permissions are currently <strong>restricted</strong>.
+                        <% } %>
+                    </p>
+                </div>
+            </form>
+        </div>
+
+       <script>
+    let selectedImage = null;
+    
+    // Property type to sub-type mapping
+    const propertyTypes = {
+        'Residential': ['Apartment', 'Independent House', 'Villa', 'Penthouse', 'Studio', 'Farmhouse'],
+        'Commercial': ['Office Space', 'Shop', 'Showroom', 'Warehouse', 'Industrial Building'],
+        'Plot': ['Residential Plot', 'Commercial Plot', 'Agricultural Land', 'Industrial Plot'],
+        'Agricultural': ['Farm Land', 'Orchard', 'Plantation'],
+        'Industrial': ['Factory', 'Manufacturing Unit', 'Storage Unit']
+    };
+    
+    // City to Locations mapping
+    const cityLocationMap = {
+        Noida: [
+            "Sector 62", "Sector 18", "Sector 15", "Sector 50",
+            "Sector 76", "Sector 137", "Sector 128",
+            "Sector 44", "Greater Noida West", "Noida Extension"
+        ],
+        Ghaziabad: [
+            "Indirapuram", "Vaishali", "Raj Nagar",
+            "Raj Nagar Extension", "Crossings Republik",
+            "Kavi Nagar", "Sanjay Nagar", "Shastri Nagar",
+            "Mohan Nagar", "Vasundhara"
+        ],
+        Gorakhpur: [
+            "Golghar", "Medical Road", "Rustampur",
+            "Taramandal", "Chargawan", "Basharatpur",
+            "Betiahata", "Civil Lines", "Transport Nagar",
+            "Padri Bazar"
+        ]
+    };
+    
+    // City to State mapping
+    const cityStateMap = {
+        'Noida': 'Uttar Pradesh',
+        'Ghaziabad': 'Uttar Pradesh',
+        'Gorakhpur': 'Uttar Pradesh'
+    };
+    
+    // ========== IMAGE HANDLING ==========
+    
+    // Handle single image upload
+    function handleImageUpload(input) {
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            
+            // Check file size (10MB limit)
+            if (file.size > 10 * 1024 * 1024) {
+                alert('File is too large. Maximum size is 10MB.');
+                input.value = '';
+                return;
+            }
+            
+            // Check file type
+            if (!file.type.match('image.*')) {
+                alert('Please select an image file.');
+                input.value = '';
+                return;
+            }
+            
+            selectedImage = file;
+            
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                // Hide placeholder if it exists
+                const placeholder = document.getElementById('imagePlaceholder');
+                if (placeholder) {
+                    placeholder.classList.add('hidden');
+                }
+                
+                // Show image preview
+                const preview = document.getElementById('imagePreview');
+                if (preview) {
+                    preview.src = e.target.result;
+                    preview.classList.remove('hidden');
+                } else {
+                    // Create preview if it doesn't exist
+                    const container = document.querySelector('.image-preview-container');
+                    const img = document.createElement('img');
+                    img.id = 'imagePreview';
+                    img.className = 'image-preview';
+                    img.src = e.target.result;
+                    container.appendChild(img);
+                }
+                
+                // Show remove button
+                const removeBtn = document.getElementById('removeImageBtn');
+                if (removeBtn) {
+                    removeBtn.classList.remove('hidden');
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+    
+    // Remove selected image
+    function removeImage() {
+        const input = document.getElementById('imageInput');
+        const preview = document.getElementById('imagePreview');
+        const placeholder = document.getElementById('imagePlaceholder');
+        const removeBtn = document.getElementById('removeImageBtn');
+        
+        if (input) input.value = '';
+        if (preview) {
+            preview.src = '';
+            preview.classList.add('hidden');
+        }
+        if (placeholder) placeholder.classList.remove('hidden');
+        if (removeBtn) removeBtn.classList.add('hidden');
+        selectedImage = null;
+    }
+    
+    // ========== HELPER FUNCTIONS ==========
+    
+    // Get form data with proper field names
+    function getFormData() {
+        const form = document.getElementById('editForm');
+        const formData = new FormData();
+        
+        // Collect all form fields
+        const inputs = form.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            if (input.name && !input.disabled) {
+                // Handle checkboxes
+                if (input.type === 'checkbox') {
+                    if (input.checked) {
+                        formData.append(input.name, input.value);
+                    }
+                } 
+                // Handle multiple select
+                else if (input.tagName === 'SELECT' && input.multiple) {
+                    const selectedOptions = Array.from(input.selectedOptions).map(option => option.value);
+                    if (selectedOptions.length > 0) {
+                        formData.append(input.name, JSON.stringify(selectedOptions));
+                    }
+                }
+                // Handle regular inputs
+                else {
+                    formData.append(input.name, input.value);
+                }
+            }
+        });
+        
+        return formData;
+    }
+    
+    // Collect address data
+    function getAddressData() {
+        return {
+            street: document.querySelector('input[name="address[street]"]')?.value || '',
+            landmark: document.querySelector('input[name="address[landmark]"]')?.value || '',
+            city: document.querySelector('select[name="address[city]"]')?.value || '',
+            state: document.querySelector('input[name="address[state]"]')?.value || '',
+            pincode: document.querySelector('input[name="address[pincode]"]')?.value || '',
+            areas: Array.from(document.querySelector('select[name="address[areas][]"]')?.selectedOptions || [])
+                    .map(opt => opt.value)
+        };
+    }
+    
+    // Form validation
+    function validateForm() {
+        const title = document.querySelector('input[name="title"]')?.value.trim() || '';
+        const description = document.querySelector('textarea[name="description"]')?.value.trim() || '';
+        const price = document.querySelector('input[name="price"]')?.value;
+        const propertyType = document.querySelector('select[name="property_type"]')?.value;
+        
+        let errors = [];
+        
+        if (!title) {
+            errors.push('Property title is required');
+        }
+        
+        if (!description || description.length < 50) {
+            errors.push('Description must be at least 50 characters');
+        }
+        
+        if (!price || parseFloat(price) < 1000) {
+            errors.push('Valid price is required (minimum ₹1000)');
+        }
+        
+        if (!propertyType) {
+            errors.push('Property type is required');
+        }
+        
+        if (errors.length > 0) {
+            showNotification(errors.join('. '), 'error');
+            return false;
+        }
+        
+        return true;
+    }
+    
+    // ========== SUBMIT FUNCTIONS ==========
+    
+    // Save as Draft function
+    async function saveAsDraft() {
+        console.log('Saving as draft...');
+        
+        // Validate form before submission
+        if (!validateForm()) {
+            return;
+        }
+        
+        try {
+            showLoading('Saving draft...');
+            
+            // Get form data
+            const formData = getFormData();
+            
+            // Add property_id
+            formData.append('property_id', '<%= property._id %>');
+            
+            // Convert amenities
+            const amenities = [];
+            document.querySelectorAll('input[name="amenities"]:checked').forEach(checkbox => {
+                amenities.push(checkbox.value);
+            });
+            
+            // Remove any existing amenities from formData and add as JSON
+            formData.delete('amenities');
+            if (amenities.length > 0) {
+                formData.append('amenities', JSON.stringify(amenities));
+            }
+            
+            // Handle address data
+            const address = getAddressData();
+            formData.append('location', JSON.stringify(address));
+            
+            // Add image if selected
+            if (selectedImage) {
+                formData.append('image', selectedImage);
+            }
+            
+            console.log('Submitting form data...');
+            
+            const response = await fetch('/seller/properties/<%= property._id %>/edit', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            console.log('Save result:', result);
+            hideLoading();
+            
+            if (result.success) {
+                showNotification('Draft saved successfully!', 'success');
+                
+                // Reload to show updated data
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                if (result.deniedFields) {
+                    showNotification(`Some fields cannot be edited. Contact admin for access.`, 'warning');
+                } else {
+                    showNotification('Error: ' + result.message, 'error');
+                }
+            }
+        } catch (error) {
+            console.error('Error saving draft:', error);
+            hideLoading();
+            showNotification('Failed to save draft. Please try again.', 'error');
+        }
+    }
+    
+    // Save Changes function (for limited/full edit mode)
+    async function saveChanges() {
+        console.log('Saving changes...');
+        
+        // Validate form before submission
+        if (!validateForm()) {
+            return;
+        }
+        
+        try {
+            showLoading('Saving changes...');
+            
+            // Get form data
+            const formData = getFormData();
+            
+            // Add property_id
+            formData.append('property_id', '<%= property._id %>');
+            
+            // Convert amenities
+            const amenities = [];
+            document.querySelectorAll('input[name="amenities"]:checked').forEach(checkbox => {
+                amenities.push(checkbox.value);
+            });
+            
+            // Remove any existing amenities from formData and add as JSON
+            formData.delete('amenities');
+            if (amenities.length > 0) {
+                formData.append('amenities', JSON.stringify(amenities));
+            }
+            
+            // Handle address data
+            const address = getAddressData();
+            formData.append('location', JSON.stringify(address));
+            
+            // Add image if selected
+            if (selectedImage) {
+                formData.append('image', selectedImage);
+            }
+            
+            console.log('Submitting changes...');
+            
+            const response = await fetch('/seller/properties/<%= property._id %>/edit', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            console.log('Save result:', result);
+            hideLoading();
+            
+            if (result.success) {
+                showNotification('Changes saved successfully!', 'success');
+                
+                // Redirect
+                setTimeout(() => {
+                    window.location.href = result.redirectUrl || `/seller/properties/<%= property._id %>`;
+                }, 1500);
+            } else {
+                if (result.deniedFields) {
+                    showNotification(`Some fields cannot be edited. You can only edit: ${result.allowedFields?.join(', ') || 'specific fields'}`, 'warning');
+                } else {
+                    showNotification('Error: ' + result.message, 'error');
+                }
+            }
+        } catch (error) {
+            console.error('Error saving changes:', error);
+            hideLoading();
+            showNotification('Failed to save changes. Please try again.', 'error');
+        }
+    }
+    
+    // Form submission for changes_requested status
+    document.getElementById('editForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Only handle for changes_requested status
+        <% if (isChangesRequested) { %>
+            console.log('Submitting changes_requested property...');
+            
+            // Validate form before submission
+            if (!validateForm()) {
+                return;
+            }
+            
+            try {
+                showLoading('Saving property and submitting for approval...');
+                
+                // Get form data
+                const formData = getFormData();
+                
+                // Add property_id and submit_for_approval flag
+                formData.append('property_id', '<%= property._id %>');
+                formData.append('submit_for_approval', 'true');
+                
+                // Convert amenities
+                const amenities = [];
+                document.querySelectorAll('input[name="amenities"]:checked').forEach(checkbox => {
+                    amenities.push(checkbox.value);
+                });
+                
+                // Remove any existing amenities from formData and add as JSON
+                formData.delete('amenities');
+                if (amenities.length > 0) {
+                    formData.append('amenities', JSON.stringify(amenities));
+                }
+                
+                // Handle address data
+                const address = getAddressData();
+                formData.append('location', JSON.stringify(address));
+                
+                // Add image if selected
+                if (selectedImage) {
+                    formData.append('image', selectedImage);
+                }
+                
+                console.log('Submitting for approval...');
+                
+                const response = await fetch('/seller/properties/<%= property._id %>/edit', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                console.log('Submit result:', result);
+                hideLoading();
+                
+                if (result.success) {
+                    showNotification('Property updated and submitted for approval!', 'success');
+                    
+                    // Redirect to dashboard
+                    setTimeout(() => {
+                        window.location.href = '/seller/dashboard';
+                    }, 1500);
+                } else {
+                    if (result.deniedFields) {
+                        showNotification(`Some fields cannot be edited. Contact admin for access.`, 'warning');
+                    } else {
+                        showNotification('Error: ' + result.message, 'error');
+                    }
+                }
+            } catch (error) {
+                console.error('Error submitting:', error);
+                hideLoading();
+                showNotification('Failed to update property. Please try again.', 'error');
+            }
+        <% } %>
+    });
+    
+    // Submit for approval
+    function submitForApproval(propertyId) {
+        console.log('Submitting for approval...');
+        
+        // First validate the form
+        if (!validateForm()) {
+            return;
+        }
+        
+        if (confirm('Submit this property for admin approval?\n\nOnce submitted, you cannot edit until admin reviews it.')) {
+            showLoading('Submitting for approval...');
+            
+            fetch(`/seller/properties/${propertyId}/submit`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Submit response:', data);
+                hideLoading();
+                if (data.success) {
+                    showNotification('Property submitted for approval! Admin will review it soon.', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/seller/dashboard';
+                    }, 2000);
+                } else {
+                    showNotification('Error: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error submitting:', error);
+                hideLoading();
+                showNotification('Failed to submit property', 'error');
+            });
+        }
+    }
+    
+    // Request edit access
+    function requestEditAccess(propertyId) {
+        const reason = prompt('Please provide a reason for requesting edit access:\n\nExample: "I entered wrong price by mistake"');
+        
+        if (reason && reason.trim()) {
+            showLoading('Submitting request...');
+            
+            fetch(`/seller/properties/${propertyId}/request-edit`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ reason: reason.trim() })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    showNotification('Edit request submitted to admin. You will be notified when approved.', 'success');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    if (data.message && data.message.includes('already sent recently')) {
+                        showNotification('You already requested edit access recently. Please wait.', 'warning');
+                    } else {
+                        showNotification('Error: ' + data.message, 'error');
+                    }
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Error:', error);
+                showNotification('Failed to submit request', 'error');
+            });
+        }
+    }
+    
+    // Request extension
+    function requestExtension(propertyId) {
+        const reason = prompt('Why do you need more time to edit?\n\nExample: "I need more time to upload better quality images"');
+        
+        if (reason && reason.trim()) {
+            showLoading('Requesting extension...');
+            
+            fetch(`/seller/properties/${propertyId}/request-extension`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ reason: reason.trim() })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    showNotification('Extension request submitted to admin.', 'success');
+                } else {
+                    showNotification('Error: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Error:', error);
+                showNotification('Failed to submit request', 'error');
+            });
+        }
+    }
+    
+    // Create new from rejected
+    function createNewFromRejected(propertyId) {
+        if (confirm('Create a new listing from this rejected property?\n\nThis will copy all details to a new draft that you can edit and resubmit.')) {
+            showLoading('Creating new listing...');
+            
+            fetch(`/seller/properties/${propertyId}/duplicate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success && data.propertyId) {
+                    showNotification('New draft created from rejected property!', 'success');
+                    setTimeout(() => {
+                        window.location.href = `/seller/properties/${data.propertyId}/edit`;
+                    }, 1500);
+                } else {
+                    showNotification('Error: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Error:', error);
+                showNotification('Failed to create new listing', 'error');
+            });
+        }
+    }
+    
+    // ========== UTILITY FUNCTIONS ==========
+    
+    function showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 px-4 py-3 rounded-lg shadow-lg z-50 
+            ${type === 'success' ? 'bg-green-100 text-green-800 border border-green-300' : 
+              type === 'error' ? 'bg-red-100 text-red-800 border border-red-300' : 
+              'bg-blue-100 text-blue-800 border border-blue-300'}`;
+        notification.innerHTML = `
+            <div class="flex items-center">
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'} mr-2"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Remove after 5 seconds
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            notification.style.transition = 'opacity 0.5s';
+            setTimeout(() => notification.remove(), 500);
+        }, 5000);
+    }
+    
+    function showLoading(message = 'Processing...') {
+        // Create loading overlay
+        const loading = document.createElement('div');
+        loading.id = 'loading-overlay';
+        loading.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+        loading.innerHTML = `
+            <div class="bg-white p-6 rounded-lg shadow-xl text-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p class="text-gray-700">${message}</p>
+            </div>
+        `;
+        
+        document.body.appendChild(loading);
+    }
+    
+    function hideLoading() {
+        const loading = document.getElementById('loading-overlay');
+        if (loading) {
+            loading.remove();
+        }
+    }
+    
+    // Update locations based on selected city
+    function updateLocations() {
+        const city = document.getElementById('citySelect').value;
+        const locationSelect = document.getElementById('locationSelect');
+        const locationCount = document.getElementById('locationCount');
+        const stateInput = document.getElementById('stateInput');
+        
+        // Clear existing options
+        locationSelect.innerHTML = '';
+        
+        if (city && cityLocationMap[city]) {
+            // Enable location dropdown
+            locationSelect.disabled = false;
+            
+            // Add all locations for the selected city
+            cityLocationMap[city].forEach(location => {
+                const option = document.createElement('option');
+                option.value = location;
+                option.textContent = location;
+                
+                // Check if this location was previously selected
+                const currentAreas = '<%= currentAreas %>'.split(',');
+                if (currentAreas.includes(location)) {
+                    option.selected = true;
+                }
+                
+                locationSelect.appendChild(option);
+            });
+            
+            // Auto-fill state based on city
+            if (cityStateMap[city] && !stateInput.value) {
+                stateInput.value = cityStateMap[city];
+            }
+            
+            // Update location count text
+            updateLocationCount();
+        } else {
+            // Disable location dropdown and show default option
+            locationSelect.disabled = true;
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'Please select a city first';
+            locationSelect.appendChild(option);
+            locationCount.textContent = 'Hold Ctrl (Windows) / Cmd (Mac) to select multiple locations';
+        }
+    }
+    
+    // Update location selection count
+    function updateLocationCount() {
+        const locationSelect = document.getElementById('locationSelect');
+        const locationCount = document.getElementById('locationCount');
+        const selectedCount = locationSelect ? 
+            Array.from(locationSelect.selectedOptions).filter(opt => opt.value).length : 0;
+        
+        if (selectedCount > 0) {
+            locationCount.textContent = `${selectedCount} location(s) selected. Hold Ctrl (Windows) / Cmd (Mac) to select multiple`;
+        } else {
+            locationCount.textContent = 'Hold Ctrl (Windows) / Cmd (Mac) to select multiple locations';
+        }
+    }
+    
+    // Update description character count
+    document.querySelector('textarea[name="description"]').addEventListener('input', function(e) {
+        const count = e.target.value.length;
+        const descCount = document.getElementById('descCount');
+        if (descCount) {
+            descCount.textContent = `${count}/5000`;
+        }
+    });
+    
+    // Update sub-type options based on property type
+    document.getElementById('propertyTypeSelect').addEventListener('change', function(e) {
+        const type = e.target.value;
+        const subTypeSelect = document.getElementById('subTypeSelect');
+        
+        subTypeSelect.innerHTML = '<option value="">Select Sub Type</option>';
+        
+        if (type && propertyTypes[type]) {
+            subTypeSelect.disabled = false;
+            propertyTypes[type].forEach(subType => {
+                const option = document.createElement('option');
+                option.value = subType;
+                option.textContent = subType;
+                subTypeSelect.appendChild(option);
+            });
+        } else {
+            subTypeSelect.disabled = true;
+        }
+    });
+    
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Page loaded, initializing...');
+        
+        // Initialize locations
+        updateLocations();
+        
+        // Add event listener for location selection changes
+        const locationSelect = document.getElementById('locationSelect');
+        if (locationSelect) {
+            locationSelect.addEventListener('change', updateLocationCount);
+        }
+        
+        // Add event listener for city change (for state auto-fill)
+        const citySelect = document.getElementById('citySelect');
+        if (citySelect) {
+            citySelect.addEventListener('change', function() {
+                updateLocations();
+                const stateInput = document.getElementById('stateInput');
+                const city = this.value;
+                if (cityStateMap[city] && !stateInput.value) {
+                    stateInput.value = cityStateMap[city];
+                }
+            });
+        }
+        
+        // Check if image preview elements exist
+        const imageInput = document.getElementById('imageInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const imagePlaceholder = document.getElementById('imagePlaceholder');
+        
+        console.log('Image elements:', {
+            imageInput: !!imageInput,
+            imagePreview: !!imagePreview,
+            imagePlaceholder: !!imagePlaceholder
+        });
+        
+        // Setup image click handler if image preview container exists
+        const imageContainer = document.querySelector('.image-preview-container');
+        if (imageContainer && imageInput) {
+            imageContainer.addEventListener('click', function() {
+                if (!imageInput.disabled) {
+                    imageInput.click();
+                }
+            });
+        }
+        
+        // Log button status for debugging
+        console.log('Edit mode status:', {
+            canEdit: <%= canEdit %>,
+            isDraft: <%= isDraft %>,
+            isChangesRequested: <%= isChangesRequested %>,
+            isPendingApproval: <%= isPendingApproval %>
+        });
+        
+        // Add console logging for button clicks for debugging
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('click', function() {
+                console.log('Button clicked:', this.textContent.trim());
+            });
+        });
+    });
+</script>
+    </body>
+</html>

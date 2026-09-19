@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Propbandhu</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center">
+                        <span class="text-xl font-bold text-gray-900">Propbandhu</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/buyer/dashboard" class="text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-home mr-1"></i>Dashboard
+                    </a>
+                    <a href="/buyer/properties" class="text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-search mr-1"></i>Browse
+                    </a>
+                    <a href="/buyer/cart" class="text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-shopping-cart mr-1"></i>My Cart
+                    </a>
+                    <a href="/logout" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+                        <i class="fas fa-sign-out-alt mr-1"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- Property Header -->
+        <div class="flex justify-between items-start mb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900"><%= property.title %></h1>
+                <p class="text-gray-600 flex items-center mt-2">
+                    <i class="fas fa-map-marker-alt mr-2 text-gray-400"></i>
+                    <%= property.address.area %>, <%= property.address.city %>, <%= property.address.state %>
+                </p>
+            </div>
+            <div class="text-right">
+                <div class="text-2xl font-bold text-blue-600">₹<%= property.price.toLocaleString() %></div>
+                <div class="text-sm text-gray-500"><%= property.price_type || 'Fixed Price' %></div>
+            </div>
+        </div>
+
+        <!-- Property Status Badges -->
+        <div class="flex flex-wrap gap-2 mb-6">
+            <span class="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
+                <%= property.property_type %>
+            </span>
+            <span class="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
+                <%= property.status %>
+            </span>
+            <% if (property.is_featured) { %>
+            <span class="bg-yellow-100 text-yellow-800 text-sm font-medium px-3 py-1 rounded-full">
+                Featured
+            </span>
+            <% } %>
+            <% if (property.is_verified) { %>
+            <span class="bg-purple-100 text-purple-800 text-sm font-medium px-3 py-1 rounded-full">
+                Verified
+            </span>
+            <% } %>
+        </div>
+
+        <!-- Property Images Gallery -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <!-- Main Image -->
+            <% if (property.images && property.images.length > 0) { %>
+            <div class="lg:col-span-2">
+                <img src="<%= property.images[0].url %>" alt="<%= property.title %>" 
+                     class="w-full h-96 object-cover rounded-xl shadow-lg">
+            </div>
+            
+            <!-- Thumbnail Images -->
+            <div class="grid grid-cols-2 gap-2">
+                <% property.images.slice(1, 5).forEach((image, index) => { %>
+                <img src="<%= image.url %>" alt="Property Image <%= index + 2 %>" 
+                     class="w-full h-48 object-cover rounded-lg cursor-pointer hover:opacity-90"
+                     onclick="openImageModal('<%= image.url %>')">
+                <% }); %>
+                <% if (property.images.length > 5) { %>
+                <div class="relative">
+                    <img src="<%= property.images[4].url %>" alt="More images" 
+                         class="w-full h-48 object-cover rounded-lg opacity-50">
+                    <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded-lg">
+                        <span class="text-white font-bold">+<%= property.images.length - 5 %> more</span>
+                    </div>
+                </div>
+                <% } %>
+            </div>
+            <% } else { %>
+            <div class="lg:col-span-3">
+                <div class="w-full h-96 bg-gray-200 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-home text-gray-400 text-8xl"></i>
+                </div>
+            </div>
+            <% } %>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Property Details -->
+            <div class="lg:col-span-2">
+                <!-- Property Description -->
+                <div class="bg-white rounded-xl shadow p-6 mb-6">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">Property Description</h2>
+                    <p class="text-gray-700 leading-relaxed"><%= property.description %></p>
+                </div>
+
+                <!-- Property Specifications -->
+                <div class="bg-white rounded-xl shadow p-6 mb-6">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">Property Specifications</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="text-center p-4 border rounded-lg">
+                            <div class="text-2xl font-bold text-blue-600 mb-2"><%= property.bedrooms || 'NA' %></div>
+                            <p class="text-gray-600">Bedrooms</p>
+                        </div>
+                        <div class="text-center p-4 border rounded-lg">
+                            <div class="text-2xl font-bold text-blue-600 mb-2"><%= property.bathrooms || 'NA' %></div>
+                            <p class="text-gray-600">Bathrooms</p>
+                        </div>
+                        <div class="text-center p-4 border rounded-lg">
+                            <div class="text-2xl font-bold text-blue-600 mb-2"><%= property.balconies || 'NA' %></div>
+                            <p class="text-gray-600">Balconies</p>
+                        </div>
+                        <div class="text-center p-4 border rounded-lg">
+                            <div class="text-2xl font-bold text-blue-600 mb-2">
+                                <%= property.built_up_area || property.carpet_area || 'NA' %>
+                            </div>
+                            <p class="text-gray-600">Area (<%= property.area_unit || 'sq ft' %>)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Amenities -->
+                <% if (property.amenities && property.amenities.length > 0) { %>
+                <div class="bg-white rounded-xl shadow p-6 mb-6">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">Amenities</h2>
+                    <div class="flex flex-wrap gap-3">
+                        <% property.amenities.forEach(amenity => { %>
+                        <span class="bg-gray-100 text-gray-800 px-3 py-2 rounded-lg">
+                            <i class="fas fa-check text-green-500 mr-2"></i><%= amenity %>
+                        </span>
+                        <% }); %>
+                    </div>
+                </div>
+                <% } %>
+            </div>
+
+            <!-- Sidebar - Action Panel -->
+            <div class="space-y-6">
+                <!-- Seller Info -->
+                <div class="bg-white rounded-xl shadow p-6">
+                    <h3 class="font-bold text-lg text-gray-900 mb-4">Seller Information</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <p class="text-sm text-gray-600">Seller Name</p>
+                            <p class="font-medium"><%= property.seller.name %></p>
+                        </div>
+                        <% if (property.seller.phone) { %>
+                        <div>
+                            <p class="text-sm text-gray-600">Contact Number</p>
+                            <p class="font-medium"><%= property.seller.phone %></p>
+                        </div>
+                        <% } %>
+                        <% if (property.seller.email) { %>
+                        <div>
+                            <p class="text-sm text-gray-600">Email</p>
+                            <p class="font-medium"><%= property.seller.email %></p>
+                        </div>
+                        <% } %>
+                    </div>
+                </div>
+
+                <!-- Cart Actions -->
+                <div class="bg-white rounded-xl shadow p-6">
+                    <h3 class="font-bold text-lg text-gray-900 mb-4">Property Actions</h3>
+                    
+                   <% if (property.isInCart) { %>
+                    <div class="space-y-3">
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                            <div class="flex items-center">
+                                <i class="fas fa-shopping-cart text-yellow-600 mr-3 text-xl"></i>
+                                <div>
+                                    <p class="font-medium text-yellow-800">In Your Cart</p>
+                                    <p class="text-sm text-yellow-700">You have 7 days to schedule a visit</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <a href="/buyer/cart" class="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 flex items-center justify-center">
+                            <i class="fas fa-shopping-cart mr-2"></i>View in Cart
+                        </a>
+                        
+                        <button onclick="removeFromCart('<%= property._id %>')" 
+                                class="w-full bg-red-100 text-red-700 px-4 py-3 rounded-lg hover:bg-red-200">
+                            <i class="fas fa-trash mr-2"></i>Remove from Cart
+                        </button>
+                    </div>
+                    <% } else { %>
+                    <div class="space-y-3">
+                        <button onclick="addToCart('<%= property._id %>')" 
+                                class="w-full bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 flex items-center justify-center">
+                            <i class="fas fa-cart-plus mr-2"></i>Add to Cart
+                        </button>
+                        
+                        <p class="text-sm text-gray-600 text-center">
+                            Adding to cart starts a 7-day visit window
+                        </p>
+                    </div>
+                    <% } %>
+                </div>
+
+                <!-- Property Stats -->
+                <div class="bg-white rounded-xl shadow p-6">
+                    <h3 class="font-bold text-lg text-gray-900 mb-4">Property Stats</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Views</span>
+                            <span class="font-bold"><%= property.views %></span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Inquiries</span>
+                            <span class="font-bold"><%= property.inquiries %></span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Listed On</span>
+                            <span class="font-bold"><%= new Date(property.createdAt).toLocaleDateString() %></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div id="imageModal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center">
+        <div class="relative max-w-4xl max-h-screen">
+            <button onclick="closeImageModal()" 
+                    class="absolute top-4 right-4 text-white text-3xl z-10">
+                <i class="fas fa-times"></i>
+            </button>
+            <img id="modalImage" src="" alt="Enlarged view" class="max-w-full max-h-screen">
+        </div>
+    </div>
+
+    <script>
+        // Add to cart function
+        async function addToCart(propertyId) {
+            try {
+                const response = await fetch('/buyer/api/cart/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ propertyId })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Property added to cart! You have 7 days to schedule a visit.');
+                    location.reload();
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to add to cart');
+            }
+        }
+
+        // Remove from cart function
+        async function removeFromCart(propertyId) {
+            if (!confirm('Remove this property from cart?')) return;
+            
+            try {
+                const response = await fetch('/buyer/api/cart/remove', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ propertyId })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Property removed from cart');
+                    location.reload();
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to remove from cart');
+            }
+        }
+
+        // Image modal functions
+        function openImageModal(imageUrl) {
+            document.getElementById('modalImage').src = imageUrl;
+            document.getElementById('imageModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeImageModal() {
+            document.getElementById('imageModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Close modal on background click
+        document.getElementById('imageModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeImageModal();
+            }
+        });
+    </script>
+</body>
+</html>
