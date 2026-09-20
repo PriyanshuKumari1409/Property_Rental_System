@@ -134,13 +134,13 @@ http://localhost:3000
 
 ### Buyer Dashboard
 
-![Buyer Dashboard](screenshots/buyer-dashboard.jpeg)
+![Buyer Dashboard](screenshots/buyer_dashboard.jpeg)
 
 ---
 
 ### Seller Dashboard
 
-![Seller Dashboard](screenshots/seller-dashboard.jpeg)
+![Seller Dashboard](screenshots/seller_dashboard.jpeg)
 
 ---
 
